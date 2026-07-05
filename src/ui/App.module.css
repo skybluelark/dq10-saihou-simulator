@@ -1,0 +1,588 @@
+/* M2 最小UI スタイル(PC前提・CSS Modules) */
+
+.app {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 12px 16px 32px;
+  font-family: "Segoe UI", "Hiragino Sans", "Meiryo", sans-serif;
+  color: #222;
+}
+
+.loading {
+  padding: 40px;
+  text-align: center;
+  color: #555;
+}
+
+.csvWarning {
+  margin: 8px 0;
+  padding: 8px 12px;
+  background: #fff3cd;
+  border: 1px solid #ffe08a;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #7a5c00;
+}
+
+/* ---- ヘッダー ---- */
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #4a67c8;
+}
+
+.headerTitle {
+  font-size: 20px;
+  margin: 0;
+  color: #2c3e78;
+  white-space: nowrap;
+}
+
+.headerControls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #444;
+}
+
+.select {
+  font-size: 13px;
+  padding: 4px 6px;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  background: #fff;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #444;
+  cursor: pointer;
+}
+
+.newButton {
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: bold;
+  color: #fff;
+  background: #4a67c8;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.newButton:hover {
+  background: #3a53a8;
+}
+
+/* ---- メイン(左グリッド+右パネル) ---- */
+
+.main {
+  display: flex;
+  gap: 20px;
+  margin-top: 16px;
+  align-items: flex-start;
+}
+
+/* ---- 布グリッド ---- */
+
+.gridWrap {
+  flex: 0 0 auto;
+}
+
+.grid {
+  display: grid;
+  gap: 6px;
+}
+
+.cell,
+.cellEmpty {
+  width: 96px;
+  height: 84px;
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+.cellEmpty {
+  border: 1px dashed #ddd;
+  background: #fafafa;
+}
+
+.cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #ccc;
+  font: inherit;
+  padding: 0;
+  cursor: default;
+}
+
+.cellClickable {
+  cursor: pointer;
+}
+
+.cellNormal {
+  background: #fff;
+}
+
+.cellYellow {
+  background: #ffe97a;
+  border-color: #e0c33c;
+}
+
+.cellDone {
+  background: #8fe08f;
+  border-color: #4caf50;
+}
+
+.cellOver {
+  background: #f08a8a;
+  border-color: #d43c3c;
+}
+
+.cellGlow {
+  background: #ffc0da;
+  border-color: #f06ca8;
+}
+
+.cellShitsuke {
+  border: 3px solid #9b30d0;
+}
+
+.cellTarget {
+  box-shadow: inset 0 0 0 3px #2f7fe0;
+}
+
+.cellAnchor {
+  box-shadow: inset 0 0 0 3px #0b4fb3, 0 0 6px #2f7fe0;
+}
+
+.remaining {
+  font-size: 26px;
+  font-weight: bold;
+  line-height: 1.1;
+}
+
+.baseVal {
+  font-size: 11px;
+  color: #666;
+}
+
+.shitsukeTag {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  font-size: 10px;
+  color: #fff;
+  background: #9b30d0;
+  border-radius: 4px;
+  padding: 0 4px;
+}
+
+.glowTag {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  font-size: 10px;
+  color: #fff;
+  background: #f06ca8;
+  border-radius: 4px;
+  padding: 0 4px;
+}
+
+.errorLine {
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.errorNote {
+  margin-left: 4px;
+  font-size: 11px;
+  color: #888;
+}
+
+.star3Line {
+  margin-left: 12px;
+  font-size: 13px;
+  color: #b8860b;
+  font-weight: bold;
+}
+
+.legend {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  font-size: 11px;
+  color: #666;
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  border: 1px solid #999;
+}
+
+.swatchDone {
+  background: #8fe08f;
+}
+
+.swatchYellow {
+  background: #ffe97a;
+}
+
+.swatchOver {
+  background: #f08a8a;
+}
+
+.swatchShitsuke {
+  background: #fff;
+  border: 2px solid #9b30d0;
+}
+
+.swatchGlow {
+  background: #ffc0da;
+}
+
+.swatchTarget {
+  background: #fff;
+  border: 2px solid #2f7fe0;
+}
+
+/* ---- 右パネル ---- */
+
+.panel {
+  flex: 1 1 auto;
+  min-width: 300px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 12px 16px;
+  background: #f8f9fc;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.statRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.statLabel {
+  font-size: 12px;
+  color: #777;
+  min-width: 64px;
+}
+
+.statValue {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.powerBadge {
+  padding: 3px 12px;
+  border-radius: 12px;
+  font-weight: bold;
+  font-size: 14px;
+  background: #ddd;
+}
+
+.power_weak {
+  background: #cfd8dc;
+}
+
+.power_normal {
+  background: #b3d9ff;
+}
+
+.power_strong {
+  background: #ffd54f;
+}
+
+.power_strongest {
+  background: #ff8a65;
+}
+
+.power_critx2 {
+  background: #f48fb1;
+}
+
+.lockNote {
+  font-size: 11px;
+  color: #9b30d0;
+}
+
+.cycleBlock {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cycleRow {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.cycleItem {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  background: #e8eaf2;
+  border: 1px solid transparent;
+}
+
+.cycleCurrent {
+  background: #4a67c8;
+  color: #fff;
+  font-weight: bold;
+}
+
+.cycleHidden {
+  font-size: 12px;
+  color: #999;
+}
+
+.concBlock {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.concBar {
+  flex: 1 1 100px;
+  height: 10px;
+  background: #e0e0e0;
+  border-radius: 5px;
+  overflow: hidden;
+  min-width: 80px;
+}
+
+.concBarFill {
+  height: 100%;
+  background: #4caf50;
+  transition: width 0.15s;
+}
+
+.concDetail {
+  width: 100%;
+  font-size: 11px;
+  color: #888;
+}
+
+.traitInfo {
+  font-size: 13px;
+}
+
+.chargeBadge {
+  align-self: flex-start;
+  padding: 4px 12px;
+  border-radius: 6px;
+  background: #ff9800;
+  color: #fff;
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.mugaBadge {
+  align-self: flex-start;
+  padding: 4px 12px;
+  border-radius: 6px;
+  background: #d43c8a;
+  color: #fff;
+  font-weight: bold;
+  font-size: 13px;
+}
+
+/* ---- 特技ボタン ---- */
+
+.skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 16px;
+}
+
+.skillButton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 92px;
+  padding: 6px 8px;
+  border: 1px solid #aab;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  font: inherit;
+}
+
+.skillButton:hover:not(:disabled) {
+  background: #eef2ff;
+}
+
+.skillButton:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.skillSelected {
+  background: #4a67c8;
+  color: #fff;
+  border-color: #2c3e78;
+}
+
+.skillSelected:hover:not(:disabled) {
+  background: #3a53a8;
+}
+
+.skillSelected .skillCost {
+  color: #dfe6ff;
+}
+
+.skillName {
+  font-size: 13px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.skillCost {
+  font-size: 11px;
+  color: #777;
+}
+
+.finishButton {
+  border-color: #b8860b;
+  background: #fff8e0;
+}
+
+.finishButton:hover:not(:disabled) {
+  background: #ffefb0;
+}
+
+/* ---- 行動ログ ---- */
+
+.logPanel {
+  margin-top: 16px;
+}
+
+.sectionTitle {
+  font-size: 14px;
+  margin: 0 0 6px;
+  color: #2c3e78;
+}
+
+.logList {
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fff;
+  padding: 6px 10px;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.logEmpty {
+  color: #999;
+}
+
+.logLine {
+  border-bottom: 1px dotted #eee;
+}
+
+/* ---- 結果表示 ---- */
+
+.resultCard {
+  margin-top: 16px;
+  border: 2px solid #b8860b;
+  border-radius: 10px;
+  background: #fffbef;
+  padding: 14px 18px;
+}
+
+.resultTitle {
+  margin: 0 0 6px;
+  font-size: 15px;
+  color: #7a5c00;
+}
+
+.resultStar {
+  font-size: 28px;
+  font-weight: bold;
+  color: #b8860b;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.resultFail {
+  color: #d43c3c;
+}
+
+.resultGreat {
+  font-size: 18px;
+  color: #d4380d;
+}
+
+.resultFailNote {
+  font-size: 16px;
+}
+
+.resultSummary {
+  margin: 8px 0;
+  font-size: 14px;
+}
+
+.resultTable {
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+
+.resultTable th,
+.resultTable td {
+  border: 1px solid #ddd;
+  padding: 3px 10px;
+  text-align: right;
+}
+
+.resultTable th {
+  background: #f5edd8;
+}
+
+.penaltyNote {
+  margin-left: 4px;
+  color: #d43c3c;
+  font-size: 11px;
+}

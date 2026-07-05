@@ -191,6 +191,24 @@ export class Engine {
     return judgeState(state, this.params);
   }
 
+  /**
+   * ターン開始処理(？抽選・布特性・集中力自動回復)を実行した状態とイベントを返す(公開API)。
+   * UIが行動前に当ターンのぬいパワー・光布の発光・自動回復を表示するために使う。
+   *
+   * applyAction は turnStarted ガードによりターン開始処理を再実行しないため、
+   * beginTurn→applyAction の順で呼んでも applyAction 単独と乱数消費・結果が完全一致する。
+   * すでに開始済み・終了済みの状態では何もしない(乱数消費なし)。
+   */
+  beginTurn(state: GameState, rng: Rng): ApplyResult {
+    const next = cloneState(state);
+    const events: TurnEvent[] = [];
+    if (next.finished) {
+      return { state: next, events };
+    }
+    this.startTurn(next, rng, events);
+    return { state: next, events };
+  }
+
   // ---- ターン開始処理 ----
 
   /**
