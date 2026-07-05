@@ -1,0 +1,56 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`T9 同一シード+同一行動列の完全一致 > 最終状態のスナップショット(ゴールデン) 1`] = `
+{
+  "cells": [
+    {
+      "c": 1,
+      "r": 1,
+      "remaining": 95,
+    },
+    {
+      "c": 2,
+      "r": 1,
+      "remaining": 73,
+    },
+    {
+      "c": 3,
+      "r": 1,
+      "remaining": 16,
+    },
+    {
+      "c": 1,
+      "r": 2,
+      "remaining": 39,
+    },
+    {
+      "c": 2,
+      "r": 2,
+      "remaining": 76,
+    },
+    {
+      "c": 3,
+      "r": 2,
+      "remaining": 45,
+    },
+    {
+      "c": 1,
+      "r": 3,
+      "remaining": 44,
+    },
+    {
+      "c": 2,
+      "r": 3,
+      "remaining": -22,
+    },
+    {
+      "c": 3,
+      "r": 3,
+      "remaining": -25,
+    },
+  ],
+  "concentration": 134,
+  "finished": true,
+  "turn": 12,
+}
+`;

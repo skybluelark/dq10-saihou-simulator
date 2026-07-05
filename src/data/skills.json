@@ -1,0 +1,40 @@
+{
+  "version": "1.0",
+  "skills": [
+    { "id": "nuu", "name": "ぬう", "learnLv": 1, "cost": 5, "kind": "sew", "multiplier": 1, "target": "single" },
+    { "id": "yoko_nui", "name": "ヨコぬい", "learnLv": 2, "cost": 8, "kind": "sew", "multiplier": 1, "target": "row2" },
+    { "id": "kagen_nui", "name": "かげんぬい", "learnLv": 3, "cost": 10, "kind": "sew", "multiplier": 0.5, "target": "single" },
+    { "id": "taki_nobori", "name": "滝のぼり", "learnLv": 5, "cost": 8, "kind": "sew", "multiplier": 1, "target": "col2" },
+    { "id": "tasuki_nui", "name": "たすきぬい", "learnLv": 7, "cost": 7, "kind": "sew", "multiplier": 1, "target": "diag_up2" },
+    { "id": "crit_up_10", "name": "会心率アップ", "learnLv": 10, "kind": "passive", "nominal": 0.001 },
+    { "id": "nibai_nui", "name": "2倍ぬい", "learnLv": 13, "cost": 9, "kind": "sew", "multiplier": 2, "target": "single" },
+    { "id": "suihei_nui", "name": "水平ぬい", "learnLv": 15, "cost": 10, "kind": "sew", "multiplier": 1, "target": "row3" },
+    { "id": "seishin_toitsu", "name": "精神統一", "learnLv": 17, "cost": 7, "kind": "support", "effect": "lockPower", "duration": 3 },
+    { "id": "otaki_nobori", "name": "大滝のぼり", "learnLv": 19, "cost": 10, "kind": "sew", "multiplier": 1, "target": "col3" },
+    { "id": "crit_up_20", "name": "会心率アップ", "learnLv": 20, "kind": "passive", "nominal": 0.002 },
+    { "id": "nerai_nui", "name": "ねらいぬい", "learnLv": 23, "cost": 16, "kind": "sew", "multiplier": 1, "target": "single", "aim": true },
+    { "id": "gyaku_tasuki", "name": "逆たすきぬい", "learnLv": 25, "cost": 7, "kind": "sew", "multiplier": 1, "target": "diag_down2" },
+    { "id": "ito_hogushi", "name": "糸ほぐし", "learnLv": 27, "cost": 16, "kind": "recover", "target": "single" },
+    { "id": "crit_up_30", "name": "会心率アップ", "learnLv": 30, "kind": "passive", "nominal": 0.003 },
+    { "id": "sanbai_nui", "name": "3倍縫い", "learnLv": 33, "cost": 12, "kind": "sew", "multiplier": 3, "target": "single" },
+    { "id": "power_shift", "name": "ぬいパワーシフト", "learnLv": 38, "cost": 7, "kind": "support", "effect": "shiftPower" },
+    { "id": "hissatsu_up", "name": "必殺率アップ", "learnLv": 45, "kind": "passive" },
+    { "id": "shitsuke_gake", "name": "しつけがけ", "learnLv": 47, "cost": 13, "kind": "support", "effect": "cellCorrection", "target": "single" },
+    { "id": "makikomi_nui", "name": "巻きこみぬい", "learnLv": 52, "cost": 13, "kind": "sew", "target": "plus5",
+      "multipliers": { "center": 1.5, "around": 0.75 } },
+    { "id": "han_kagen_nui", "name": "半かげんぬい", "learnLv": 75, "cost": 12, "kind": "sew", "multiplier": 0.75, "target": "single" },
+    { "id": "midare_nui", "name": "みだれぬい", "learnLv": 80, "cost": 7, "kind": "sew", "target": "random4",
+      "multipliers": [2, 1, 1, 0.5] },
+    { "id": "muga_no_kyochi", "name": "無我の境地", "kind": "hissatsu", "cost": 0 }
+  ],
+  "targetPatterns": {
+    "single": [[0, 0]],
+    "row2": [[0, 0], [0, 1]],
+    "col2": [[0, 0], [-1, 0]],
+    "diag_up2": [[0, 0], [-1, 1]],
+    "diag_down2": [[0, 0], [-1, -1]],
+    "row3": [[0, -1], [0, 0], [0, 1]],
+    "col3": [[-1, 0], [0, 0], [1, 0]],
+    "plus5": [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]]
+  }
+}

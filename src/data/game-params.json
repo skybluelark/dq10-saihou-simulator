@@ -1,0 +1,42 @@
+{
+  "version": "1.0",
+  "crit": {
+    "kotsuBonus": 0.01,
+    "passiveEffective": 0.001,
+    "aimMultiplier": 7,
+    "hissatsuMultiplier": 2,
+    "shiftCritMultiplier": 2,
+    "randomCritMultiplier": 1,
+    "fixedBonus": {
+      "rainbowCritTurn": 0.24,
+      "lightGlowCell": 0.24
+    }
+  },
+  "hissatsuCharge": {
+    "baseRate": 0.00233
+  },
+  "clothTrait": {
+    "firstTurn": 5,
+    "interval": 4,
+    "regenAmounts": [12, 13, 14, 15, 16],
+    "rainbowCostHalfFirst": true,
+    "rainbowCostUpFactor": 1.5,
+    "lightCellCorrection": 2
+  },
+  "concentrationRecovery": {
+    "threshold": 10,
+    "chance": 0.1,
+    "amount": 30,
+    "oncePerSession": true
+  },
+  "gauge": {
+    "yellowRange": 4,
+    "penaltyError": 9
+  },
+  "evaluation": {
+    "9": { "star3": 8, "star2": 17, "star1": 36, "star0": 49 },
+    "7": { "star3": 5, "star2": 17, "star1": 27, "star0": 30 },
+    "6": { "star3": 4, "star2": 11, "star1": 24, "star0": 39 },
+    "4": { "star3": 2, "star2": 7, "star1": 16, "star0": 29 }
+  }
+}
