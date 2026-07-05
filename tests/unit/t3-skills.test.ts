@@ -7,6 +7,7 @@ import {
   buildEngine,
   ScriptedRng,
   baseValueRoll,
+  hogushiRoll,
   CRIT_NO,
   CRIT_YES,
   HISSATSU_NO,
@@ -149,5 +150,70 @@ describe('T3 しつけがけ', () => {
     const cell = s2.cells.find((c) => c.r === 2 && c.c === 2)!;
     expect(cell.cumulative).toBe(24); // 補正2適用
     expect(cell.shitsuke).toBe(false); // 縫われて解除
+  });
+});
+
+describe('T3 糸ほぐしとしつけがけ (SPEC v1.1)', () => {
+  it('補正×2を適用した上で、対象マスのしつけがけを解除する', () => {
+    const engine = buildEngine();
+    const { state } = engine.createSession(grid3x3(500), config, new ScriptedRng([]));
+    // しつけがけ付与
+    const { state: s1 } = engine.applyAction(
+      state,
+      { type: 'sew', skillId: 'shitsuke_gake', anchor: { r: 2, c: 2 } },
+      config,
+      new ScriptedRng([]),
+    );
+    expect(s1.cells.find((c) => c.r === 2 && c.c === 2)!.shitsuke).toBe(true);
+    // 累積を作ってから糸ほぐし: base6普通 補正2(しつけ) → 12回復
+    const bumped: typeof s1 = {
+      ...s1,
+      cells: s1.cells.map((c) => (c.r === 2 && c.c === 2 ? { ...c, cumulative: 50 } : c)),
+    };
+    const { state: s2, events } = engine.applyAction(
+      bumped,
+      { type: 'sew', skillId: 'ito_hogushi', anchor: { r: 2, c: 2 } },
+      config,
+      new ScriptedRng([hogushiRoll(6)]),
+    );
+    const cell = s2.cells.find((c) => c.r === 2 && c.c === 2)!;
+    expect(events.find((e) => e.kind === 'sewCell')).toMatchObject({ damage: -12 }); // 補正×2適用
+    expect(cell.cumulative).toBe(50 - 12);
+    expect(cell.shitsuke).toBe(false); // 糸ほぐしでしつけがけが解除される(SPEC v1.1)
+  });
+});
+
+describe('T3 みだれぬい (SPEC v1.1: 値は生成マスに適用・ソートは表示順のみ)', () => {
+  it('各値は生成したマス自身に適用される(選択順とは無関係)', () => {
+    const engine = buildEngine();
+    const { state } = engine.createSession(grid3x3(500), config, new ScriptedRng([]));
+    // 対象選択: 部分Fisher-Yatesで4マスを選ぶ。各打ちごとに基礎値→会心。
+    // 打ち順(2/1/1/0.5倍)のうち、生成順で最小値になるよう並べ、
+    // ソート後の適用先が生成マスと一致する(選択順とは異なる)ことを検証する。
+    const rng = new ScriptedRng([
+      0.1, 0.1, 0.1, 0.1, // 対象選択(9マスから4マス)
+      baseValueRoll(12), CRIT_NO, // 1打目 2倍 → 24 (最大)
+      baseValueRoll(12), CRIT_NO, // 2打目 1倍 → 12
+      baseValueRoll(18), CRIT_NO, // 3打目 1倍 → 18
+      baseValueRoll(12), CRIT_NO, // 4打目 0.5倍 → 6 (最小)
+      HISSATSU_NO,
+    ]);
+    const { state: s2, events } = engine.applyAction(
+      state,
+      { type: 'skill', skillId: 'midare_nui' },
+      config,
+      rng,
+    );
+    const sews = events.filter((e) => e.kind === 'sewCell');
+    expect(sews).toHaveLength(4);
+    // イベント発行順は値の降順(表示上の縫い順): 24,18,12,6
+    expect(sews.map((e) => (e.kind === 'sewCell' ? e.damage : 0))).toEqual([24, 18, 12, 6]);
+    // 状態への適用結果はソートと無関係: 生成順1打目(2倍,24)のマスの累積が24になっている
+    const firstGenR = sews.find((e) => e.kind === 'sewCell' && e.damage === 24);
+    expect(firstGenR).toBeDefined();
+    const appliedCell = s2.cells.find(
+      (c) => firstGenR!.kind === 'sewCell' && c.r === firstGenR!.r && c.c === firstGenR!.c,
+    )!;
+    expect(appliedCell.cumulative).toBe(24); // 生成マス自身に適用されている
   });
 });

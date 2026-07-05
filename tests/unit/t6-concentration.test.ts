@@ -157,4 +157,49 @@ describe('T6 集中力の自動回復', () => {
     expect(res.events.find((e) => e.kind === 'concRecovery')).toBeUndefined();
     expect(state.concentration).toBe(8 - 5);
   });
+
+  it('不発の場合はフラグを立てず、次の条件成立ターンで再抽選される(SPEC v1.1)', () => {
+    const engine = buildEngine();
+    const config: SimulatorConfig = { ...DEFAULT_CONFIG, needle: { type: 'copper', stars: 0 } };
+    let state = engine.createStateFromSnapshot({
+      recipeId: 'x',
+      cells: [{ r: 1, c: 1, base: 9999, cumulative: 0, shitsuke: false }],
+      powerCycle: ['normal'],
+      concentration: 8, // 残10以下
+    });
+    // ターン1: 回復ロール不発(x=0.9 ≥ 0.1) → concRecoveryUsedは立たない
+    let res = engine.applyAction(
+      state,
+      { type: 'sew', skillId: 'nuu', anchor: { r: 1, c: 1 } },
+      config,
+      new ScriptedRng([0.9 /*回復不発*/, baseValueRoll(12), CRIT_NO, HISSATSU_NO]),
+    );
+    state = res.state;
+    expect(res.events.find((e) => e.kind === 'concRecovery')).toBeUndefined();
+    expect(state.concRecoveryUsed).toBe(false); // 不発ではフラグを立てない
+    expect(state.concentration).toBe(3); // 8-5
+
+    // ターン2: 残3(依然≤10) → 再度回復ロールが行われ、成功する
+    res = engine.applyAction(
+      state,
+      { type: 'sew', skillId: 'nuu', anchor: { r: 1, c: 1 } },
+      config,
+      new ScriptedRng([0.05 /*回復成功*/, baseValueRoll(12), CRIT_NO, HISSATSU_NO]),
+    );
+    state = res.state;
+    expect(res.events.find((e) => e.kind === 'concRecovery')).toMatchObject({ amount: 30 });
+    expect(state.concRecoveryUsed).toBe(true);
+    expect(state.concentration).toBe(3 + 30 - 5); // 28
+
+    // ターン3: 成功済みのため、残10以下でも以後は抽選されない(回復ロールを消費しない)
+    const rng3 = new ScriptedRng([baseValueRoll(12), CRIT_NO, HISSATSU_NO]); // 回復ロールなし
+    res = engine.applyAction(
+      state,
+      { type: 'sew', skillId: 'nuu', anchor: { r: 1, c: 1 } },
+      config,
+      rng3,
+    );
+    expect(res.events.find((e) => e.kind === 'concRecovery')).toBeUndefined();
+    expect(rng3.consumed()).toBe(3); // 基礎値+会心+必殺の3回のみ
+  });
 });

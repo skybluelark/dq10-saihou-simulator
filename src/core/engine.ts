@@ -1,10 +1,10 @@
 // ゲームエンジン (SPEC §3 の実装)
 //
-// 乱数消費順 (ARCHITECTURE A4、確定版):
-//   ターン開始時: [「？」の抽選] → [光布の発光対象選定] → [集中力自動回復判定]
+// 乱数消費順 (ARCHITECTURE A4、確定版 v1.1):
+//   ターン開始時: [「？」の抽選] → [布特性: 光布の発光対象選定 / 再生布の回復(対象タイブレーク→回復量)]
+//                 → [集中力自動回復判定(成功するまで条件成立ターンごとに毎回判定)]
 //   縫い(通常):   マスごとに [基礎値ロール] → [会心判定](対象順に独立)
-//   みだれぬい:    [対象4マス選択] → 各打ちごとに [基礎値] → [会心] ×4 → ソート適用
-//   再生布:        [対象タイブレーク] → [回復量ロール]
+//   みだれぬい:    [対象4マス選択] → 各打ちごとに [基礎値] → [会心] ×4 → ソート適用(表示順のみ)
 //   ターン終了時:  [必殺チャージ判定]
 //
 // createSession の開幕効果(奇跡+30 / 光チャージ)は、最初のターン開始の抽選より前
@@ -194,8 +194,8 @@ export class Engine {
   // ---- ターン開始処理 ----
 
   /**
-   * ターン開始処理(？抽選・光発光・集中力自動回復)を1度だけ実施し、
-   * 当ターンの currentPower を確定する。すでに開始済みなら何もしない。
+   * ターン開始処理(？抽選・布特性[光発光/再生回復/虹イベント]・集中力自動回復)を
+   * 1度だけ実施し、当ターンの currentPower を確定する。すでに開始済みなら何もしない。
    */
   private startTurn(state: GameState, rng: Rng, events: TurnEvent[]): void {
     if (state.turnStarted) return;
@@ -231,17 +231,25 @@ export class Engine {
 
     const nextTurn = state.turn + 1;
 
-    // 光布の発光対象選定(発動ターンのみ)
+    // 布特性(発動ターンのみ。光布=発光対象選定 / 再生布=回復 は排他)
     state.glowCell = null;
-    if (state.clothType === 'light' && isTraitTurn(nextTurn, this.params)) {
-      const cell = this.pickGlowCell(state, rng);
-      if (cell) {
-        state.glowCell = { r: cell.r, c: cell.c };
-        events.push({ kind: 'glow', r: cell.r, c: cell.c });
+    if (isTraitTurn(nextTurn, this.params)) {
+      if (state.clothType === 'light') {
+        const cell = this.pickGlowCell(state, rng);
+        if (cell) {
+          state.glowCell = { r: cell.r, c: cell.c };
+          events.push({ kind: 'glow', r: cell.r, c: cell.c });
+        }
+      } else if (state.clothType === 'regen') {
+        this.applyRegen(state, rng, events);
+      } else if (state.clothType === 'rainbow') {
+        // 虹の消費補正・会心+24%は effectiveCost / rollCrit 側で処理済み。表示用イベントのみ発行。
+        const mode = rainbowMode(nextTurn, this.params);
+        events.push({ kind: 'clothRainbow', mode, cost: 0 });
       }
     }
 
-    // 集中力自動回復判定(残10以下・10%・1セッション1回)
+    // 集中力自動回復判定(残10以下・10%・成功するまで条件成立ターンごとに毎回判定)
     const rec = this.params.concentrationRecovery;
     if (
       !state.concRecoveryUsed &&
@@ -252,11 +260,8 @@ export class Engine {
         state.concentration += rec.amount;
         state.concRecoveryUsed = true;
         events.push({ kind: 'concRecovery', amount: rec.amount });
-      } else if (rec.oncePerSession) {
-        // 「1セッション1回」= 条件成立時に1度だけ判定する解釈。
-        // 判定を消費したら以後は再判定しない。
-        state.concRecoveryUsed = true;
       }
+      // 不発の場合はフラグを立てない → 次回条件成立ターンで再判定する。
     }
 
     events.push({
@@ -334,9 +339,6 @@ export class Engine {
 
     next.concentration -= cost;
     events.push({ kind: 'skillUsed', skillId: skill.id, cost });
-
-    // 布特性(縫い/回復系の適用後、再生・虹)。虹の消費補正は effectiveCost で反映済み。
-    this.applyClothTraits(next, rng, events);
 
     // ターン終了処理
     this.endTurn(next, config, turnDamage, rng, events);
@@ -496,14 +498,18 @@ export class Engine {
       chosen.push(pool[k]);
     }
 
-    // 各打ちごとに [基礎値] → [会心] を生成
+    // 各打ちごとに [基礎値] → [会心] を生成し、生成したマス自身にそのまま適用する。
+    // 「大きい値から順に縫う」は表示上の縫い順(イベント発行順)のみで、
+    // どのマスにどの値が入るかのロジックには影響しない(SPEC §3.2 みだれぬい詳細)。
     interface Roll {
-      value: number; // 会心2倍適用後
+      r: number;
+      c: number;
+      damage: number; // 適用後の実ダメージ(頭打ち後)
       crit: boolean;
       capped: boolean;
-      cellIdx: number;
     }
     const rolls: Roll[] = [];
+    let total = 0;
     for (let k = 0; k < pick; k++) {
       const cell = state.cells[chosen[k]];
       const correction = this.cellCorrection(state, cell);
@@ -511,26 +517,24 @@ export class Engine {
       let dmg = sewDamage(baseValue, multipliers[k], state.currentPower, correction);
       const isCrit = this.rollCrit(state, cell, config, rng);
       if (isCrit) dmg *= 2;
-      rolls.push({ value: dmg, crit: isCrit, capped: false, cellIdx: chosen[k] });
-    }
 
-    // 会心2倍適用後の値で降順ソートし、大きい順に選択マスへ適用
-    rolls.sort((a, b) => b.value - a.value);
-    let total = 0;
-    for (let k = 0; k < rolls.length; k++) {
-      const roll = rolls[k];
-      const cell = state.cells[chosen[k]]; // ソート後の順序で選択マスへ割り当て
-      let dmg = roll.value;
+      // 会心の基準値頭打ちは各マス(生成マス)基準で適用
       const remainingBefore = cell.base - cell.cumulative;
       let capped = false;
-      if (roll.crit && dmg > remainingBefore) {
+      if (isCrit && dmg > remainingBefore) {
         dmg = remainingBefore;
         capped = true;
       }
       cell.cumulative += dmg;
       total += dmg;
-      events.push({ kind: 'sewCell', r: cell.r, c: cell.c, damage: dmg, crit: roll.crit, capped });
       if (cell.shitsuke) cell.shitsuke = false;
+      rolls.push({ r: cell.r, c: cell.c, damage: dmg, crit: isCrit, capped });
+    }
+
+    // 会心2倍適用後の値で降順ソートし、その順序でイベントのみ発行(表示上の縫い順)
+    rolls.sort((a, b) => b.damage - a.damage);
+    for (const roll of rolls) {
+      events.push({ kind: 'sewCell', r: roll.r, c: roll.c, damage: roll.damage, crit: roll.crit, capped: roll.capped });
     }
     return total;
   }
@@ -558,7 +562,8 @@ export class Engine {
     }
     cell.cumulative += damage;
     events.push({ kind: 'sewCell', r: cell.r, c: cell.c, damage, crit: false, capped: damage === 0 });
-    // 糸ほぐしはマスを「縫った」に含めない → しつけ解除しない(縫われていない)
+    // 補正×2(しつけ)を適用した上で、対象マスのしつけがけを解除する(SPEC §3.3)
+    if (cell.shitsuke) cell.shitsuke = false;
     return 0; // 糸ほぐしは与ダメージ0扱い(必殺チャージ判定なし)
   }
 
@@ -613,21 +618,7 @@ export class Engine {
     // ぬいパワーは次のものに移動する(このターンを消費し、次パワーへ)。
   }
 
-  // ---- 布特性(再生・虹) ----
-
-  private applyClothTraits(state: GameState, rng: Rng, events: TurnEvent[]): void {
-    const nextTurn = state.turn + 1; // このターンの番号(endTurn前)
-    if (!isTraitTurn(nextTurn, this.params)) return;
-
-    if (state.clothType === 'regen') {
-      this.applyRegen(state, rng, events);
-    }
-    // 虹の消費補正・会心+24%は effectiveCost / rollCrit 側で処理済み。
-    if (state.clothType === 'rainbow') {
-      const mode = rainbowMode(nextTurn, this.params);
-      events.push({ kind: 'clothRainbow', mode, cost: 0 });
-    }
-  }
+  // ---- 布特性(再生) ----
 
   /** 再生布: 累積÷基準値が最大のマス(黄色枠内除外)を回復。 */
   private applyRegen(state: GameState, rng: Rng, events: TurnEvent[]): void {

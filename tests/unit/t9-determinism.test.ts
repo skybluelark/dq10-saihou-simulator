@@ -163,7 +163,7 @@ describe('T9 乱数消費順のゴールデンテスト (ARCHITECTURE A4)', () =
     expect(new Set(targets).size).toBe(4);
   });
 
-  it('再生布: [対象タイブレーク] → [回復量ロール]', () => {
+  it('再生布(発動ターンの行動前): [対象タイブレーク] → [回復量ロール] → 縫い[基礎値→会心]', () => {
     const engine = buildEngine();
     // 同率2マス(累積/基準が同値)でタイブレークが発生する状況
     const state = engine.createStateFromSnapshot({
@@ -182,11 +182,12 @@ describe('T9 乱数消費順のゴールデンテスト (ARCHITECTURE A4)', () =
       concentration: 207,
       turn: 4, // 次=5ターン目で発動
     });
-    // 消費: 基礎値+会心(縫い) → タイブレーク → 回復量 → 必殺 = 5
+    // 再生布の回復は発動ターンの行動前(ターン開始側)で適用される(ARCHITECTURE A4 v1.1)。
+    // 消費順: タイブレーク → 回復量 → 縫い[基礎値→会心] → 必殺 = 5
     const rng = new ScriptedRng([
-      baseValueRoll(12), 0.9, // (2,1) を縫う: 累積10→22 ratio0.22(同率を壊さない)
       0.6, // タイブレーク nextInt(2)=1 → (1,2)
       0.3, // 回復量 nextInt(5)=1 → 13
+      baseValueRoll(12), 0.9, // (2,1) を縫う: 累積10→22
       0.9, // 必殺
     ]);
     const { events } = engine.applyAction(
