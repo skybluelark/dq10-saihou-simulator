@@ -21,7 +21,13 @@ import { ResultPanel } from './ResultPanel';
 import { RightPanel } from './RightPanel';
 import { SkillPanel } from './SkillPanel';
 import { formatEvents } from './format';
-import { deriveBalloons, isTargetless, resolveTargetCells, type Balloon } from './helpers';
+import {
+  deriveBalloons,
+  isTargetless,
+  previewPositions,
+  resolveTargetCells,
+  type Balloon,
+} from './helpers';
 import { loadSettings, saveSettings, type UiSettings } from './storage';
 import styles from './App.module.css';
 
@@ -150,6 +156,14 @@ function App() {
   const balloonTimersRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
   const BALLOON_LIFETIME_MS = 750;
 
+  // 遅延表示待ちのバルーン生成タイマー(再生布の回復分をダメージ表示後に出すため)
+  const pendingSpawnTimersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+
+  // 必殺チャージの一時演出(グリッド中央のオーバーレイ)。値はアニメーション再生成用キー。
+  const [hissatsuFx, setHissatsuFx] = useState<number | null>(null);
+  const hissatsuFxTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const HISSATSU_FX_MS = 1200;
+
   const spawnBalloons = useCallback((newOnes: Balloon[]) => {
     if (newOnes.length === 0) return;
     setBalloons((prev) => [...prev, ...newOnes]);
@@ -162,12 +176,38 @@ function App() {
     }
   }, []);
 
+  // 回復吹き出しの分離表示(SPEC §4.3): 同じ画面更新のダメージ吹き出しの表示後に出す
+  const spawnBalloonsDelayed = useCallback(
+    (newOnes: Balloon[], delayMs: number) => {
+      if (newOnes.length === 0) return;
+      const timer = setTimeout(() => {
+        pendingSpawnTimersRef.current.delete(timer);
+        spawnBalloons(newOnes);
+      }, delayMs);
+      pendingSpawnTimersRef.current.add(timer);
+    },
+    [spawnBalloons],
+  );
+
+  const triggerHissatsuFx = useCallback(() => {
+    if (hissatsuFxTimerRef.current) clearTimeout(hissatsuFxTimerRef.current);
+    setHissatsuFx(Date.now());
+    hissatsuFxTimerRef.current = setTimeout(() => {
+      setHissatsuFx(null);
+      hissatsuFxTimerRef.current = null;
+    }, HISSATSU_FX_MS);
+  }, []);
+
   // アンマウント時にタイマーを掃除
   useEffect(() => {
     const timers = balloonTimersRef.current;
+    const pending = pendingSpawnTimersRef.current;
     return () => {
       for (const t of timers.values()) clearTimeout(t);
       timers.clear();
+      for (const t of pending) clearTimeout(t);
+      pending.clear();
+      if (hissatsuFxTimerRef.current) clearTimeout(hissatsuFxTimerRef.current);
     };
   }, []);
 
@@ -179,10 +219,21 @@ function App() {
     const begun = engine.beginTurn(created.state, rng);
     rngRef.current = rng;
     lastAppliedRef.current = null;
-    // 新規セッション開始時は前セッションのバルーン(とタイマー)をクリアする
+    // 新規ゲーム開始時は前ゲームのバルーン・演出(とタイマー)をクリアする
     for (const t of balloonTimersRef.current.values()) clearTimeout(t);
     balloonTimersRef.current.clear();
+    for (const t of pendingSpawnTimersRef.current) clearTimeout(t);
+    pendingSpawnTimersRef.current.clear();
     setBalloons([]);
+    if (hissatsuFxTimerRef.current) {
+      clearTimeout(hissatsuFxTimerRef.current);
+      hissatsuFxTimerRef.current = null;
+    }
+    setHissatsuFx(null);
+    // 開幕の必殺チャージ(光の針)も演出対象
+    if (created.events.some((e) => e.kind === 'hissatsuCharge')) {
+      triggerHissatsuFx();
+    }
     const log = [
       ...formatEvents(created.events, 0, skillName),
       ...formatEvents(begun.events, begun.state.turn + 1, skillName),
@@ -197,7 +248,7 @@ function App() {
         result: null,
       },
     });
-  }, [engine, recipe, config, skillName]);
+  }, [engine, recipe, config, skillName, triggerHissatsuFx]);
 
   // レシピ・針の変更(および初回ロード完了)で新しいセッションを開始
   useEffect(() => {
@@ -215,20 +266,26 @@ function App() {
       let game = applied.state;
       let lines = formatEvents(applied.events, before.turn + 1, skillName);
       let result: JudgeResult | null = null;
-      const newBalloons = deriveBalloons(applied.events);
+      // 行動(applied)由来の吹き出しは即時表示
+      const actionBalloons = deriveBalloons(applied.events);
+      let hissatsuCharged = applied.events.some((e) => e.kind === 'hissatsuCharge');
       if (game.finished) {
         result = engine.judge(game);
       } else {
         // 各行動後に次ターンの開始処理(パワー・発光・回復)を先行実行して表示へ反映
         const begun = engine.beginTurn(game, rng);
         lines = [...lines, ...formatEvents(begun.events, game.turn + 1, skillName)];
-        newBalloons.push(...deriveBalloons(begun.events));
+        // 次ターン開始(begun)由来の吹き出し(再生布の回復等)は、同じ画面更新の
+        // ダメージ吹き出しの表示後に分けて表示する(SPEC §4.3)
+        spawnBalloonsDelayed(deriveBalloons(begun.events), BALLOON_LIFETIME_MS);
+        hissatsuCharged ||= begun.events.some((e) => e.kind === 'hissatsuCharge');
         game = begun.state;
       }
-      spawnBalloons(newBalloons);
+      spawnBalloons(actionBalloons);
+      if (hissatsuCharged) triggerHissatsuFx();
       dispatch({ type: 'applied', game, lines, result });
     },
-    [engine, config, ui.session, skillName, spawnBalloons],
+    [engine, config, ui.session, skillName, spawnBalloons, spawnBalloonsDelayed, triggerHissatsuFx],
   );
 
   // 操作フロー: 特技選択 → マスタップ(プレビュー) → 同マス再タップで実行
@@ -258,8 +315,20 @@ function App() {
       if (!ui.selectedSkillId) {
         dispatch({ type: 'skillSelected', skillId });
       }
-      // 対象解決(アンカー自動置換適用後)で存在するマスが0となるタップは無効
-      // (単マス特技で空き位置など = 行動不成立。プレビューも出さず実行もしない)
+      // タップ規則(SPEC §4.3): アンカー設定済みで青枠(アンカー+対象範囲。空きマス含む)内を
+      // タップした場合のみ実行。青枠外は新たな1タップ目(アンカーの取り直し)として扱う。
+      if (ui.selectedSkillId && ui.anchor) {
+        const anchor = ui.anchor;
+        const inPreview = previewPositions(data.skills, skill, anchor, ui.session.game).some(
+          (p) => p.r === r && p.c === c,
+        );
+        if (inPreview) {
+          runAction({ type: 'sew', skillId, anchor });
+          return;
+        }
+      }
+      // 1タップ目(アンカー設定/取り直し)。対象解決(アンカー自動置換適用後)で
+      // 存在するマスが0となるタップは無効(行動不成立。プレビューも出さない)。
       const targets = resolveTargetCells(data.skills, skill, { r, c }, ui.session.game);
       if (targets.length === 0) return;
       // アンカーは置換後の座標で保存する(SPEC: 置換はアンカーそのものに適用。
@@ -271,23 +340,20 @@ function App() {
         ui.session.game.rows,
         ui.session.game.cols,
       );
-      if (ui.selectedSkillId && ui.anchor && ui.anchor.r === clamped.r && ui.anchor.c === clamped.c) {
-        runAction({ type: 'sew', skillId, anchor: clamped });
-      } else {
-        dispatch({ type: 'anchorSet', anchor: clamped });
-      }
+      dispatch({ type: 'anchorSet', anchor: clamped });
     },
     [ui.selectedSkillId, ui.session, ui.anchor, runAction, skillMap, data],
   );
 
   const handleFinish = useCallback(() => runAction({ type: 'finish' }), [runAction]);
 
-  // 対象プレビュー(ライン系はアンカー自動置換後の範囲。布外・欠けマスはハイライトしない)
+  // 対象プレビュー(ライン系はアンカー自動置換後の範囲)。パターン範囲内の
+  // グリッド位置すべてを青枠表示する(空きマス含む。ダメージが入るのは存在するマスのみ)。
   const previewTargets = useMemo(() => {
     if (!ui.session || !ui.selectedSkillId || !ui.anchor) return [];
     const skill = skillMap.get(ui.selectedSkillId);
     if (!skill) return [];
-    return resolveTargetCells(data.skills, skill, ui.anchor, ui.session.game);
+    return previewPositions(data.skills, skill, ui.anchor, ui.session.game);
   }, [ui.session, ui.selectedSkillId, ui.anchor, skillMap, data]);
 
   // 誤差評価値(現在合計)は常時表示
@@ -354,6 +420,7 @@ function App() {
               totalError={currentJudge?.totalError ?? 0}
               star3Line={star3Line}
               balloons={balloons}
+              hissatsuFx={hissatsuFx}
               onCellClick={handleCellClick}
             />
             <RightPanel

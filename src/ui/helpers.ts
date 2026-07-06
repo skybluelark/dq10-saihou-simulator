@@ -83,6 +83,27 @@ export function resolveTargetCells(
     .filter((t) => state.cells.some((cell) => cell.r === t.r && cell.c === t.c));
 }
 
+/**
+ * アンカーからのパターン範囲内グリッド位置をすべて返す(存在しないマスも含む)。
+ * タップ規則の「青枠」(=対象範囲プレビュー)の判定・表示に使う(SPEC §4.3):
+ * 空きマスにも青枠を表示し、青枠内タップ=実行・青枠外タップ=アンカー取り直しとなる。
+ * アンカー自動置換(clampAnchorForPattern)適用後の範囲で、グリッド外の座標のみ除外する。
+ */
+export function previewPositions(
+  skills: SkillsFile,
+  skill: SkillDef,
+  anchor: { r: number; c: number },
+  state: GameState,
+): { r: number; c: number }[] {
+  const pattern = skill.target;
+  if (!pattern || pattern === 'random4') return [];
+  const offsets = skills.targetPatterns[pattern] ?? [];
+  const clamped = clampAnchorForPattern(pattern, offsets, anchor, state.rows, state.cols);
+  return offsets
+    .map(([dr, dc]) => ({ r: clamped.r + dr, c: clamped.c + dc }))
+    .filter((t) => t.r >= 1 && t.r <= state.rows && t.c >= 1 && t.c <= state.cols);
+}
+
 /** 次の布特性発動ターン(currentTurn 自身が発動ターンならそれを返す)。 */
 export function nextTraitTurn(currentTurn: number, params: GameParams): number {
   const { firstTurn, interval } = params.clothTrait;

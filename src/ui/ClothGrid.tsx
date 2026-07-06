@@ -15,6 +15,7 @@ interface ClothGridProps {
   totalError: number; // 現在の誤差評価値(ゲージ外9換算)
   star3Line: number;
   balloons: Balloon[]; // ダメージ/回復の一時表示
+  hissatsuFx: number | null; // 必殺チャージの一時演出キー(null = 非表示)
   onCellClick: (r: number, c: number) => void;
 }
 
@@ -40,6 +41,7 @@ export function ClothGrid({
   totalError,
   star3Line,
   balloons,
+  hissatsuFx,
   onCellClick,
 }: ClothGridProps) {
   const rows = Array.from({ length: game.rows }, (_, i) => i + 1);
@@ -66,9 +68,12 @@ export function ClothGrid({
             if (!cell) {
               // 空きマス(頭・ぬいぐるみの欠け位置)もアンカーとしてタップできる(SPEC §3.1)。
               // 対象0件となるタップの無効化は App 側(handleCellClick)で行う。
+              // 対象範囲の青枠は空きマスにも表示する(ダメージが入るのは存在するマスのみ)。
               const isEmptyAnchor = anchor?.r === r && anchor?.c === c;
+              const isEmptyTarget = targets.some((t) => t.r === r && t.c === c);
               const emptyClasses = [
                 styles.cellEmpty,
+                isEmptyTarget ? styles.cellTarget : '',
                 isEmptyAnchor ? styles.cellAnchor : '',
                 selectingTarget && !game.finished ? styles.cellClickable : '',
               ]
@@ -109,7 +114,6 @@ export function ClothGrid({
               >
                 <span className={styles.remaining}>{remaining}</span>
                 <span className={styles.baseVal}>/{cell.base}</span>
-                {isGlow && <span className={styles.glowTag}>発光</span>}
                 {cellBalloons.map((b) => (
                   <span key={b.id} className={`${styles.balloon} ${BALLOON_CLASS[b.kind]}`}>
                     {b.text}
@@ -118,6 +122,12 @@ export function ClothGrid({
               </button>
             );
           }),
+        )}
+        {hissatsuFx !== null && (
+          // 必殺チャージの一時演出(グリッドコンテナ基準の absolute オーバーレイ)
+          <div key={hissatsuFx} className={styles.hissatsuOverlay} aria-hidden="true">
+            必殺チャージ!
+          </div>
         )}
       </div>
 

@@ -93,6 +93,7 @@ export type TurnEvent =
       damage: number; // 適用された実ダメージ(会心・頭打ち後)。糸ほぐしは負
       crit: boolean;
       capped: boolean; // 基準値/初期状態で頭打ちされたか
+      critRate?: number; // 会心判定に用いた会心率(0〜1)。会心判定のない糸ほぐしでは省略
     }
   | { kind: 'skillUsed'; skillId: string; cost: number }
   | { kind: 'powerLock'; power: Power; turns: number }

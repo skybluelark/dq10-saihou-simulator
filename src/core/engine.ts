@@ -441,7 +441,7 @@ export class Engine {
     let damage = sewDamage(baseValue, skillMultiplier, state.currentPower, correction);
 
     // [会心判定]
-    const isCrit = this.rollCrit(state, cell, config, rng, aimOverride);
+    const { crit: isCrit, rate: critRate } = this.rollCrit(state, cell, config, rng, aimOverride);
     let capped = false;
     if (isCrit) {
       damage *= 2;
@@ -464,20 +464,21 @@ export class Engine {
       damage,
       crit: isCrit,
       capped,
+      critRate,
     });
     // しつけがけはこのマスが縫われたら解除
     if (cell.shitsuke) cell.shitsuke = false;
     return damage;
   }
 
-  /** 会心発生判定。 */
+  /** 会心発生判定。判定結果と、判定に用いた会心率を返す(乱数消費は従来と同一)。 */
   private rollCrit(
     state: GameState,
     cell: CellState,
     config: SimulatorConfig,
     rng: Rng,
     aimOverride?: boolean,
-  ): boolean {
+  ): { crit: boolean; rate: number } {
     // 「会心×2」パワーは会心確定ではなく会心率への補正(SPEC §3.4):
     //   シフト会心(シフト由来の critx2)= 会心率×2 / ランダム会心(？由来)= 補正なし
     const ctx: CritContext = {
@@ -498,7 +499,7 @@ export class Engine {
       }
     }
     const rate = computeCritRate(this.params, ctx);
-    return rng.next() < rate;
+    return { crit: rng.next() < rate, rate };
   }
 
   private isGlow(state: GameState, cell: CellState): boolean {
@@ -545,6 +546,7 @@ export class Engine {
       damage: number; // 適用後の実ダメージ(頭打ち後)
       crit: boolean;
       capped: boolean;
+      critRate: number;
     }
     const rolls: Roll[] = [];
     let total = 0;
@@ -553,7 +555,7 @@ export class Engine {
       const correction = this.cellCorrection(state, cell);
       const baseValue = 12 + rng.nextInt(7);
       let dmg = sewDamage(baseValue, multipliers[k], state.currentPower, correction);
-      const isCrit = this.rollCrit(state, cell, config, rng);
+      const { crit: isCrit, rate: critRate } = this.rollCrit(state, cell, config, rng);
       if (isCrit) dmg *= 2;
 
       // 会心の基準値頭打ちは各マス(生成マス)基準で適用
@@ -566,13 +568,13 @@ export class Engine {
       cell.cumulative += dmg;
       total += dmg;
       if (cell.shitsuke) cell.shitsuke = false;
-      rolls.push({ r: cell.r, c: cell.c, damage: dmg, crit: isCrit, capped });
+      rolls.push({ r: cell.r, c: cell.c, damage: dmg, crit: isCrit, capped, critRate });
     }
 
     // 会心2倍適用後の値で降順ソートし、その順序でイベントのみ発行(表示上の縫い順)
     rolls.sort((a, b) => b.damage - a.damage);
     for (const roll of rolls) {
-      events.push({ kind: 'sewCell', r: roll.r, c: roll.c, damage: roll.damage, crit: roll.crit, capped: roll.capped });
+      events.push({ kind: 'sewCell', r: roll.r, c: roll.c, damage: roll.damage, crit: roll.crit, capped: roll.capped, critRate: roll.critRate });
     }
     return total;
   }
