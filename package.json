@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "test": "vitest run --exclude \"tests/stats/**\"",
+    "test:quick": "vitest run --reporter=dot --exclude \"tests/stats/**\"",
     "test:stats": "vitest run tests/stats",
     "lint": "eslint src"
   },
