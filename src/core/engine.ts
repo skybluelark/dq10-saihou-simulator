@@ -596,10 +596,12 @@ export class Engine {
   ): void {
     switch (skill.effect) {
       case 'lockPower': {
-        // 精神統一: 当ターンの currentPower を duration ターン固定
+        // 精神統一: 使用ターンで1ターン経過し、その次のターンから duration(3)ターン、
+        // 使用ターンの currentPower を固定する(SPEC §3.3)。
+        // lockPowerRemaining は使用ターンの endTurn で1減るため +1 して持つ。
         const dur = skill.duration ?? 3;
         state.lockedPower = state.currentPower;
-        state.lockPowerRemaining = dur;
+        state.lockPowerRemaining = dur + 1;
         events.push({ kind: 'powerLock', power: state.currentPower, turns: dur });
         break;
       }

@@ -124,7 +124,7 @@ describe('T4 精神統一', () => {
     expect(e1.find((e) => e.kind === 'turnStart')).toMatchObject({ power: 'strong' });
     expect(e1.find((e) => e.kind === 'powerLock')).toMatchObject({ power: 'strong', turns: 3 });
 
-    // T2,T3,T4: strong 固定(抽選なし)。ぬうで縫う
+    // 使用ターン(T1)で1ターン経過し、次のターンから3ターン(T2〜T4)固定。
     let s = s1;
     for (let t = 0; t < 3; t++) {
       const { state: sn, events } = engine.applyAction(
@@ -133,13 +133,19 @@ describe('T4 精神統一', () => {
         config,
         new ScriptedRng([baseValueRoll(12), CRIT_NO, HISSATSU_NO]),
       );
-      // 精神統一のターン(T1)を含めると固定は T1..T3。T2/T3 は strong、T4 で解除されサイクル進行
       const ts = events.find((e) => e.kind === 'turnStart');
-      if (t < 2) {
-        expect(ts).toMatchObject({ power: 'strong' });
-      }
+      expect(ts).toMatchObject({ power: 'strong' }); // T2/T3/T4 すべて固定
       s = sn;
     }
+
+    // T5: 固定解除。サイクルは停止していたため続き(idx1=weak)から再開
+    const { events: e5 } = engine.applyAction(
+      s,
+      { type: 'sew', skillId: 'nuu', anchor: { r: 1, c: 1 } },
+      config,
+      new ScriptedRng([baseValueRoll(12), CRIT_NO, HISSATSU_NO]),
+    );
+    expect(e5.find((e) => e.kind === 'turnStart')).toMatchObject({ power: 'weak' });
   });
 });
 
