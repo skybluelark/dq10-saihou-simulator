@@ -2,7 +2,42 @@
 // から導出する表示ロジックのみで、ゲーム状態遷移は含まない(依存方向 ui → core)。
 
 import { isTraitTurn, rainbowMode } from '../core';
-import type { GameParams, GameState, SkillDef, SkillsFile } from '../core';
+import type { GameParams, GameState, SkillDef, SkillsFile, TurnEvent } from '../core';
+
+// ---- ダメージ/回復バルーン(一時表示) ----
+
+export type BalloonKind = 'damage' | 'crit' | 'heal';
+
+export interface Balloon {
+  id: number;
+  r: number;
+  c: number;
+  text: string;
+  kind: BalloonKind;
+}
+
+let balloonSeq = 0;
+
+/**
+ * TurnEvent列(sewCell/clothRegen)からマス上に一時表示するバルーンを生成する。
+ * 複数マス特技(ヨコぬい・みだれぬい等)は各マスごとに1個生成される。
+ */
+export function deriveBalloons(events: TurnEvent[]): Balloon[] {
+  const balloons: Balloon[] = [];
+  for (const e of events) {
+    if (e.kind === 'sewCell') {
+      const isHeal = e.damage < 0;
+      const kind: BalloonKind = isHeal ? 'heal' : e.crit ? 'crit' : 'damage';
+      const sign = isHeal ? '+' : '-';
+      const text = e.crit ? `会心! ${sign}${Math.abs(e.damage)}` : `${sign}${Math.abs(e.damage)}`;
+      balloons.push({ id: ++balloonSeq, r: e.r, c: e.c, text, kind });
+    } else if (e.kind === 'clothRegen') {
+      if (e.amount === 0) continue;
+      balloons.push({ id: ++balloonSeq, r: e.r, c: e.c, text: `+${e.amount}`, kind: 'heal' });
+    }
+  }
+  return balloons;
+}
 
 /** 対象マス不要でボタン押下のみで即実行する特技か(精神統一・シフト・みだれ・無我)。 */
 export function isTargetless(skill: SkillDef): boolean {

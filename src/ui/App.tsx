@@ -21,7 +21,7 @@ import { ResultPanel } from './ResultPanel';
 import { RightPanel } from './RightPanel';
 import { SkillPanel } from './SkillPanel';
 import { formatEvents } from './format';
-import { isTargetless, resolveTargetCells } from './helpers';
+import { deriveBalloons, isTargetless, resolveTargetCells, type Balloon } from './helpers';
 import { loadSettings, saveSettings, type UiSettings } from './storage';
 import styles from './App.module.css';
 
@@ -144,6 +144,33 @@ function App() {
   // 同一状態への二重適用ガード(再レンダー前に同一クリックが連続発火した場合の保険)
   const lastAppliedRef = useRef<GameState | null>(null);
 
+  // ダメージ/回復バルーン(一時表示)。id をキーに独立したタイマーで除去するため、
+  // 連続行動で前のバルーンが残っていても正しく積み上がり/消去される。
+  const [balloons, setBalloons] = useState<Balloon[]>([]);
+  const balloonTimersRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+  const BALLOON_LIFETIME_MS = 1500;
+
+  const spawnBalloons = useCallback((newOnes: Balloon[]) => {
+    if (newOnes.length === 0) return;
+    setBalloons((prev) => [...prev, ...newOnes]);
+    for (const b of newOnes) {
+      const timer = setTimeout(() => {
+        setBalloons((prev) => prev.filter((x) => x.id !== b.id));
+        balloonTimersRef.current.delete(b.id);
+      }, BALLOON_LIFETIME_MS);
+      balloonTimersRef.current.set(b.id, timer);
+    }
+  }, []);
+
+  // アンマウント時にタイマーを掃除
+  useEffect(() => {
+    const timers = balloonTimersRef.current;
+    return () => {
+      for (const t of timers.values()) clearTimeout(t);
+      timers.clear();
+    };
+  }, []);
+
   const startSession = useCallback(() => {
     if (!recipe) return;
     const seed = Date.now() >>> 0; // シードはセッション開始時に自動生成
@@ -152,6 +179,10 @@ function App() {
     const begun = engine.beginTurn(created.state, rng);
     rngRef.current = rng;
     lastAppliedRef.current = null;
+    // 新規セッション開始時は前セッションのバルーン(とタイマー)をクリアする
+    for (const t of balloonTimersRef.current.values()) clearTimeout(t);
+    balloonTimersRef.current.clear();
+    setBalloons([]);
     const log = [
       ...formatEvents(created.events, 0, skillName),
       ...formatEvents(begun.events, begun.state.turn + 1, skillName),
@@ -184,17 +215,20 @@ function App() {
       let game = applied.state;
       let lines = formatEvents(applied.events, before.turn + 1, skillName);
       let result: JudgeResult | null = null;
+      const newBalloons = deriveBalloons(applied.events);
       if (game.finished) {
         result = engine.judge(game);
       } else {
         // 各行動後に次ターンの開始処理(パワー・発光・回復)を先行実行して表示へ反映
         const begun = engine.beginTurn(game, rng);
         lines = [...lines, ...formatEvents(begun.events, game.turn + 1, skillName)];
+        newBalloons.push(...deriveBalloons(begun.events));
         game = begun.state;
       }
+      spawnBalloons(newBalloons);
       dispatch({ type: 'applied', game, lines, result });
     },
-    [engine, config, ui.session, skillName],
+    [engine, config, ui.session, skillName, spawnBalloons],
   );
 
   // 操作フロー: 特技選択 → マスタップ(プレビュー) → 同マス再タップで実行
@@ -298,6 +332,7 @@ function App() {
               selectingTarget={ui.selectedSkillId !== null}
               totalError={currentJudge?.totalError ?? 0}
               star3Line={star3Line}
+              balloons={balloons}
               onCellClick={handleCellClick}
             />
             <RightPanel

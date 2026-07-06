@@ -1,7 +1,9 @@
 // 布グリッド (F1): rows×cols 描画・残り数値・状態色・しつけ/発光/選択プレビュー・
-// 誤差評価値(常時表示)・凡例。
+// 誤差評価値(常時表示)・凡例。布タイプ別のグリッド背景色・ダメージ/回復バルーン表示。
 
 import type { GameState } from '../core';
+import type { Balloon } from './helpers';
+import { CLOTH_LABELS } from './format';
 import styles from './App.module.css';
 
 interface ClothGridProps {
@@ -12,8 +14,22 @@ interface ClothGridProps {
   selectingTarget: boolean; // 対象あり特技を選択中か
   totalError: number; // 現在の誤差評価値(ゲージ外9換算)
   star3Line: number;
+  balloons: Balloon[]; // ダメージ/回復の一時表示
   onCellClick: (r: number, c: number) => void;
 }
+
+const CLOTH_BG_CLASS: Record<string, string> = {
+  normal: styles.clothBgNormal,
+  regen: styles.clothBgRegen,
+  rainbow: styles.clothBgRainbow,
+  light: styles.clothBgLight,
+};
+
+const BALLOON_CLASS: Record<Balloon['kind'], string> = {
+  damage: styles.balloonDamage,
+  crit: styles.balloonCrit,
+  heal: styles.balloonHeal,
+};
 
 export function ClothGrid({
   game,
@@ -23,6 +39,7 @@ export function ClothGrid({
   selectingTarget,
   totalError,
   star3Line,
+  balloons,
   onCellClick,
 }: ClothGridProps) {
   const rows = Array.from({ length: game.rows }, (_, i) => i + 1);
@@ -35,10 +52,12 @@ export function ClothGrid({
     return styles.cellNormal; // 白
   };
 
+  const clothBgClass = CLOTH_BG_CLASS[game.clothType] ?? '';
+
   return (
     <div className={styles.gridWrap}>
       <div
-        className={styles.grid}
+        className={`${styles.grid} ${clothBgClass}`}
         style={{ gridTemplateColumns: `repeat(${game.cols}, 96px)` }}
       >
         {rows.map((r) =>
@@ -51,6 +70,7 @@ export function ClothGrid({
             const isGlow = game.glowCell?.r === r && game.glowCell?.c === c;
             const isAnchor = anchor?.r === r && anchor?.c === c;
             const isTarget = targets.some((t) => t.r === r && t.c === c);
+            const cellBalloons = balloons.filter((b) => b.r === r && b.c === c);
             const classes = [
               styles.cell,
               stateClass(remaining),
@@ -73,10 +93,19 @@ export function ClothGrid({
                 <span className={styles.baseVal}>/{cell.base}</span>
                 {cell.shitsuke && <span className={styles.shitsukeTag}>しつけ</span>}
                 {isGlow && <span className={styles.glowTag}>発光</span>}
+                {cellBalloons.map((b) => (
+                  <span key={b.id} className={`${styles.balloon} ${BALLOON_CLASS[b.kind]}`}>
+                    {b.text}
+                  </span>
+                ))}
               </button>
             );
           }),
         )}
+      </div>
+
+      <div className={styles.clothTypeNote}>
+        布タイプ: <strong>{CLOTH_LABELS[game.clothType] ?? game.clothType}</strong>
       </div>
 
       <div className={styles.errorLine}>

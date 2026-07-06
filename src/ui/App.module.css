@@ -107,6 +107,33 @@
 .grid {
   display: grid;
   gap: 6px;
+  padding: 10px;
+  border-radius: 10px;
+}
+
+/* ---- 布タイプ別グリッド背景(淡色。マス自体の状態色より優先度を下げるため
+   グリッドコンテナ側=マスの外側にのみ適用する) ---- */
+
+.clothBgNormal {
+  background: #f3ead9; /* ベージュ */
+}
+
+.clothBgRegen {
+  background: #e1f3e1; /* グリーン */
+}
+
+.clothBgRainbow {
+  background: #fbf6d6; /* イエロー */
+}
+
+.clothBgLight {
+  background: #fbe3ef; /* ピンク */
+}
+
+.clothTypeNote {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #666;
 }
 
 .cell,
@@ -205,6 +232,59 @@
   background: #f06ca8;
   border-radius: 4px;
   padding: 0 4px;
+}
+
+/* ---- ダメージ/回復バルーン(一時表示・約1.5秒でフェードアウト) ---- */
+
+@keyframes balloonFade {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 4px);
+  }
+  15% {
+    opacity: 1;
+    transform: translate(-50%, -6px);
+  }
+  70% {
+    opacity: 1;
+    transform: translate(-50%, -14px);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -22px);
+  }
+}
+
+.balloon {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  z-index: 5;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: bold;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: balloonFade 1.5s ease-out forwards;
+}
+
+.balloonDamage {
+  background: #ffe6cc; /* 淡いオレンジ背景 */
+  border: 1px solid #ff9800;
+  color: #d2691e; /* オレンジ文字 */
+}
+
+.balloonCrit {
+  background: #ff9800; /* オレンジ背景 */
+  border: 1px solid #e07b00;
+  color: #fff; /* 白抜き文字 */
+}
+
+.balloonHeal {
+  background: #e1f3e1; /* 淡い緑背景 */
+  border: 1px solid #4caf50;
+  color: #2e7d32; /* 緑文字 */
 }
 
 .errorLine {

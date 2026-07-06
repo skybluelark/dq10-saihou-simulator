@@ -16,7 +16,7 @@
     { "id": "gyaku_tasuki", "name": "逆たすきぬい", "learnLv": 25, "cost": 7, "kind": "sew", "multiplier": 1, "target": "diag_down2" },
     { "id": "ito_hogushi", "name": "糸ほぐし", "learnLv": 27, "cost": 16, "kind": "recover", "target": "single" },
     { "id": "crit_up_30", "name": "会心率アップ", "learnLv": 30, "kind": "passive", "nominal": 0.003 },
-    { "id": "sanbai_nui", "name": "3倍縫い", "learnLv": 33, "cost": 12, "kind": "sew", "multiplier": 3, "target": "single" },
+    { "id": "sanbai_nui", "name": "3倍ぬい", "learnLv": 33, "cost": 12, "kind": "sew", "multiplier": 3, "target": "single" },
     { "id": "power_shift", "name": "ぬいパワーシフト", "learnLv": 38, "cost": 7, "kind": "support", "effect": "shiftPower" },
     { "id": "hissatsu_up", "name": "必殺率アップ", "learnLv": 45, "kind": "passive" },
     { "id": "shitsuke_gake", "name": "しつけがけ", "learnLv": 47, "cost": 13, "kind": "support", "effect": "cellCorrection", "target": "single" },
