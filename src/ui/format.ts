@@ -97,6 +97,9 @@ export function formatEvents(
       case 'insufficientConcentration':
         lines.push(`T${turn}: ${skillName(e.skillId)} は集中力不足で使用できない`);
         break;
+      case 'invalidTarget':
+        lines.push(`T${turn}: ${skillName(e.skillId)} は対象マスがないため使用できない`);
+        break;
       case 'finish':
         lines.push(`しあげる → ${STAR_LABELS[e.star]} (誤差評価値 ${e.totalError})`);
         break;

@@ -147,6 +147,9 @@
 .cellEmpty {
   border: 1px dashed #ddd;
   background: #fafafa;
+  font: inherit;
+  padding: 0;
+  cursor: default;
 }
 
 .cell {

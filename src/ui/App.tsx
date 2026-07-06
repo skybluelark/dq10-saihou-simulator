@@ -250,18 +250,24 @@ function App() {
   const handleCellClick = useCallback(
     (r: number, c: number) => {
       if (!ui.selectedSkillId || !ui.session || ui.session.game.finished) return;
+      const skill = skillMap.get(ui.selectedSkillId);
+      if (!skill) return;
+      // 対象解決(アンカー自動置換適用後)で存在するマスが0となるタップは無効
+      // (単マス特技で空き位置など = 行動不成立。プレビューも出さず実行もしない)
+      const targets = resolveTargetCells(data.skills, skill, { r, c }, ui.session.game);
+      if (targets.length === 0) return;
       if (ui.anchor && ui.anchor.r === r && ui.anchor.c === c) {
         runAction({ type: 'sew', skillId: ui.selectedSkillId, anchor: { r, c } });
       } else {
         dispatch({ type: 'anchorSet', anchor: { r, c } });
       }
     },
-    [ui.selectedSkillId, ui.session, ui.anchor, runAction],
+    [ui.selectedSkillId, ui.session, ui.anchor, runAction, skillMap, data],
   );
 
   const handleFinish = useCallback(() => runAction({ type: 'finish' }), [runAction]);
 
-  // 対象プレビュー(布外にはみ出すマスはハイライトしない)
+  // 対象プレビュー(ライン系はアンカー自動置換後の範囲。布外・欠けマスはハイライトしない)
   const previewTargets = useMemo(() => {
     if (!ui.session || !ui.selectedSkillId || !ui.anchor) return [];
     const skill = skillMap.get(ui.selectedSkillId);

@@ -64,7 +64,25 @@ export function ClothGrid({
           cols.map((c) => {
             const cell = game.cells.find((x) => x.r === r && x.c === c);
             if (!cell) {
-              return <div key={`${r}-${c}`} className={styles.cellEmpty} />;
+              // 空きマス(頭・ぬいぐるみの欠け位置)もアンカーとしてタップできる(SPEC §3.1)。
+              // 対象0件となるタップの無効化は App 側(handleCellClick)で行う。
+              const isEmptyAnchor = anchor?.r === r && anchor?.c === c;
+              const emptyClasses = [
+                styles.cellEmpty,
+                isEmptyAnchor ? styles.cellAnchor : '',
+                selectingTarget && !game.finished ? styles.cellClickable : '',
+              ]
+                .filter(Boolean)
+                .join(' ');
+              return (
+                <button
+                  key={`${r}-${c}`}
+                  type="button"
+                  className={emptyClasses}
+                  onClick={() => onCellClick(r, c)}
+                  aria-label={`空きマス (${r},${c})`}
+                />
+              );
             }
             const remaining = cell.base - cell.cumulative;
             const isGlow = game.glowCell?.r === r && game.glowCell?.c === c;

@@ -102,6 +102,7 @@ export type TurnEvent =
   | { kind: 'hissatsuCharge'; source: 'opening' | 'turnEnd' }
   | { kind: 'muga' }
   | { kind: 'insufficientConcentration'; skillId: string; cost: number }
+  | { kind: 'invalidTarget'; skillId: string }
   | { kind: 'finish'; star: Star; totalError: number };
 
 export interface ApplyResult {

@@ -1,7 +1,7 @@
 // UI表示用の派生値計算。core のエクスポート(isTraitTurn / rainbowMode / targetPatterns)
 // から導出する表示ロジックのみで、ゲーム状態遷移は含まない(依存方向 ui → core)。
 
-import { isTraitTurn, rainbowMode } from '../core';
+import { clampAnchorForPattern, isTraitTurn, rainbowMode } from '../core';
 import type { GameParams, GameState, SkillDef, SkillsFile, TurnEvent } from '../core';
 
 // ---- ダメージ/回復バルーン(一時表示) ----
@@ -62,7 +62,12 @@ export function displayCost(skill: SkillDef, state: GameState, params: GameParam
   return Math.ceil(base * factor);
 }
 
-/** アンカーから対象パターンで対象マスを解決(布内に存在するマスのみ。布外は無視)。 */
+/**
+ * アンカーから対象パターンで対象マスを解決(布内に存在するマスのみ。布外は無視)。
+ * ライン系特技はコアと同じアンカー自動置換(clampAnchorForPattern)を適用するため、
+ * プレビューは実行時(Engine.resolveTargets)と同一の対象範囲になる。
+ * 対象0件(単マス特技で空き位置など)は空配列 = 実行不成立。
+ */
 export function resolveTargetCells(
   skills: SkillsFile,
   skill: SkillDef,
@@ -72,8 +77,9 @@ export function resolveTargetCells(
   const pattern = skill.target;
   if (!pattern || pattern === 'random4') return [];
   const offsets = skills.targetPatterns[pattern] ?? [];
+  const clamped = clampAnchorForPattern(pattern, offsets, anchor, state.rows, state.cols);
   return offsets
-    .map(([dr, dc]) => ({ r: anchor.r + dr, c: anchor.c + dc }))
+    .map(([dr, dc]) => ({ r: clamped.r + dr, c: clamped.c + dc }))
     .filter((t) => state.cells.some((cell) => cell.r === t.r && cell.c === t.c));
 }
 

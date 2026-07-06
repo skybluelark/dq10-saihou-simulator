@@ -124,7 +124,7 @@
     { "id": "gyaku_tasuki",   "name": "逆たすきぬい",     "learnLv": 25, "cost": 7,  "kind": "sew",     "multiplier": 1,    "target": "diag_down2" },
     { "id": "ito_hogushi",    "name": "糸ほぐし",         "learnLv": 27, "cost": 16, "kind": "recover", "target": "single" },
     { "id": "crit_up_30",     "name": "会心率アップ",     "learnLv": 30, "kind": "passive", "nominal": 0.003 },
-    { "id": "sanbai_nui",     "name": "3倍縫い",          "learnLv": 33, "cost": 12, "kind": "sew",     "multiplier": 3,    "target": "single" },
+    { "id": "sanbai_nui",     "name": "3倍ぬい",          "learnLv": 33, "cost": 12, "kind": "sew",     "multiplier": 3,    "target": "single" },
     { "id": "power_shift",    "name": "ぬいパワーシフト", "learnLv": 38, "cost": 7,  "kind": "support", "effect": "shiftPower" },
     { "id": "hissatsu_up",    "name": "必殺率アップ",     "learnLv": 45, "kind": "passive" },
     { "id": "shitsuke_gake",  "name": "しつけがけ",       "learnLv": 47, "cost": 13, "kind": "support", "effect": "cellCorrection", "target": "single" },
@@ -187,7 +187,7 @@ interface RecipeDef {
 |---|---|---|
 | V1 | id: `^[a-z0-9_]+$` かつ全行で一意 | エラー |
 | V2 | category / cloth_type が enum に含まれる | エラー |
-| V3 | rows/cols が category の固定値と一致(head・leg=2×2、body_upper=3×3、body_lower=3×2、arm・rug=2×3、doll=3×3) | エラー |
+| V3 | rows/cols が category の固定値と一致(leg=2×2、head=2×3、body_upper=3×3、body_lower=3×2、arm・rug=2×3、doll=3×3)。head はセル位置も固定((1,2),(2,1),(2,2),(2,3)の凸形) | エラー |
 | V4 | (欠番: ラグの向き確定により V3 に統合) | - |
 | V5 | セルは rows×cols の範囲内のみに存在し、値は正整数 | エラー |
 | V6 | マス数が category と一致(head/leg=4、body_upper=9、body_lower/arm/rug=6、doll=7) | エラー |

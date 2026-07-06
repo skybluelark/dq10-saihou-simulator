@@ -41,8 +41,9 @@ const POWER_MAP: Record<string, Power> = {
 };
 
 // category → 固定の rows/cols とマス数(V3, V6)
+// 頭は 2行×3列のうち4マス(凸形)。cells は固定位置集合(V3-shape)で検証する。
 const CATEGORY_GRID: Record<Category, { rows: number; cols: number; cells: number }> = {
-  head: { rows: 2, cols: 2, cells: 4 },
+  head: { rows: 2, cols: 3, cells: 4 },
   leg: { rows: 2, cols: 2, cells: 4 },
   body_upper: { rows: 3, cols: 3, cells: 9 },
   body_lower: { rows: 3, cols: 2, cells: 6 },
@@ -50,6 +51,9 @@ const CATEGORY_GRID: Record<Category, { rows: number; cols: number; cells: numbe
   rug: { rows: 2, cols: 3, cells: 6 },
   doll: { rows: 3, cols: 3, cells: 7 },
 };
+
+// 頭の固定形状(凸形): (1,2),(2,1),(2,2),(2,3) の4マスに完全一致すること(V3-shape)。
+const HEAD_SHAPE: ReadonlySet<string> = new Set(['1,2', '2,1', '2,2', '2,3']);
 
 const HEADER = [
   'id',
@@ -201,6 +205,20 @@ export function parseRecipesCsv(csv: string): RecipeParseResult {
       const expected = CATEGORY_GRID[category].cells;
       if (cellCount !== expected) {
         err('V6', `マス数 ${cellCount} が category "${categoryRaw}" の期待値 ${expected} と一致しません。`);
+      }
+    }
+
+    // V3-shape: 頭は凸形((1,2),(2,1),(2,2),(2,3))のマス位置に完全一致すること
+    if (category === 'head') {
+      const positions = new Set(cells.map((cell) => `${cell.r},${cell.c}`));
+      const matches =
+        positions.size === HEAD_SHAPE.size &&
+        [...HEAD_SHAPE].every((pos) => positions.has(pos));
+      if (!matches) {
+        err(
+          'V3-shape',
+          `頭のマス位置が凸形(1,2)(2,1)(2,2)(2,3)と一致しません(実際: ${[...positions].sort().join('/') || 'なし'})。`,
+        );
       }
     }
 

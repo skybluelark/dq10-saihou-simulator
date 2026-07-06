@@ -336,6 +336,13 @@ export class Engine {
       return { state: next, events }; // ターン消費しない(行動失敗)
     }
 
+    // 対象マス存在チェック(SPEC §3.1/§3.3): 対象範囲(置換適用後)に存在するマスが
+    // 1つもない場合は行動不成立(状態変化なし・ターン非消費・集中力非消費)。
+    if (!this.hasValidTarget(next, skill, action)) {
+      events.push({ kind: 'invalidTarget', skillId: skill.id });
+      return { state: next, events };
+    }
+
     let turnDamage = 0;
 
     switch (skill.kind) {
@@ -362,6 +369,19 @@ export class Engine {
     this.endTurn(next, config, turnDamage, rng, events);
 
     return { state: next, events };
+  }
+
+  /**
+   * 対象範囲(アンカー自動置換の適用後)に存在するマスが1つ以上あるかを判定する。
+   * 対象不要の特技(精神統一・シフト・みだれぬい・無我)は常に true。
+   * 単マス特技(ぬう・かげんぬい・糸ほぐし・しつけがけ等)はアンカー自身の存在で判定する。
+   */
+  private hasValidTarget(state: GameState, skill: SkillDef, action: Action): boolean {
+    if (action.type !== 'sew') return true; // 対象不要特技(skill/finish)は常に成立
+    if (!skill.target || skill.target === 'random4') return true; // みだれぬい等は対象マス指定なし
+
+    const targets = this.resolveTargets(skill, action.anchor, state.rows, state.cols);
+    return targets.some((t) => this.cellAt(state, t.r, t.c) !== undefined);
   }
 
   /** 虹布の消費集中力補正を反映した実効コスト。 */
@@ -393,7 +413,7 @@ export class Engine {
     }
     if (action.type !== 'sew') throw new Error(`${skill.id} には対象マスが必要です。`);
 
-    const targets = this.resolveTargets(skill, action.anchor);
+    const targets = this.resolveTargets(skill, action.anchor, state.rows, state.cols);
     let total = 0;
     for (const t of targets) {
       const cell = this.cellAt(state, t.r, t.c);
@@ -713,29 +733,37 @@ export class Engine {
 
   // ---- 対象解決 ----
 
-  /** アンカーからオフセット配列で対象マスを解決(倍率つき)。 */
+  /**
+   * アンカーからオフセット配列で対象マスを解決(倍率つき)。
+   * ライン系特技(row2/col2/row3/col3/diag_up2/diag_down2)は、はみ出すアンカーを
+   * グリッド範囲内へクランプしてから対象を展開する(SPEC §3.3 アンカー自動置換)。
+   */
   private resolveTargets(
     skill: SkillDef,
     anchor: { r: number; c: number },
+    rows: number,
+    cols: number,
   ): { r: number; c: number; multiplier: number }[] {
     const pattern = skill.target!;
     const offsets = this.skills.targetPatterns[pattern];
     if (!offsets) throw new Error(`対象パターン未定義: ${pattern}`);
 
+    const clamped = clampAnchorForPattern(pattern, offsets, anchor, rows, cols);
+
     if (pattern === 'plus5') {
       // 巻きこみぬい: 中心1.5倍、周囲0.75倍
       const m = skill.multipliers as { center: number; around: number };
       return offsets.map(([dr, dc], i) => ({
-        r: anchor.r + dr,
-        c: anchor.c + dc,
+        r: clamped.r + dr,
+        c: clamped.c + dc,
         multiplier: i === 0 ? m.center : m.around,
       }));
     }
 
     const mult = skill.multiplier ?? 1;
     return offsets.map(([dr, dc]) => ({
-      r: anchor.r + dr,
-      c: anchor.c + dc,
+      r: clamped.r + dr,
+      c: clamped.c + dc,
       multiplier: mult,
     }));
   }
@@ -776,4 +804,70 @@ export function rainbowMode(turn: number, params: GameParams): 'half' | 'up' {
   const { firstTurn, interval } = params.clothTrait;
   const occurrence = (turn - firstTurn) / interval; // 0,1,2,...
   return occurrence % 2 === 0 ? 'half' : 'up';
+}
+
+// ---- ライン系特技のアンカー自動置換 (SPEC §3.3 2026-07-06確定) ----
+
+/**
+ * アンカー自動置換の対象パターン。
+ * ヨコぬい(row2)・滝のぼり(col2)・水平ぬい(row3)・大滝のぼり(col3)・
+ * たすきぬい(diag_up2)・逆たすきぬい(diag_down2) が対象。
+ * single(ぬう等)・plus5(巻きこみ=全位置可)・random4(みだれ)は対象外。
+ */
+const CLAMPED_PATTERNS: ReadonlySet<string> = new Set([
+  'row2',
+  'col2',
+  'row3',
+  'col3',
+  'diag_up2',
+  'diag_down2',
+]);
+
+/**
+ * ライン系特技のアンカーをグリッド範囲(rows×cols)内へクランプする(公開ヘルパ)。
+ * コア(resolveTargets)とUI(対象プレビュー)で同一ロジックを共有するために公開する。
+ *
+ * 許容範囲: パターンのオフセット群 offsets から
+ *   minDr/maxDr = dr の最小/最大、minDc/maxDc = dc の最小/最大 を求め、
+ *   r ∈ [1 - minDr, rows - maxDr] / c ∈ [1 - minDc, cols - maxDc] へクランプする。
+ * 範囲が空(下限>上限、例: 2列グリッドでの水平ぬい)の場合は下限値を採用する
+ * (結果としてはみ出す分は「存在するマスのみ」処理で無視される)。
+ * 対象外パターン(single/plus5/random4 等)はアンカーをそのまま返す。
+ */
+export function clampAnchorForPattern(
+  pattern: string,
+  offsets: readonly [number, number][],
+  anchor: { r: number; c: number },
+  rows: number,
+  cols: number,
+): { r: number; c: number } {
+  if (!CLAMPED_PATTERNS.has(pattern)) return { r: anchor.r, c: anchor.c };
+
+  let minDr = Infinity;
+  let maxDr = -Infinity;
+  let minDc = Infinity;
+  let maxDc = -Infinity;
+  for (const [dr, dc] of offsets) {
+    if (dr < minDr) minDr = dr;
+    if (dr > maxDr) maxDr = dr;
+    if (dc < minDc) minDc = dc;
+    if (dc > maxDc) maxDc = dc;
+  }
+
+  const rLow = 1 - minDr;
+  const rHigh = rows - maxDr;
+  const cLow = 1 - minDc;
+  const cHigh = cols - maxDc;
+
+  const clampOne = (value: number, low: number, high: number): number => {
+    if (low > high) return low; // 範囲が空 → 下限値を採用
+    if (value < low) return low;
+    if (value > high) return high;
+    return value;
+  };
+
+  return {
+    r: clampOne(anchor.r, rLow, rHigh),
+    c: clampOne(anchor.c, cLow, cHigh),
+  };
 }

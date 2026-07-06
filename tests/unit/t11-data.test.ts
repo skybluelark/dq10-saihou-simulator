@@ -23,10 +23,9 @@ function csvWith(rows: string[]): string {
   return [HEADER, ...rows].join('\r\n');
 }
 
-// 2×2(頭)の位置対応: cell_r1c1, cell_r1c2, (r1c3空), cell_r2c1, cell_r2c2, 残り空
-// ※ data/README の記入例は「先頭4列詰め」に見えるが、実データ recipes.csv と
-//    DATA_DESIGN V5(rows×cols の範囲内のみ)に従い位置対応を正とする。
-const VALID_ROW = 'hat_a,ぼうしA,頭,通常,2,2,30,32,,32,30,,,,,弱い/普通/強い/最強,';
+// 頭(2行×3列のうち凸形4マス)の位置対応:
+// cell_r1c1(空), cell_r1c2, cell_r1c3(空), cell_r2c1, cell_r2c2, cell_r2c3, 残り(r3系)は空
+const VALID_ROW = 'hat_a,ぼうしA,頭,通常,2,3,,32,,32,30,32,,,,弱い/普通/強い/最強,';
 
 describe('T11 game-params.json が SPEC と一致', () => {
   const p = loadGameParams();
@@ -114,13 +113,18 @@ describe('T11 recipes.csv 正常系(実データ9件)', () => {
     expect(doll.powerCycle).toEqual(['normal', 'unknown', 'weak', 'strongest']);
   });
 
-  it('賢哲のターバン: 頭2×2・虹・基準値231×4', () => {
+  it('賢哲のターバン: 頭2行3列(凸形)・虹・基準値231×4', () => {
     const t = result.recipes.find((r) => r.id === 'kentetsu_turban')!;
     expect(t.category).toBe('head');
     expect(t.clothType).toBe('rainbow');
     expect(t.rows).toBe(2);
-    expect(t.cols).toBe(2);
-    expect(t.cells.map((c) => c.base)).toEqual([231, 231, 231, 231]);
+    expect(t.cols).toBe(3);
+    expect(t.cells.map((c) => ({ r: c.r, c: c.c, base: c.base }))).toEqual([
+      { r: 1, c: 2, base: 231 },
+      { r: 2, c: 1, base: 231 },
+      { r: 2, c: 2, base: 231 },
+      { r: 2, c: 3, base: 231 },
+    ]);
     expect(t.powerCycle).toEqual(['normal', 'unknown', 'weak', 'unknown', 'strongest']);
   });
 
@@ -147,7 +151,7 @@ describe('T11 recipes.csv 正常系(実データ9件)', () => {
 
 describe('T11 recipes.csv バリデーション異常系 (V1〜V8)', () => {
   it('V1: id形式不正(大文字)', () => {
-    const r = parseRecipesCsv(csvWith(['Hat_A,ぼうし,頭,通常,2,2,30,32,,32,30,,,,,弱い/普通,']));
+    const r = parseRecipesCsv(csvWith(['Hat_A,ぼうし,頭,通常,2,3,,32,,32,30,32,,,,弱い/普通,']));
     expect(r.errors.some((e) => e.rule === 'V1' && e.line === 2)).toBe(true);
     expect(r.recipes).toHaveLength(0);
   });
@@ -159,12 +163,12 @@ describe('T11 recipes.csv バリデーション異常系 (V1〜V8)', () => {
   });
 
   it('V2: category不正', () => {
-    const r = parseRecipesCsv(csvWith(['hat_b,ぼうし,かぶと,通常,2,2,30,32,,32,30,,,,,弱い/普通,']));
+    const r = parseRecipesCsv(csvWith(['hat_b,ぼうし,かぶと,通常,2,3,,32,,32,30,32,,,,弱い/普通,']));
     expect(r.errors.some((e) => e.rule === 'V2' && e.line === 2)).toBe(true);
   });
 
   it('V2: cloth_type不正', () => {
-    const r = parseRecipesCsv(csvWith(['hat_b,ぼうし,頭,金,2,2,30,32,,32,30,,,,,弱い/普通,']));
+    const r = parseRecipesCsv(csvWith(['hat_b,ぼうし,頭,金,2,3,,32,,32,30,32,,,,弱い/普通,']));
     expect(r.errors.some((e) => e.rule === 'V2' && e.line === 2)).toBe(true);
   });
 
@@ -173,31 +177,51 @@ describe('T11 recipes.csv バリデーション異常系 (V1〜V8)', () => {
     expect(r.errors.some((e) => e.rule === 'V3' && e.line === 2)).toBe(true);
   });
 
-  it('V5: グリッド範囲外にセル値(頭2×2で r3c1 に値)', () => {
-    const r = parseRecipesCsv(csvWith(['hat_b,ぼうし,頭,通常,2,2,30,32,,32,30,,99,,,弱い/普通,']));
+  it('V5: グリッド範囲外にセル値(頭2行3列で r3c1 に値)', () => {
+    const r = parseRecipesCsv(csvWith(['hat_b,ぼうし,頭,通常,2,3,,32,,32,30,32,99,,,弱い/普通,']));
     expect(r.errors.some((e) => e.rule === 'V5' && e.line === 2)).toBe(true);
+  });
+
+  it('V5ではなくV3-shape: 頭のグリッド内欠け位置(r1c1)に値', () => {
+    // r1c1 は 2×3 グリッドの範囲内(V5対象外)だが、凸形の欠け位置なので V3-shape で検出する
+    const r = parseRecipesCsv(csvWith(['hat_b,ぼうし,頭,通常,2,3,99,32,,32,30,32,,,,弱い/普通,']));
+    expect(r.errors.some((e) => e.rule === 'V5')).toBe(false);
+    expect(r.errors.some((e) => e.rule === 'V3-shape' && e.line === 2)).toBe(true);
   });
 
   it('V5: セル値が正整数でない(0・負・小数・文字)', () => {
     for (const bad of ['0', '-5', '3.5', 'abc']) {
-      const r = parseRecipesCsv(csvWith([`hat_b,ぼうし,頭,通常,2,2,${bad},32,,32,30,,,,,弱い/普通,`]));
+      const r = parseRecipesCsv(csvWith([`hat_b,ぼうし,頭,通常,2,3,,${bad},,32,30,32,,,,弱い/普通,`]));
       expect(r.errors.some((e) => e.rule === 'V5' && e.line === 2)).toBe(true);
     }
   });
 
   it('V6: マス数不一致(頭で3マスのみ)', () => {
-    const r = parseRecipesCsv(csvWith(['hat_b,ぼうし,頭,通常,2,2,30,32,,32,,,,,,弱い/普通,']));
+    const r = parseRecipesCsv(csvWith(['hat_b,ぼうし,頭,通常,2,3,,32,,32,30,,,,,弱い/普通,']));
     expect(r.errors.some((e) => e.rule === 'V6' && e.line === 2)).toBe(true);
   });
 
   it('V7: power_order空', () => {
-    const r = parseRecipesCsv(csvWith(['hat_b,ぼうし,頭,通常,2,2,30,32,,32,30,,,,,,']));
+    const r = parseRecipesCsv(csvWith(['hat_b,ぼうし,頭,通常,2,3,,32,,32,30,32,,,,,']));
     expect(r.errors.some((e) => e.rule === 'V7' && e.line === 2)).toBe(true);
   });
 
   it('V7: 不正トークン(会心×2 はサイクル不可)', () => {
-    const r = parseRecipesCsv(csvWith(['hat_b,ぼうし,頭,通常,2,2,30,32,,32,30,,,,,弱い/会心×2,']));
+    const r = parseRecipesCsv(csvWith(['hat_b,ぼうし,頭,通常,2,3,,32,,32,30,32,,,,弱い/会心×2,']));
     expect(r.errors.some((e) => e.rule === 'V7' && e.line === 2)).toBe(true);
+  });
+
+  it('V3-shape: 頭のマス位置が凸形と不一致(2×2詰め配置)', () => {
+    // rows=2,cols=3 だが値が旧2×2詰め位置(r1c1,r1c2,r2c1,r2c2)にある = 凸形と不一致
+    const r = parseRecipesCsv(csvWith(['hat_b,ぼうし,頭,通常,2,3,30,32,,32,30,,,,,弱い/普通,']));
+    expect(r.errors.some((e) => e.rule === 'V3-shape' && e.line === 2)).toBe(true);
+  });
+
+  it('V3-shape: 頭の凸形が正しい配置は通る', () => {
+    const r = parseRecipesCsv(csvWith(['hat_b,ぼうし,頭,通常,2,3,,32,,32,30,32,,,,弱い/普通,']));
+    expect(r.errors).toEqual([]);
+    expect(r.recipes).toHaveLength(1);
+    expect(r.recipes[0].cells.map((c) => `${c.r},${c.c}`).sort()).toEqual(['1,2', '2,1', '2,2', '2,3']);
   });
 
   it('V8: 空行・全列空はスキップ(警告・行番号つき)', () => {
@@ -210,7 +234,7 @@ describe('T11 recipes.csv バリデーション異常系 (V1〜V8)', () => {
 
   it('エラー行は除外され、正常行は読み込まれる', () => {
     const r = parseRecipesCsv(
-      csvWith([VALID_ROW, 'BAD_ID,x,頭,通常,2,2,30,32,,32,30,,,,,弱い,', VALID_ROW.replace('hat_a', 'hat_c')]),
+      csvWith([VALID_ROW, 'BAD_ID,x,頭,通常,2,3,,32,,32,30,32,,,,弱い,', VALID_ROW.replace('hat_a', 'hat_c')]),
     );
     expect(r.recipes.map((x) => x.id)).toEqual(['hat_a', 'hat_c']);
     expect(r.errors.some((e) => e.line === 3)).toBe(true);
