@@ -4,7 +4,7 @@
 // 当ターンのぬいパワー・発光・自動回復を行動前に表示へ反映する。
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
-import { DEFAULT_CONFIG, Engine, Mulberry32 } from '../core';
+import { DEFAULT_CONFIG, Engine, Mulberry32, clampAnchorForPattern } from '../core';
 import type {
   Action,
   GameState,
@@ -148,7 +148,7 @@ function App() {
   // 連続行動で前のバルーンが残っていても正しく積み上がり/消去される。
   const [balloons, setBalloons] = useState<Balloon[]>([]);
   const balloonTimersRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
-  const BALLOON_LIFETIME_MS = 1500;
+  const BALLOON_LIFETIME_MS = 750;
 
   const spawnBalloons = useCallback((newOnes: Balloon[]) => {
     if (newOnes.length === 0) return;
@@ -249,17 +249,32 @@ function App() {
 
   const handleCellClick = useCallback(
     (r: number, c: number) => {
-      if (!ui.selectedSkillId || !ui.session || ui.session.game.finished) return;
-      const skill = skillMap.get(ui.selectedSkillId);
+      if (!ui.session || ui.session.game.finished) return;
+      // 特技未選択でマスをタップした場合は「ぬう」を自動選択し、
+      // そのタップを1タップ目(アンカー設定)として同様に処理する(SPEC)。
+      const skillId = ui.selectedSkillId ?? 'nuu';
+      const skill = skillMap.get(skillId);
       if (!skill) return;
+      if (!ui.selectedSkillId) {
+        dispatch({ type: 'skillSelected', skillId });
+      }
       // 対象解決(アンカー自動置換適用後)で存在するマスが0となるタップは無効
       // (単マス特技で空き位置など = 行動不成立。プレビューも出さず実行もしない)
       const targets = resolveTargetCells(data.skills, skill, { r, c }, ui.session.game);
       if (targets.length === 0) return;
-      if (ui.anchor && ui.anchor.r === r && ui.anchor.c === c) {
-        runAction({ type: 'sew', skillId: ui.selectedSkillId, anchor: { r, c } });
+      // アンカーは置換後の座標で保存する(SPEC: 置換はアンカーそのものに適用。
+      // 表示・以降の再タップ判定も置換後アンカーに対して行う)。
+      const clamped = clampAnchorForPattern(
+        skill.target ?? '',
+        data.skills.targetPatterns[skill.target ?? ''] ?? [],
+        { r, c },
+        ui.session.game.rows,
+        ui.session.game.cols,
+      );
+      if (ui.selectedSkillId && ui.anchor && ui.anchor.r === clamped.r && ui.anchor.c === clamped.c) {
+        runAction({ type: 'sew', skillId, anchor: clamped });
       } else {
-        dispatch({ type: 'anchorSet', anchor: { r, c } });
+        dispatch({ type: 'anchorSet', anchor: clamped });
       }
     },
     [ui.selectedSkillId, ui.session, ui.anchor, runAction, skillMap, data],

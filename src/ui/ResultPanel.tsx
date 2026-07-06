@@ -4,6 +4,7 @@
 import { cellErrorScore } from '../core';
 import type { GameParams, GameState, JudgeResult } from '../core';
 import { STAR_LABELS } from './format';
+import uiConfig from './ui-config.json';
 import styles from './App.module.css';
 
 interface ResultPanelProps {
@@ -32,34 +33,36 @@ export function ResultPanel({ game, result, params, onNewSession }: ResultPanelP
         誤差評価値合計 <strong>{result.totalError}</strong>(★3ライン: ≤{star3Line}) /
         使用ターン数 <strong>{game.turn}</strong> / 残集中力 <strong>{game.concentration}</strong>
       </div>
-      <table className={styles.resultTable}>
-        <thead>
-          <tr>
-            <th>マス</th>
-            <th>残り</th>
-            <th>誤差</th>
-            <th>評価値</th>
-          </tr>
-        </thead>
-        <tbody>
-          {game.cells.map((cell) => {
-            const remaining = cell.base - cell.cumulative;
-            const err = Math.abs(remaining);
-            const score = cellErrorScore(remaining, yellow, penalty);
-            return (
-              <tr key={`${cell.r}-${cell.c}`}>
-                <td>({cell.r},{cell.c})</td>
-                <td>{remaining}</td>
-                <td>{err}</td>
-                <td>
-                  {score}
-                  {score !== err && <span className={styles.penaltyNote}>(ゲージ外9換算)</span>}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      {uiConfig.debugMode && (
+        <table className={styles.resultTable}>
+          <thead>
+            <tr>
+              <th>マス</th>
+              <th>残り</th>
+              <th>誤差</th>
+              <th>評価値</th>
+            </tr>
+          </thead>
+          <tbody>
+            {game.cells.map((cell) => {
+              const remaining = cell.base - cell.cumulative;
+              const err = Math.abs(remaining);
+              const score = cellErrorScore(remaining, yellow, penalty);
+              return (
+                <tr key={`${cell.r}-${cell.c}`}>
+                  <td>({cell.r},{cell.c})</td>
+                  <td>{remaining}</td>
+                  <td>{err}</td>
+                  <td>
+                    {score}
+                    {score !== err && <span className={styles.penaltyNote}>(ゲージ外9換算)</span>}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
       <button type="button" className={styles.newButton} onClick={onNewSession}>
         新しく始める
       </button>

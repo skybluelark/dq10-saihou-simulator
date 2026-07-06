@@ -109,7 +109,6 @@ export function ClothGrid({
               >
                 <span className={styles.remaining}>{remaining}</span>
                 <span className={styles.baseVal}>/{cell.base}</span>
-                {cell.shitsuke && <span className={styles.shitsukeTag}>しつけ</span>}
                 {isGlow && <span className={styles.glowTag}>発光</span>}
                 {cellBalloons.map((b) => (
                   <span key={b.id} className={`${styles.balloon} ${BALLOON_CLASS[b.kind]}`}>

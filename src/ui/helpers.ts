@@ -28,12 +28,12 @@ export function deriveBalloons(events: TurnEvent[]): Balloon[] {
     if (e.kind === 'sewCell') {
       const isHeal = e.damage < 0;
       const kind: BalloonKind = isHeal ? 'heal' : e.crit ? 'crit' : 'damage';
-      const sign = isHeal ? '+' : '-';
-      const text = e.crit ? `会心! ${sign}${Math.abs(e.damage)}` : `${sign}${Math.abs(e.damage)}`;
+      // 数値は符号なし・文字なし(「会心!」等は付けない)。配色のみで区別する(SPEC)。
+      const text = `${Math.abs(e.damage)}`;
       balloons.push({ id: ++balloonSeq, r: e.r, c: e.c, text, kind });
     } else if (e.kind === 'clothRegen') {
       if (e.amount === 0) continue;
-      balloons.push({ id: ++balloonSeq, r: e.r, c: e.c, text: `+${e.amount}`, kind: 'heal' });
+      balloons.push({ id: ++balloonSeq, r: e.r, c: e.c, text: `${Math.abs(e.amount)}`, kind: 'heal' });
     }
   }
   return balloons;
