@@ -700,6 +700,15 @@
   border-bottom: 1px dotted #eee;
 }
 
+.logLineCurrent {
+  background: rgba(58, 83, 168, 0.12);
+  border-left: 3px solid #3a53a8;
+  padding-left: 7px;
+  margin-left: -10px;
+  margin-right: -10px;
+  padding-right: 10px;
+}
+
 /* ---- 結果表示 ---- */
 
 .resultCard {

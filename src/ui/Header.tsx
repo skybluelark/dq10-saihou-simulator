@@ -19,6 +19,8 @@ interface HeaderProps {
   onSeedInputChange: (value: string) => void;
   canUndo: boolean;
   onUndo: () => void;
+  canRedo: boolean;
+  onRedo: () => void;
   onBuildReplayText: () => string | null;
   onOpenReplayDialog: () => void;
 }
@@ -35,6 +37,8 @@ export function Header({
   onSeedInputChange,
   canUndo,
   onUndo,
+  canRedo,
+  onRedo,
   onBuildReplayText,
   onOpenReplayDialog,
 }: HeaderProps) {
@@ -128,6 +132,14 @@ export function Header({
               onClick={onUndo}
             >
               1手戻す
+            </button>
+            <button
+              type="button"
+              className={styles.undoButton}
+              disabled={!canRedo}
+              onClick={onRedo}
+            >
+              1手進む
             </button>
             <button type="button" className={styles.undoButton} onClick={handleCopyReplay}>
               {copied ? 'コピーしました' : 'リプレイコピー'}

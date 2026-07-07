@@ -58,12 +58,13 @@ interface HistoryEntry {
 
 interface Session {
   seed: number;
-  game: GameState; // beginTurn 済み(または finished)
   initialConcentration: number;
-  log: LogEntry[]; // 古い順(整形前のイベント列で保持。表示時に整形する)
-  actions: Action[]; // 成立した行動のみ(次タスクのリプレイ出力用)
-  history: HistoryEntry[]; // actions と同数・同順(各行動の適用直前の状態)
-  result: JudgeResult | null;
+  actions: Action[]; // タイムライン上の全行動(次タスクのリプレイ出力用)
+  history: HistoryEntry[]; // history[i] = actions[i] 適用直前の状態
+  log: LogEntry[]; // タイムライン全体のログ(古い順。カーソル移動では消去しない)
+  finalGame: GameState; // position === actions.length のときの表示状態(最新端)
+  finalResult: JudgeResult | null; // finalGame.finished のときのみ非 null
+  position: number; // 現在位置 0..actions.length
 }
 
 interface UiState {
@@ -83,23 +84,38 @@ type UiEvent =
     }
   | { type: 'skillSelected'; skillId: string | null }
   | { type: 'anchorSet'; anchor: { r: number; c: number } | null }
-  | { type: 'undone' };
+  | { type: 'undone' }
+  | { type: 'redone' };
 
 function reducer(state: UiState, ev: UiEvent): UiState {
   switch (ev.type) {
     case 'sessionStarted':
       return { session: ev.session, selectedSkillId: null, anchor: null };
     case 'applied': {
-      const session = state.session;
-      if (!session) return state;
+      const s = state.session;
+      if (!s) return state;
+      const pos = s.position;
+      let actions = s.actions;
+      let history = s.history;
+      let log = s.log;
+      if (pos < actions.length) {
+        // 過去位置からの分岐(SPEC §4.3): そのターンの行動以降の旧ログ・旧行動列を消去する。
+        // history[pos].logCount はターン開始情報行までを含む位置なので、情報行は残る。
+        log = log.slice(0, history[pos].logCount);
+        actions = actions.slice(0, pos);
+        history = history.slice(0, pos);
+      }
+      const newActions = ev.record ? [...actions, ev.record.action] : actions;
+      const newHistory = ev.record ? [...history, ev.record.historyEntry] : history;
       return {
         session: {
-          ...session,
-          game: ev.game,
-          log: [...session.log, ...ev.entries],
-          actions: ev.record ? [...session.actions, ev.record.action] : session.actions,
-          history: ev.record ? [...session.history, ev.record.historyEntry] : session.history,
-          result: ev.result,
+          ...s,
+          actions: newActions,
+          history: newHistory,
+          log: [...log, ...ev.entries],
+          finalGame: ev.game,
+          finalResult: ev.result,
+          position: newActions.length,
         },
         selectedSkillId: null,
         anchor: null,
@@ -107,17 +123,18 @@ function reducer(state: UiState, ev: UiEvent): UiState {
     }
     case 'undone': {
       const session = state.session;
-      if (!session || session.history.length === 0) return state;
-      const entry = session.history[session.history.length - 1];
+      if (!session || session.position === 0) return state;
       return {
-        session: {
-          ...session,
-          game: entry.game,
-          log: session.log.slice(0, entry.logCount),
-          actions: session.actions.slice(0, -1),
-          history: session.history.slice(0, -1),
-          result: null,
-        },
+        session: { ...session, position: session.position - 1 },
+        selectedSkillId: null,
+        anchor: null,
+      };
+    }
+    case 'redone': {
+      const session = state.session;
+      if (!session || session.position >= session.actions.length) return state;
+      return {
+        session: { ...session, position: session.position + 1 },
         selectedSkillId: null,
         anchor: null,
       };
@@ -204,6 +221,19 @@ function App() {
   const rngRef = useRef<Rng | null>(null);
   // 同一状態への二重適用ガード(再レンダー前に同一クリックが連続発火した場合の保険)
   const lastAppliedRef = useRef<GameState | null>(null);
+
+  // タイムライン+カーソル(SPEC v1.16 §4.3): position が最新端かどうかで表示状態を導出する
+  const currentGame: GameState | null = ui.session
+    ? ui.session.position === ui.session.actions.length
+      ? ui.session.finalGame
+      : ui.session.history[ui.session.position].game
+    : null;
+  const currentResult: JudgeResult | null =
+    ui.session && ui.session.position === ui.session.actions.length
+      ? ui.session.finalResult
+      : null;
+  const currentTurn: number | null =
+    currentGame && !currentGame.finished ? currentGame.turn + 1 : null;
 
   // リプレイ読込(F6): 読込後の警告バナー・ダイアログ開閉状態
   const [importWarning, setImportWarning] = useState<string | null>(null);
@@ -308,15 +338,16 @@ function App() {
         type: 'sessionStarted',
         session: {
           seed,
-          game: begun.state,
           initialConcentration: created.state.concentration,
+          actions: [],
+          history: [],
           log: [
             { turn: 0, events: created.events },
             { turn: begun.state.turn + 1, events: begun.events },
           ],
-          actions: [],
-          history: [],
-          result: null,
+          finalGame: begun.state,
+          finalResult: null,
+          position: 0,
         },
       });
     },
@@ -336,17 +367,35 @@ function App() {
 
   const runAction = useCallback(
     (action: Action) => {
-      const rng = rngRef.current;
-      if (!rng || !ui.session || ui.session.game.finished) return;
-      const before = ui.session.game;
+      const session = ui.session;
+      if (!session) return;
+      const pos = session.position;
+      const atEdge = pos === session.actions.length;
+      const before = atEdge ? session.finalGame : session.history[pos].game;
+      if (before.finished) return;
       if (lastAppliedRef.current === before) return; // 同一状態への二重適用を防止
       lastAppliedRef.current = before;
+      let rng: Rng;
+      if (atEdge) {
+        const r = rngRef.current;
+        if (!r) return;
+        rng = r;
+      } else {
+        // 過去位置からの分岐(SPEC §4.3): その時点の乱数状態から再開する
+        rng = new Mulberry32(session.history[pos].rngState);
+        rngRef.current = rng;
+      }
       const rngStateBefore = rng.getState();
       const applied = engine.applyAction(before, action, config, rng);
       // 拒否行動(集中力不足・対象マスなし)は状態変更・乱数消費なし → 履歴・行動列に記録しない
       const rejected = applied.events.some(
         (e) => e.kind === 'insufficientConcentration' || e.kind === 'invalidTarget',
       );
+      if (rejected && !atEdge) {
+        // 過去位置での拒否行動は分岐させない(何も起きない)
+        lastAppliedRef.current = null;
+        return;
+      }
       let game = applied.state;
       const entries: LogEntry[] = [{ turn: before.turn + 1, events: applied.events }];
       let result: JudgeResult | null = null;
@@ -374,7 +423,7 @@ function App() {
             historyEntry: {
               game: before,
               rngState: rngStateBefore,
-              logCount: ui.session.log.length,
+              logCount: atEdge ? session.log.length : session.history[pos].logCount,
             },
           };
       dispatch({ type: 'applied', game, entries, result, record });
@@ -382,15 +431,21 @@ function App() {
     [engine, config, ui.session, spawnBalloons, spawnBalloonsDelayed, triggerHissatsuFx],
   );
 
-  const canUndo = ui.session !== null && ui.session.history.length > 0;
+  const canUndo = ui.session !== null && ui.session.position > 0;
+  const canRedo = ui.session !== null && ui.session.position < ui.session.actions.length;
 
   const handleUndo = useCallback(() => {
-    if (!ui.session || ui.session.history.length === 0) return;
-    const entry = ui.session.history[ui.session.history.length - 1];
-    rngRef.current = new Mulberry32(entry.rngState);
+    if (!ui.session || ui.session.position === 0) return;
     lastAppliedRef.current = null;
     clearTransientFx();
     dispatch({ type: 'undone' });
+  }, [ui.session, clearTransientFx]);
+
+  const handleRedo = useCallback(() => {
+    if (!ui.session || ui.session.position >= ui.session.actions.length) return;
+    lastAppliedRef.current = null;
+    clearTransientFx();
+    dispatch({ type: 'redone' });
   }, [ui.session, clearTransientFx]);
 
   // 「新しく始める」: シード入力欄に有効な数値があればそのシードで、なければ自動生成で開始する
@@ -409,7 +464,7 @@ function App() {
     const s = ui.session;
     if (!s || !recipe) return null;
     const replay: ReplayData = { v: 1, seed: s.seed, recipeId: recipe.id, config, actions: s.actions };
-    if (s.result && s.game.finished) replay.check = makeReplayCheck(s.result, s.game);
+    if (s.finalResult && s.finalGame.finished) replay.check = makeReplayCheck(s.finalResult, s.finalGame);
     return serializeReplay(replay);
   }, [ui.session, recipe, config]);
 
@@ -501,12 +556,13 @@ function App() {
         type: 'sessionStarted',
         session: {
           seed: replay.seed,
-          game,
           initialConcentration: created.state.concentration,
-          log,
           actions,
           history,
-          result,
+          log,
+          finalGame: game,
+          finalResult: result,
+          position: 0, // 1ターン目の状態で復元(SPEC v1.16)
         },
       });
       return null;
@@ -532,7 +588,7 @@ function App() {
 
   const handleCellClick = useCallback(
     (r: number, c: number) => {
-      if (!ui.session || ui.session.game.finished) return;
+      if (!currentGame || currentGame.finished) return;
       // 特技未選択でマスをタップした場合は「ぬう」を自動選択し、
       // そのタップを1タップ目(アンカー設定)として同様に処理する(SPEC)。
       const skillId = ui.selectedSkillId ?? 'nuu';
@@ -545,7 +601,7 @@ function App() {
       // タップした場合のみ実行。青枠外は新たな1タップ目(アンカーの取り直し)として扱う。
       if (ui.selectedSkillId && ui.anchor) {
         const anchor = ui.anchor;
-        const inPreview = previewPositions(data.skills, skill, anchor, ui.session.game).some(
+        const inPreview = previewPositions(data.skills, skill, anchor, currentGame).some(
           (p) => p.r === r && p.c === c,
         );
         if (inPreview) {
@@ -555,7 +611,7 @@ function App() {
       }
       // 1タップ目(アンカー設定/取り直し)。対象解決(アンカー自動置換適用後)で
       // 存在するマスが0となるタップは無効(行動不成立。プレビューも出さない)。
-      const targets = resolveTargetCells(data.skills, skill, { r, c }, ui.session.game);
+      const targets = resolveTargetCells(data.skills, skill, { r, c }, currentGame);
       if (targets.length === 0) return;
       // アンカーは置換後の座標で保存する(SPEC: 置換はアンカーそのものに適用。
       // 表示・以降の再タップ判定も置換後アンカーに対して行う)。
@@ -563,12 +619,12 @@ function App() {
         skill.target ?? '',
         data.skills.targetPatterns[skill.target ?? ''] ?? [],
         { r, c },
-        ui.session.game.rows,
-        ui.session.game.cols,
+        currentGame.rows,
+        currentGame.cols,
       );
       dispatch({ type: 'anchorSet', anchor: clamped });
     },
-    [ui.selectedSkillId, ui.session, ui.anchor, runAction, skillMap, data],
+    [ui.selectedSkillId, currentGame, ui.anchor, runAction, skillMap, data],
   );
 
   const handleFinish = useCallback(() => runAction({ type: 'finish' }), [runAction]);
@@ -576,24 +632,27 @@ function App() {
   // 対象プレビュー(ライン系はアンカー自動置換後の範囲)。パターン範囲内の
   // グリッド位置すべてを青枠表示する(空きマス含む。ダメージが入るのは存在するマスのみ)。
   const previewTargets = useMemo(() => {
-    if (!ui.session || !ui.selectedSkillId || !ui.anchor) return [];
+    if (!currentGame || !ui.selectedSkillId || !ui.anchor) return [];
     const skill = skillMap.get(ui.selectedSkillId);
     if (!skill) return [];
-    return previewPositions(data.skills, skill, ui.anchor, ui.session.game);
-  }, [ui.session, ui.selectedSkillId, ui.anchor, skillMap, data]);
+    return previewPositions(data.skills, skill, ui.anchor, currentGame);
+  }, [currentGame, ui.selectedSkillId, ui.anchor, skillMap, data]);
 
   // 誤差評価値(現在合計)は常時表示
   const currentJudge = useMemo(
-    () => (ui.session ? engine.judge(ui.session.game) : null),
-    [engine, ui.session],
+    () => (currentGame ? engine.judge(currentGame) : null),
+    [engine, currentGame],
   );
 
-  // 行動ログ表示行(検証モードのトグルで過去ログ含め即時に切り替わるよう、毎回整形し直す)
-  const logLines = useMemo(
+  // 行動ログ表示行(現在ターンのハイライト用にターン番号を付与。検証モードのトグルで
+  // 過去ログ含め即時に切り替わるよう、毎回整形し直す)
+  const logItems = useMemo(
     () =>
       ui.session
         ? ui.session.log.flatMap((e) =>
-            formatEvents(e.events, e.turn, skillName, { showRolls: settings.verifyMode }),
+            formatEvents(e.events, e.turn, skillName, { showRolls: settings.verifyMode }).map(
+              (text) => ({ text, turn: e.turn }),
+            ),
           )
         : [],
     [ui.session, skillName, settings.verifyMode],
@@ -620,8 +679,8 @@ function App() {
   }
 
   const session = ui.session;
-  const star3Line = session
-    ? data.params.evaluation[String(session.game.massCount)].star3
+  const star3Line = currentGame
+    ? data.params.evaluation[String(currentGame.massCount)].star3
     : 0;
 
   return (
@@ -638,6 +697,8 @@ function App() {
         onSeedInputChange={setSeedInput}
         canUndo={canUndo}
         onUndo={handleUndo}
+        canRedo={canRedo}
+        onRedo={handleRedo}
         onBuildReplayText={buildReplayText}
         onOpenReplayDialog={() => setShowReplayDialog(true)}
       />
@@ -651,12 +712,12 @@ function App() {
         />
       )}
 
-      {session && (
+      {session && currentGame && (
         <>
-          {session.result && (
+          {currentResult && (
             <ResultPanel
-              game={session.game}
-              result={session.result}
+              game={currentGame}
+              result={currentResult}
               params={data.params}
               onNewSession={handleNewSession}
               verifyMode={settings.verifyMode}
@@ -667,7 +728,7 @@ function App() {
 
           <main className={styles.main}>
             <ClothGrid
-              game={session.game}
+              game={currentGame}
               yellowRange={data.params.gauge.yellowRange}
               anchor={ui.anchor}
               targets={previewTargets}
@@ -679,7 +740,7 @@ function App() {
               onCellClick={handleCellClick}
             />
             <RightPanel
-              game={session.game}
+              game={currentGame}
               params={data.params}
               needle={needle}
               levelBase={levelBase}
@@ -690,14 +751,14 @@ function App() {
 
           <SkillPanel
             skills={actionSkills}
-            game={session.game}
+            game={currentGame}
             params={data.params}
             selectedSkillId={ui.selectedSkillId}
             onSkillClick={handleSkillClick}
             onFinish={handleFinish}
           />
 
-          <LogPanel log={logLines} />
+          <LogPanel log={logItems} currentTurn={currentTurn} />
         </>
       )}
     </div>
