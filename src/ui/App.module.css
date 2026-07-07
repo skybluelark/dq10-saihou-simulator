@@ -178,8 +178,9 @@
 
 .cell,
 .cellEmpty {
-  width: 96px;
-  height: 84px;
+  /* マス寸法はスマホ幅の圧縮表示(下部の @media)で上書きする */
+  width: var(--cell-w, 96px);
+  height: var(--cell-h, 84px);
   border-radius: 8px;
   box-sizing: border-box;
 }
@@ -722,6 +723,75 @@
 
 .logEmpty {
   color: #999;
+}
+
+/* ---- スマホ幅の圧縮表示(SPEC §4.3 v1.22) ----
+   目的: 状態表示(ぬいパワー・集中力等)〜布グリッド〜特技ボタン群を1画面に収める
+   (ヘッダーはスクロールで画面外に出てよい)。
+   ブラウザ版のスマホ最適化はこの最低限の圧縮まで。本格対応はスマホアプリ版(W1)で別設計 */
+
+@media (max-width: 520px) {
+  .app {
+    --cell-w: 60px;
+    --cell-h: 54px;
+    padding: 8px 10px 24px;
+  }
+
+  .grid {
+    gap: 4px;
+    padding: 8px;
+  }
+
+  .remaining {
+    font-size: 17px;
+  }
+
+  .baseVal {
+    font-size: 9px;
+  }
+
+  /* 凡例・布タイプ行・集中力内訳はプレイ中必須でないため非表示 */
+  .legend,
+  .clothTypeNote,
+  .concDetail {
+    display: none;
+  }
+
+  .main {
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .panel {
+    min-width: 0;
+    padding: 6px 10px;
+    gap: 3px;
+    font-size: 13px;
+  }
+
+  .errorLine {
+    margin-top: 6px;
+  }
+
+  .skills {
+    gap: 4px;
+    margin-top: 10px;
+  }
+
+  /* ボタンは文字幅フィットで詰め、1画面あたりの段数を減らす */
+  .skillButton {
+    min-width: 0;
+    padding: 2px 5px;
+    gap: 0;
+  }
+
+  .skillName {
+    font-size: 11px;
+  }
+
+  .skillCost {
+    font-size: 10px;
+  }
 }
 
 .logLine {

@@ -60,7 +60,7 @@ export function ClothGrid({
     <div className={styles.gridWrap}>
       <div
         className={`${styles.grid} ${clothBgClass}`}
-        style={{ gridTemplateColumns: `repeat(${game.cols}, 96px)` }}
+        style={{ gridTemplateColumns: `repeat(${game.cols}, var(--cell-w, 96px))` }}
       >
         {rows.map((r) =>
           cols.map((c) => {
