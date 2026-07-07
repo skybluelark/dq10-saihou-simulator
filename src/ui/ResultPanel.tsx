@@ -1,8 +1,10 @@
 // 結果表示 (F4): ★数・大成功/失敗の別・誤差評価値合計と★3ライン・
 // マス別誤差内訳(ゲージ外9換算の明示)・使用ターン数・残集中力。
 
+import { useState } from 'react';
 import { cellErrorScore } from '../core';
 import type { GameParams, GameState, JudgeResult } from '../core';
+import { copyReplayText } from './clipboard';
 import { STAR_LABELS } from './format';
 import { DEBUG_MODE } from './debug';
 import styles from './App.module.css';
@@ -12,14 +14,35 @@ interface ResultPanelProps {
   result: JudgeResult;
   params: GameParams;
   onNewSession: () => void;
+  showUndo: boolean;
+  onUndo: () => void;
+  onBuildReplayText: () => string | null;
 }
 
-export function ResultPanel({ game, result, params, onNewSession }: ResultPanelProps) {
+export function ResultPanel({
+  game,
+  result,
+  params,
+  onNewSession,
+  showUndo,
+  onUndo,
+  onBuildReplayText,
+}: ResultPanelProps) {
   const yellow = params.gauge.yellowRange;
   const penalty = params.gauge.penaltyError;
   const star3Line = params.evaluation[String(game.massCount)].star3;
   const isGreat = result.star === 'star3';
   const isFail = result.star === 'fail';
+
+  const [copied, setCopied] = useState(false);
+  const handleCopyReplay = () => {
+    const text = onBuildReplayText();
+    if (!text) return;
+    copyReplayText(text, () => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  };
 
   return (
     <section className={styles.resultCard}>
@@ -63,9 +86,19 @@ export function ResultPanel({ game, result, params, onNewSession }: ResultPanelP
           </tbody>
         </table>
       )}
-      <button type="button" className={styles.newButton} onClick={onNewSession}>
-        新しく始める
-      </button>
+      <div className={styles.resultActions}>
+        {showUndo && (
+          <button type="button" className={styles.undoButton} onClick={onUndo}>
+            1手戻す
+          </button>
+        )}
+        <button type="button" className={styles.undoButton} onClick={handleCopyReplay}>
+          {copied ? 'コピーしました' : 'リプレイをコピー'}
+        </button>
+        <button type="button" className={styles.newButton} onClick={onNewSession}>
+          新しく始める
+        </button>
+      </div>
     </section>
   );
 }

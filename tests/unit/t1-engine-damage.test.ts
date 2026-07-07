@@ -48,7 +48,11 @@ describe('T1 会心の頭打ち・縫いすぎ', () => {
     );
     // base12 → 12ダメ、会心24。残り100-24=76
     expect(s2.cells[0].cumulative).toBe(24);
-    expect(events.find((e) => e.kind === 'sewCell')).toMatchObject({ capped: false, damage: 24 });
+    expect(events.find((e) => e.kind === 'sewCell')).toMatchObject({
+      capped: false,
+      damage: 24,
+      baseValue: 12, // 実ロール値(検証モード表示用)
+    });
   });
 
   it('非会心: 残りを超えても縫いすぎ(マイナス)を許容', () => {
@@ -187,6 +191,7 @@ describe('T1 糸ほぐし', () => {
       rng,
     );
     expect(s2.cells[0].cumulative).toBe(0);
-    expect(events.find((e) => e.kind === 'sewCell')).toMatchObject({ damage: -3 });
+    // baseValue は糸ほぐしでも正の出目(6〜9)で記録される
+    expect(events.find((e) => e.kind === 'sewCell')).toMatchObject({ damage: -3, baseValue: 9 });
   });
 });

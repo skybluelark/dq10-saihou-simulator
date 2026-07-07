@@ -472,6 +472,7 @@ export class Engine {
       r: cell.r,
       c: cell.c,
       damage,
+      baseValue,
       crit: isCrit,
       capped,
       critRate,
@@ -554,6 +555,7 @@ export class Engine {
       r: number;
       c: number;
       damage: number; // 適用後の実ダメージ(頭打ち後)
+      baseValue: number;
       crit: boolean;
       capped: boolean;
       critRate?: number;
@@ -585,13 +587,13 @@ export class Engine {
       cell.cumulative += dmg;
       total += dmg;
       if (cell.shitsuke) cell.shitsuke = false;
-      rolls.push({ r: cell.r, c: cell.c, damage: dmg, crit: isCrit, capped, critRate });
+      rolls.push({ r: cell.r, c: cell.c, damage: dmg, baseValue, crit: isCrit, capped, critRate });
     }
 
     // 会心2倍適用後の値で降順ソートし、その順序でイベントのみ発行(表示上の縫い順)
     rolls.sort((a, b) => b.damage - a.damage);
     for (const roll of rolls) {
-      events.push({ kind: 'sewCell', r: roll.r, c: roll.c, damage: roll.damage, crit: roll.crit, capped: roll.capped, critRate: roll.critRate });
+      events.push({ kind: 'sewCell', r: roll.r, c: roll.c, damage: roll.damage, baseValue: roll.baseValue, crit: roll.crit, capped: roll.capped, critRate: roll.critRate });
     }
     return total;
   }
@@ -610,15 +612,15 @@ export class Engine {
     if (!cell) throw new Error('糸ほぐし: 対象マスが存在しません。');
 
     const correction = this.cellCorrection(state, cell); // しつけ×2は乗る(会心判定はなし)
-    const baseValue = -(6 + rng.nextInt(4)); // -6..-9
-    let damage = hogushiDamage(baseValue, state.currentPower, correction); // 負値
+    const baseValue = 6 + rng.nextInt(4); // 6..9(出目。回復なので適用時は負)
+    let damage = hogushiDamage(-baseValue, state.currentPower, correction); // 負値
 
     // 回復上限: 初期状態(累積0)で頭打ち。cumulative + damage < 0 なら damage = -cumulative
     if (cell.cumulative + damage < 0) {
       damage = -cell.cumulative;
     }
     cell.cumulative += damage;
-    events.push({ kind: 'sewCell', r: cell.r, c: cell.c, damage, crit: false, capped: damage === 0 });
+    events.push({ kind: 'sewCell', r: cell.r, c: cell.c, damage, baseValue, crit: false, capped: damage === 0 });
     // 補正×2(しつけ)を適用した上で、対象マスのしつけがけを解除する(SPEC §3.3)
     if (cell.shitsuke) cell.shitsuke = false;
     return 0; // 糸ほぐしは与ダメージ0扱い(必殺チャージ判定なし)

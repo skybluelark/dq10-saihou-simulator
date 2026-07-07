@@ -4,19 +4,31 @@
 // 当ターンのぬいパワー・発光・自動回復を行動前に表示へ反映する。
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
-import { DEFAULT_CONFIG, Engine, Mulberry32, clampAnchorForPattern } from '../core';
+import {
+  DEFAULT_CONFIG,
+  Engine,
+  Mulberry32,
+  clampAnchorForPattern,
+  makeReplayCheck,
+  matchesReplayCheck,
+  parseReplay,
+  serializeReplay,
+} from '../core';
 import type {
   Action,
   GameState,
   JudgeResult,
   RecipeDef,
+  ReplayData,
   Rng,
   SimulatorConfig,
+  TurnEvent,
 } from '../core';
 import { FetchDataProvider, loadGameData } from '../data';
 import { ClothGrid } from './ClothGrid';
 import { Header } from './Header';
 import { LogPanel } from './LogPanel';
+import { ReplayDialog } from './ReplayDialog';
 import { ResultPanel } from './ResultPanel';
 import { RightPanel } from './RightPanel';
 import { SkillPanel } from './SkillPanel';
@@ -33,11 +45,24 @@ import styles from './App.module.css';
 
 // ---- UI状態(reducer は純粋。エンジン呼び出しはハンドラ側) ----
 
+interface LogEntry {
+  turn: number;
+  events: TurnEvent[];
+}
+
+interface HistoryEntry {
+  game: GameState;
+  rngState: number;
+  logCount: number;
+}
+
 interface Session {
   seed: number;
   game: GameState; // beginTurn 済み(または finished)
   initialConcentration: number;
-  log: string[]; // 古い順
+  log: LogEntry[]; // 古い順(整形前のイベント列で保持。表示時に整形する)
+  actions: Action[]; // 成立した行動のみ(次タスクのリプレイ出力用)
+  history: HistoryEntry[]; // actions と同数・同順(各行動の適用直前の状態)
   result: JudgeResult | null;
 }
 
@@ -49,22 +74,49 @@ interface UiState {
 
 type UiEvent =
   | { type: 'sessionStarted'; session: Session }
-  | { type: 'applied'; game: GameState; lines: string[]; result: JudgeResult | null }
+  | {
+      type: 'applied';
+      game: GameState;
+      entries: LogEntry[];
+      result: JudgeResult | null;
+      record?: { action: Action; historyEntry: HistoryEntry };
+    }
   | { type: 'skillSelected'; skillId: string | null }
-  | { type: 'anchorSet'; anchor: { r: number; c: number } | null };
+  | { type: 'anchorSet'; anchor: { r: number; c: number } | null }
+  | { type: 'undone' };
 
 function reducer(state: UiState, ev: UiEvent): UiState {
   switch (ev.type) {
     case 'sessionStarted':
       return { session: ev.session, selectedSkillId: null, anchor: null };
     case 'applied': {
-      if (!state.session) return state;
+      const session = state.session;
+      if (!session) return state;
       return {
         session: {
-          ...state.session,
+          ...session,
           game: ev.game,
-          log: [...state.session.log, ...ev.lines],
+          log: [...session.log, ...ev.entries],
+          actions: ev.record ? [...session.actions, ev.record.action] : session.actions,
+          history: ev.record ? [...session.history, ev.record.historyEntry] : session.history,
           result: ev.result,
+        },
+        selectedSkillId: null,
+        anchor: null,
+      };
+    }
+    case 'undone': {
+      const session = state.session;
+      if (!session || session.history.length === 0) return state;
+      const entry = session.history[session.history.length - 1];
+      return {
+        session: {
+          ...session,
+          game: entry.game,
+          log: session.log.slice(0, entry.logCount),
+          actions: session.actions.slice(0, -1),
+          history: session.history.slice(0, -1),
+          result: null,
         },
         selectedSkillId: null,
         anchor: null,
@@ -122,6 +174,9 @@ function App() {
     };
   }, []);
 
+  // 検証モード: シード指定入力(App が保持。「新しく始める」で解決する)
+  const [seedInput, setSeedInput] = useState('');
+
   // UI設定(localStorage 自動保存/復元: N4)
   const [settings, setSettings] = useState<UiSettings>(loadSettings);
   useEffect(() => {
@@ -149,6 +204,13 @@ function App() {
   const rngRef = useRef<Rng | null>(null);
   // 同一状態への二重適用ガード(再レンダー前に同一クリックが連続発火した場合の保険)
   const lastAppliedRef = useRef<GameState | null>(null);
+
+  // リプレイ読込(F6): 読込後の警告バナー・ダイアログ開閉状態
+  const [importWarning, setImportWarning] = useState<string | null>(null);
+  const [showReplayDialog, setShowReplayDialog] = useState(false);
+  // リプレイ読込がレシピ/針の settings を書き換えたとき、直後の自動再開始
+  // useEffect(レシピ・針変更で発火)が読込済みセッションを潰さないよう抑止する
+  const skipAutoStartRef = useRef(false);
 
   // ダメージ/回復バルーン(一時表示)。id をキーに独立したタイマーで除去するため、
   // 連続行動で前のバルーンが残っていても正しく積み上がり/消去される。
@@ -198,6 +260,20 @@ function App() {
     }, HISSATSU_FX_MS);
   }, []);
 
+  // バルーン・保留タイマー・必殺演出のクリア(新規セッション開始/アンドゥで共通)
+  const clearTransientFx = useCallback(() => {
+    for (const t of balloonTimersRef.current.values()) clearTimeout(t);
+    balloonTimersRef.current.clear();
+    for (const t of pendingSpawnTimersRef.current) clearTimeout(t);
+    pendingSpawnTimersRef.current.clear();
+    setBalloons([]);
+    if (hissatsuFxTimerRef.current) {
+      clearTimeout(hissatsuFxTimerRef.current);
+      hissatsuFxTimerRef.current = null;
+    }
+    setHissatsuFx(null);
+  }, []);
+
   // アンマウント時にタイマーを掃除
   useEffect(() => {
     const timers = balloonTimersRef.current;
@@ -211,47 +287,50 @@ function App() {
     };
   }, []);
 
-  const startSession = useCallback(() => {
-    if (!recipe) return;
-    const seed = Date.now() >>> 0; // シードはセッション開始時に自動生成
-    const rng = new Mulberry32(seed);
-    const created = engine.createSession(recipe, config, rng);
-    const begun = engine.beginTurn(created.state, rng);
-    rngRef.current = rng;
-    lastAppliedRef.current = null;
-    // 新規ゲーム開始時は前ゲームのバルーン・演出(とタイマー)をクリアする
-    for (const t of balloonTimersRef.current.values()) clearTimeout(t);
-    balloonTimersRef.current.clear();
-    for (const t of pendingSpawnTimersRef.current) clearTimeout(t);
-    pendingSpawnTimersRef.current.clear();
-    setBalloons([]);
-    if (hissatsuFxTimerRef.current) {
-      clearTimeout(hissatsuFxTimerRef.current);
-      hissatsuFxTimerRef.current = null;
-    }
-    setHissatsuFx(null);
-    // 開幕の必殺チャージ(光の針)も演出対象
-    if (created.events.some((e) => e.kind === 'hissatsuCharge')) {
-      triggerHissatsuFx();
-    }
-    const log = [
-      ...formatEvents(created.events, 0, skillName),
-      ...formatEvents(begun.events, begun.state.turn + 1, skillName),
-    ];
-    dispatch({
-      type: 'sessionStarted',
-      session: {
-        seed,
-        game: begun.state,
-        initialConcentration: created.state.concentration,
-        log,
-        result: null,
-      },
-    });
-  }, [engine, recipe, config, skillName, triggerHissatsuFx]);
+  const startSession = useCallback(
+    (seedOverride?: number) => {
+      if (!recipe) return;
+      // シードは引数で受け取る(state を関数内で読まない)。省略時は自動生成。
+      const seed = seedOverride ?? (Date.now() >>> 0);
+      const rng = new Mulberry32(seed);
+      const created = engine.createSession(recipe, config, rng);
+      const begun = engine.beginTurn(created.state, rng);
+      rngRef.current = rng;
+      lastAppliedRef.current = null;
+      // 新規ゲーム開始時は前ゲームのバルーン・演出(とタイマー)・リプレイ警告をクリアする
+      clearTransientFx();
+      setImportWarning(null);
+      // 開幕の必殺チャージ(光の針)も演出対象
+      if (created.events.some((e) => e.kind === 'hissatsuCharge')) {
+        triggerHissatsuFx();
+      }
+      dispatch({
+        type: 'sessionStarted',
+        session: {
+          seed,
+          game: begun.state,
+          initialConcentration: created.state.concentration,
+          log: [
+            { turn: 0, events: created.events },
+            { turn: begun.state.turn + 1, events: begun.events },
+          ],
+          actions: [],
+          history: [],
+          result: null,
+        },
+      });
+    },
+    [engine, recipe, config, triggerHissatsuFx, clearTransientFx],
+  );
 
-  // レシピ・針の変更(および初回ロード完了)で新しいセッションを開始
+  // レシピ・針の変更(および初回ロード完了)で新しいセッションを開始。
+  // ただしリプレイ読込が settings を書き換えた直後はこの発火をスキップする
+  // (読込済みセッションを新規セッションで潰さないため)。
   useEffect(() => {
+    if (skipAutoStartRef.current) {
+      skipAutoStartRef.current = false;
+      return;
+    }
     startSession();
   }, [startSession]);
 
@@ -262,9 +341,14 @@ function App() {
       const before = ui.session.game;
       if (lastAppliedRef.current === before) return; // 同一状態への二重適用を防止
       lastAppliedRef.current = before;
+      const rngStateBefore = rng.getState();
       const applied = engine.applyAction(before, action, config, rng);
+      // 拒否行動(集中力不足・対象マスなし)は状態変更・乱数消費なし → 履歴・行動列に記録しない
+      const rejected = applied.events.some(
+        (e) => e.kind === 'insufficientConcentration' || e.kind === 'invalidTarget',
+      );
       let game = applied.state;
-      let lines = formatEvents(applied.events, before.turn + 1, skillName);
+      const entries: LogEntry[] = [{ turn: before.turn + 1, events: applied.events }];
       let result: JudgeResult | null = null;
       // 行動(applied)由来の吹き出しは即時表示
       const actionBalloons = deriveBalloons(applied.events);
@@ -274,7 +358,7 @@ function App() {
       } else {
         // 各行動後に次ターンの開始処理(パワー・発光・回復)を先行実行して表示へ反映
         const begun = engine.beginTurn(game, rng);
-        lines = [...lines, ...formatEvents(begun.events, game.turn + 1, skillName)];
+        entries.push({ turn: game.turn + 1, events: begun.events });
         // 次ターン開始(begun)由来の吹き出し(再生布の回復等)は、同じ画面更新の
         // ダメージ吹き出しの表示後に分けて表示する(SPEC §4.3)
         spawnBalloonsDelayed(deriveBalloons(begun.events), BALLOON_LIFETIME_MS);
@@ -283,9 +367,151 @@ function App() {
       }
       spawnBalloons(actionBalloons);
       if (hissatsuCharged) triggerHissatsuFx();
-      dispatch({ type: 'applied', game, lines, result });
+      const record = rejected
+        ? undefined
+        : {
+            action,
+            historyEntry: {
+              game: before,
+              rngState: rngStateBefore,
+              logCount: ui.session.log.length,
+            },
+          };
+      dispatch({ type: 'applied', game, entries, result, record });
     },
-    [engine, config, ui.session, skillName, spawnBalloons, spawnBalloonsDelayed, triggerHissatsuFx],
+    [engine, config, ui.session, spawnBalloons, spawnBalloonsDelayed, triggerHissatsuFx],
+  );
+
+  const canUndo = ui.session !== null && ui.session.history.length > 0;
+
+  const handleUndo = useCallback(() => {
+    if (!ui.session || ui.session.history.length === 0) return;
+    const entry = ui.session.history[ui.session.history.length - 1];
+    rngRef.current = new Mulberry32(entry.rngState);
+    lastAppliedRef.current = null;
+    clearTransientFx();
+    dispatch({ type: 'undone' });
+  }, [ui.session, clearTransientFx]);
+
+  // 「新しく始める」: シード入力欄に有効な数値があればそのシードで、なければ自動生成で開始する
+  const handleNewSession = useCallback(() => {
+    const trimmed = seedInput.trim();
+    if (trimmed !== '' && Number.isFinite(Number(trimmed))) {
+      startSession(Number(trimmed) >>> 0);
+    } else {
+      startSession();
+    }
+  }, [seedInput, startSession]);
+
+  // リプレイ出力 (F6): 現セッションを「シード+設定+レシピid+行動列」へ変換する。
+  // 検証モード中はプレイ途中(未終了)でもその時点までの行動列でコピー可。
+  const buildReplayText = useCallback((): string | null => {
+    const s = ui.session;
+    if (!s || !recipe) return null;
+    const replay: ReplayData = { v: 1, seed: s.seed, recipeId: recipe.id, config, actions: s.actions };
+    if (s.result && s.game.finished) replay.check = makeReplayCheck(s.result, s.game);
+    return serializeReplay(replay);
+  }, [ui.session, recipe, config]);
+
+  // リプレイ読込 (F6・検証モードのみ): ライブプレイの runAction と同じ呼び出し列で
+  // セッションを再構築する。戻り値はエラーメッセージ(成功時 null)。
+  const handleImportReplay = useCallback(
+    (text: string): string | null => {
+      if (!recipes) return 'レシピが読み込まれていません';
+      const parsed = parseReplay(text);
+      if (!parsed.ok) return parsed.error;
+      const replay = parsed.replay;
+      const rcp = recipes.find((r) => r.id === replay.recipeId);
+      if (!rcp) return `レシピ '${replay.recipeId}' が recipes.csv にありません`;
+
+      const rng = new Mulberry32(replay.seed);
+      const created = engine.createSession(rcp, replay.config, rng);
+      const begun = engine.beginTurn(created.state, rng);
+      const log: LogEntry[] = [
+        { turn: 0, events: created.events },
+        { turn: begun.state.turn + 1, events: begun.events },
+      ];
+      const history: HistoryEntry[] = [];
+      const actions: Action[] = [];
+      let game = begun.state;
+      let result: JudgeResult | null = null;
+      for (const action of replay.actions) {
+        const before = game;
+        if (before.finished) {
+          return '終了後の行動が含まれています';
+        }
+        const rngStateBefore = rng.getState();
+        const applied = engine.applyAction(before, action, replay.config, rng);
+        const rejected = applied.events.some(
+          (e) => e.kind === 'insufficientConcentration' || e.kind === 'invalidTarget',
+        );
+        if (rejected) {
+          return `行動${actions.length + 1}がこの環境では成立しません(データ・仕様バージョン差の可能性)`;
+        }
+        history.push({ game: before, rngState: rngStateBefore, logCount: log.length });
+        actions.push(action);
+        log.push({ turn: before.turn + 1, events: applied.events });
+        game = applied.state;
+        if (game.finished) {
+          result = engine.judge(game);
+        } else {
+          const b2 = engine.beginTurn(game, rng);
+          log.push({ turn: game.turn + 1, events: b2.events });
+          game = b2.state;
+        }
+      }
+
+      // check 照合(あれば): 不一致は警告のみ(読込自体は成功させる)
+      let warning: string | null = null;
+      if (replay.check && (!result || !matchesReplayCheck(replay.check, result, game))) {
+        warning = 'リプレイの最終結果が一致しません(仕様バージョン差の可能性)';
+      }
+      // needle 以外の config が既定値と異なる場合も別途警告(check警告とは独立)
+      const configDefaultsDiffer =
+        replay.config.level !== DEFAULT_CONFIG.level ||
+        replay.config.kotsu !== DEFAULT_CONFIG.kotsu ||
+        replay.config.passives.critUp !== DEFAULT_CONFIG.passives.critUp ||
+        replay.config.passives.hissatsuUp !== DEFAULT_CONFIG.passives.hissatsuUp;
+      if (configDefaultsDiffer) {
+        const extra =
+          'リプレイの設定(レベル等)が既定値と異なります。読込後の追加操作は既定値で計算されます';
+        warning = warning ? `${warning} / ${extra}` : extra;
+      }
+
+      // レシピ・針を settings へ反映(変化がある場合のみ、自動再開始 effect を抑止)
+      const needleChanged =
+        replay.recipeId !== recipe?.id ||
+        replay.config.needle.type !== settings.needleType ||
+        replay.config.needle.stars !== settings.needleStars;
+      if (needleChanged) {
+        skipAutoStartRef.current = true;
+        setSettings((prev) => ({
+          ...prev,
+          recipeId: replay.recipeId,
+          needleType: replay.config.needle.type,
+          needleStars: replay.config.needle.stars,
+        }));
+      }
+
+      setImportWarning(warning);
+      rngRef.current = rng;
+      lastAppliedRef.current = null;
+      clearTransientFx();
+      dispatch({
+        type: 'sessionStarted',
+        session: {
+          seed: replay.seed,
+          game,
+          initialConcentration: created.state.concentration,
+          log,
+          actions,
+          history,
+          result,
+        },
+      });
+      return null;
+    },
+    [recipes, recipe, settings.needleType, settings.needleStars, engine, clearTransientFx],
   );
 
   // 操作フロー: 特技選択 → マスタップ(プレビュー) → 同マス再タップで実行
@@ -362,6 +588,17 @@ function App() {
     [engine, ui.session],
   );
 
+  // 行動ログ表示行(検証モードのトグルで過去ログ含め即時に切り替わるよう、毎回整形し直す)
+  const logLines = useMemo(
+    () =>
+      ui.session
+        ? ui.session.log.flatMap((e) =>
+            formatEvents(e.events, e.turn, skillName, { showRolls: settings.verifyMode }),
+          )
+        : [],
+    [ui.session, skillName, settings.verifyMode],
+  );
+
   const needle = useMemo(
     () => data.needles.needles.find((n) => n.id === settings.needleType) ?? data.needles.needles[0],
     [data, settings.needleType],
@@ -395,9 +632,24 @@ function App() {
         settings={settings}
         activeRecipeId={recipe.id}
         onChangeSettings={changeSettings}
-        onNewSession={startSession}
+        onNewSession={handleNewSession}
+        currentSeed={session?.seed ?? null}
+        seedInput={seedInput}
+        onSeedInputChange={setSeedInput}
+        canUndo={canUndo}
+        onUndo={handleUndo}
+        onBuildReplayText={buildReplayText}
+        onOpenReplayDialog={() => setShowReplayDialog(true)}
       />
       {loadError && <div className={styles.csvWarning}>{loadError}</div>}
+      {importWarning && <div className={styles.csvWarning}>{importWarning}</div>}
+
+      {showReplayDialog && (
+        <ReplayDialog
+          onImport={handleImportReplay}
+          onClose={() => setShowReplayDialog(false)}
+        />
+      )}
 
       {session && (
         <>
@@ -406,7 +658,10 @@ function App() {
               game={session.game}
               result={session.result}
               params={data.params}
-              onNewSession={startSession}
+              onNewSession={handleNewSession}
+              showUndo={settings.verifyMode}
+              onUndo={handleUndo}
+              onBuildReplayText={buildReplayText}
             />
           )}
 
@@ -442,7 +697,7 @@ function App() {
             onFinish={handleFinish}
           />
 
-          <LogPanel log={session.log} />
+          <LogPanel log={logLines} />
         </>
       )}
     </div>

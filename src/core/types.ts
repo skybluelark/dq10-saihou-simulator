@@ -94,6 +94,7 @@ export type TurnEvent =
       r: number;
       c: number;
       damage: number; // 適用された実ダメージ(会心・頭打ち後)。糸ほぐしは負
+      baseValue: number; // 基礎値の出目(縫い12〜18/糸ほぐし6〜9。検証モードの実ロール値表示用)
       crit: boolean;
       capped: boolean; // 基準値/初期状態で頭打ちされたか
       critRate?: number; // 会心判定に用いた会心率(0〜1)。会心判定のない糸ほぐしでは省略

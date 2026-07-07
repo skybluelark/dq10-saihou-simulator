@@ -89,6 +89,41 @@
   background: #3a53a8;
 }
 
+.seedDisplay {
+  font-size: 13px;
+  color: #444;
+  white-space: nowrap;
+}
+
+.seedInput {
+  font-size: 13px;
+  padding: 4px 6px;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  background: #fff;
+  width: 120px;
+}
+
+.undoButton {
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: bold;
+  color: #444;
+  background: #eee;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.undoButton:hover:not(:disabled) {
+  background: #e0e0e0;
+}
+
+.undoButton:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 /* ---- メイン(左グリッド+右パネル) ---- */
 
 .main {
@@ -729,4 +764,65 @@
   margin-left: 4px;
   color: #d43c3c;
   font-size: 11px;
+}
+
+.resultActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* ---- リプレイ読込ダイアログ (F6) ---- */
+
+.dialogOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.dialogPanel {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  width: 520px;
+  max-width: 90vw;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.dialogTitle {
+  margin: 0 0 12px;
+  font-size: 16px;
+  color: #2c3e78;
+}
+
+.dialogTextarea {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 12px;
+  font-family: "Consolas", monospace;
+  padding: 8px;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  resize: vertical;
+}
+
+.dialogError {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #fdecea;
+  border: 1px solid #f3b4ac;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #a12f24;
+}
+
+.dialogActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
 }

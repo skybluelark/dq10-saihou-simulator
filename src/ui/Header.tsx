@@ -1,6 +1,8 @@
 // ヘッダー (F1/N4): レシピ選択・針選択(7種+★0〜3)・サイクル予告トグル・新しく始める。
 
+import { useState } from 'react';
 import type { NeedleDef, NeedleType, RecipeDef } from '../core';
+import { copyReplayText } from './clipboard';
 import { CLOTH_LABELS } from './format';
 import type { UiSettings } from './storage';
 import styles from './App.module.css';
@@ -12,6 +14,13 @@ interface HeaderProps {
   activeRecipeId: string | null;
   onChangeSettings: (patch: Partial<UiSettings>) => void;
   onNewSession: () => void;
+  currentSeed: number | null;
+  seedInput: string;
+  onSeedInputChange: (value: string) => void;
+  canUndo: boolean;
+  onUndo: () => void;
+  onBuildReplayText: () => string | null;
+  onOpenReplayDialog: () => void;
 }
 
 export function Header({
@@ -21,7 +30,23 @@ export function Header({
   activeRecipeId,
   onChangeSettings,
   onNewSession,
+  currentSeed,
+  seedInput,
+  onSeedInputChange,
+  canUndo,
+  onUndo,
+  onBuildReplayText,
+  onOpenReplayDialog,
 }: HeaderProps) {
+  const [copied, setCopied] = useState(false);
+  const handleCopyReplay = () => {
+    const text = onBuildReplayText();
+    if (!text) return;
+    copyReplayText(text, () => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  };
   return (
     <header className={styles.header}>
       <h1 className={styles.headerTitle}>DQ10 さいほうシミュレータ</h1>
@@ -78,6 +103,40 @@ export function Header({
           />
           サイクル予告表示
         </label>
+        <label className={styles.toggle}>
+          <input
+            type="checkbox"
+            checked={settings.verifyMode}
+            onChange={(e) => onChangeSettings({ verifyMode: e.target.checked })}
+          />
+          検証モード
+        </label>
+        {settings.verifyMode && (
+          <>
+            <span className={styles.seedDisplay}>シード: {currentSeed ?? '-'}</span>
+            <input
+              type="text"
+              className={styles.seedInput}
+              value={seedInput}
+              placeholder="シード(空欄=自動)"
+              onChange={(e) => onSeedInputChange(e.target.value)}
+            />
+            <button
+              type="button"
+              className={styles.undoButton}
+              disabled={!canUndo}
+              onClick={onUndo}
+            >
+              1手戻す
+            </button>
+            <button type="button" className={styles.undoButton} onClick={handleCopyReplay}>
+              {copied ? 'コピーしました' : 'リプレイコピー'}
+            </button>
+            <button type="button" className={styles.undoButton} onClick={onOpenReplayDialog}>
+              リプレイ読込
+            </button>
+          </>
+        )}
         <button type="button" className={styles.newButton} onClick={onNewSession}>
           新しく始める
         </button>

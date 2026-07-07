@@ -8,6 +8,7 @@ export interface UiSettings {
   needleType: NeedleType;
   needleStars: 0 | 1 | 2 | 3;
   showCyclePreview: boolean;
+  verifyMode: boolean;
 }
 
 export const DEFAULT_SETTINGS: UiSettings = {
@@ -15,6 +16,7 @@ export const DEFAULT_SETTINGS: UiSettings = {
   needleType: 'copper',
   needleStars: 0,
   showCyclePreview: true,
+  verifyMode: false,
 };
 
 const STORAGE_KEY = 'dq10-saihou:ui-settings:v1';
@@ -47,6 +49,8 @@ export function loadSettings(): UiSettings {
         typeof p.showCyclePreview === 'boolean'
           ? p.showCyclePreview
           : DEFAULT_SETTINGS.showCyclePreview,
+      verifyMode:
+        typeof p.verifyMode === 'boolean' ? p.verifyMode : DEFAULT_SETTINGS.verifyMode,
     };
   } catch {
     return { ...DEFAULT_SETTINGS };

@@ -30,15 +30,21 @@ export const CLOTH_LABELS: Record<string, string> = {
 
 type SewCellEvent = Extract<TurnEvent, { kind: 'sewCell' }>;
 
-function formatSew(s: SewCellEvent): string {
+function formatSew(s: SewCellEvent, showRolls: boolean): string {
   const sign = s.damage < 0 ? '+' : '-';
   const crit = s.crit ? ' 会心!' : '';
   const capped = s.capped && s.damage >= 0 ? '(頭打ち)' : '';
-  // デバッグモード時のみ、会心判定に用いた会心率を付記する(糸ほぐし等 critRate なしは対象外)
-  const rate =
-    DEBUG_MODE && s.critRate !== undefined
-      ? `(会心率${(s.critRate * 100).toFixed(1)}%)`
-      : '';
+  // 検証モード時: 基礎値の出目・会心率を [] 内に付記する(SPEC §4.3)。
+  // 検証モードでないときはデバッグモードのみ、会心判定に用いた会心率を付記する(従来どおり)。
+  let rate = '';
+  if (showRolls) {
+    rate =
+      s.critRate !== undefined
+        ? ` [出目${s.baseValue} 会心率${(s.critRate * 100).toFixed(1)}%]`
+        : ` [出目${s.baseValue}]`;
+  } else if (DEBUG_MODE && s.critRate !== undefined) {
+    rate = `(会心率${(s.critRate * 100).toFixed(1)}%)`;
+  }
   return `(${s.r},${s.c}) ${sign}${Math.abs(s.damage)}${crit}${capped}${rate}`;
 }
 
@@ -50,7 +56,9 @@ export function formatEvents(
   events: TurnEvent[],
   turn: number,
   skillName: (id: string) => string,
+  opts?: { showRolls?: boolean },
 ): string[] {
+  const showRolls = opts?.showRolls ?? false;
   const lines: string[] = [];
   const sews: SewCellEvent[] = [];
   let detail = '';
@@ -70,7 +78,10 @@ export function formatEvents(
         detail = ' → 会心率×2(ゲーム終了まで)';
         break;
       case 'skillUsed': {
-        const targets = sews.length > 0 ? ` → ${sews.map(formatSew).join(' / ')}` : '';
+        const targets =
+          sews.length > 0
+            ? ` → ${sews.map((s) => formatSew(s, showRolls)).join(' / ')}`
+            : '';
         lines.push(`T${turn}: ${skillName(e.skillId)}${targets}${detail} (消費${e.cost})`);
         sews.length = 0;
         detail = '';

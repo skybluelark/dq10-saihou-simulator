@@ -6,3 +6,4 @@ export * from './damage';
 export * from './crit';
 export * from './judge';
 export * from './engine';
+export * from './replay';
