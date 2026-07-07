@@ -1,0 +1,414 @@
+{
+  "version": "1.0",
+  "recipes": [
+    {
+      "id": "kentetsu_turban",
+      "name": "賢哲のターバン",
+      "category": "head",
+      "clothType": "rainbow",
+      "cells": [
+        {
+          "r": 1,
+          "c": 2,
+          "base": 231
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 231
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 231
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 231
+        }
+      ],
+      "powerCycle": [
+        "normal",
+        "unknown",
+        "weak",
+        "unknown",
+        "strongest"
+      ]
+    },
+    {
+      "id": "kyosho_turban",
+      "name": "巨商のターバン",
+      "category": "head",
+      "clothType": "light",
+      "cells": [
+        {
+          "r": 1,
+          "c": 2,
+          "base": 240
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 170
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 300
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 170
+        }
+      ],
+      "powerCycle": [
+        "normal",
+        "unknown",
+        "weak",
+        "strong",
+        "strongest",
+        "unknown"
+      ]
+    },
+    {
+      "id": "kentetsu_koromo_ue",
+      "name": "賢哲のころも上",
+      "category": "body_upper",
+      "clothType": "rainbow",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 140
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 96
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 96
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 60
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 140
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 60
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 96
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 96
+        },
+        {
+          "r": 3,
+          "c": 3,
+          "base": 140
+        }
+      ],
+      "powerCycle": [
+        "normal",
+        "unknown",
+        "weak",
+        "strong",
+        "strongest",
+        "unknown",
+        "strong"
+      ]
+    },
+    {
+      "id": "cathedral_robe",
+      "name": "カテドラルローブ",
+      "category": "body_upper",
+      "clothType": "regen",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 100
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 98
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 100
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 100
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 150
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 100
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 100
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 98
+        },
+        {
+          "r": 3,
+          "c": 3,
+          "base": 100
+        }
+      ],
+      "powerCycle": [
+        "normal",
+        "unknown",
+        "strong",
+        "weak",
+        "strongest"
+      ]
+    },
+    {
+      "id": "sopos_koromo_shita",
+      "name": "ソポスのころも下",
+      "category": "body_lower",
+      "clothType": "light",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 133
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 195
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 133
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 195
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 150
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 150
+        }
+      ],
+      "powerCycle": [
+        "normal",
+        "unknown",
+        "weak",
+        "unknown",
+        "strong",
+        "strongest"
+      ],
+      "notes": "体下は3行2列"
+    },
+    {
+      "id": "daikaiketsu_glove",
+      "name": "大怪傑のグローブ",
+      "category": "arm",
+      "clothType": "rainbow",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 144
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 144
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 185
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 144
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 144
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 185
+        }
+      ],
+      "powerCycle": [
+        "normal",
+        "unknown",
+        "weak",
+        "unknown",
+        "strong",
+        "strongest"
+      ],
+      "notes": "腕は2行3列"
+    },
+    {
+      "id": "kuzoku_boots",
+      "name": "空賊のブーツ",
+      "category": "leg",
+      "clothType": "light",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 300
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 300
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 230
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 230
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "unknown",
+        "strongest",
+        "normal",
+        "strong"
+      ]
+    },
+    {
+      "id": "wanderers_boots",
+      "name": "ワンダラーズブーツ",
+      "category": "leg",
+      "clothType": "regen",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 260
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 260
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 190
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 190
+        }
+      ],
+      "powerCycle": [
+        "strong",
+        "weak",
+        "unknown",
+        "unknown",
+        "strongest",
+        "normal"
+      ]
+    },
+    {
+      "id": "wedi_doll_m",
+      "name": "ウェディの人形・男",
+      "category": "doll",
+      "clothType": "rainbow",
+      "cells": [
+        {
+          "r": 1,
+          "c": 2,
+          "base": 100
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 90
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 50
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 90
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 70
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 80
+        },
+        {
+          "r": 3,
+          "c": 3,
+          "base": 70
+        }
+      ],
+      "powerCycle": [
+        "normal",
+        "unknown",
+        "weak",
+        "strongest"
+      ],
+      "notes": "7マス(r1c1・r1c3なし)。dqxdb由来"
+    }
+  ]
+}

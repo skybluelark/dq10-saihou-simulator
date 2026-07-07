@@ -13,7 +13,7 @@ import {
   type ReplayData,
   type SimulatorConfig,
 } from '../../src/core';
-import { buildEngine, parseRealRecipes } from '../fixtures/engine-helpers';
+import { buildEngine, loadRealRecipes } from '../fixtures/engine-helpers';
 
 const config: SimulatorConfig = { ...DEFAULT_CONFIG, needle: { type: 'miracle', stars: 3 } };
 
@@ -26,7 +26,7 @@ const ACTIONS: Action[] = [
 
 function fixture() {
   const engine = buildEngine();
-  const { recipes } = parseRealRecipes();
+  const recipes = loadRealRecipes();
   const recipe = recipes.find((r) => r.id === 'kentetsu_koromo_ue')!; // 3×3 虹布
   const replay: ReplayData = {
     v: 1,

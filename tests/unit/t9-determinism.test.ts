@@ -14,7 +14,7 @@ import {
 } from '../../src/core';
 import {
   buildEngine,
-  parseRealRecipes,
+  loadRealRecipes,
   ScriptedRng,
   baseValueRoll,
 } from '../fixtures/engine-helpers';
@@ -24,7 +24,7 @@ const config: SimulatorConfig = { ...DEFAULT_CONFIG, needle: { type: 'miracle', 
 // data/recipes.csv の実レシピでセッションを再生する
 function playSession(seed: number, actions: Action[]) {
   const engine = buildEngine();
-  const { recipes } = parseRealRecipes();
+  const recipes = loadRealRecipes();
   const recipe = recipes.find((r) => r.id === 'kentetsu_koromo_ue')!; // 3×3 虹布・？入りサイクル
   const rng = new Mulberry32(seed);
   const session = engine.createSession(recipe, config, rng);

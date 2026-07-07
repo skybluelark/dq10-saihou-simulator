@@ -1,21 +1,20 @@
-// JSON ローダ(バリデーション付き)と DataProvider インターフェース。
-// バンドルされた JSON を型検証して返す純関数群。fetch は DataProvider 実装に分離。
+// JSON ローダ(バリデーション付き)。
+// バンドルされた JSON を型検証して返す純関数群(ARCHITECTURE A5: ビルド時バンドル、fetch不使用)。
 
 import type {
   GameParams,
   NeedlesFile,
   SkillsFile,
   ConcentrationFile,
-  RecipeParseResult,
+  RecipeDef,
 } from './types';
 
 import gameParamsRaw from './game-params.json';
 import needlesRaw from './needles.json';
 import skillsRaw from './skills.json';
 import concentrationRaw from './concentration.json';
-import { parseRecipesCsv } from './recipe-csv';
-
-export class DataValidationError extends Error {}
+import recipesRaw from './recipes.json';
+import { validateRecipesJson, DataValidationError } from './recipe-json';
 
 function assert(cond: unknown, msg: string): asserts cond {
   if (!cond) throw new DataValidationError(msg);
@@ -64,12 +63,18 @@ export function loadConcentration(): ConcentrationFile {
   return c;
 }
 
+/** バンドルされた recipes.json を検証して返す(レシピデータの正: ARCHITECTURE A5)。 */
+export function loadRecipes(): RecipeDef[] {
+  return validateRecipesJson(recipesRaw);
+}
+
 /** バンドルされた全 JSON をまとめてロード。 */
 export interface GameData {
   params: GameParams;
   needles: NeedlesFile;
   skills: SkillsFile;
   concentration: ConcentrationFile;
+  recipes: RecipeDef[];
 }
 
 export function loadGameData(): GameData {
@@ -78,24 +83,6 @@ export function loadGameData(): GameData {
     needles: loadNeedles(),
     skills: loadSkills(),
     concentration: loadConcentration(),
+    recipes: loadRecipes(),
   };
-}
-
-/**
- * DataProvider: レシピCSVの取得元を抽象化(ARCHITECTURE A5)。
- * fetch / fs / IndexedDB などの取得手段をこの背後に隠す。
- */
-export interface DataProvider {
-  loadRecipes(): Promise<RecipeParseResult>;
-}
-
-/** fetch でCSVを取得する実装(ブラウザ用)。 */
-export class FetchDataProvider implements DataProvider {
-  constructor(private readonly url: string) {}
-
-  async loadRecipes(): Promise<RecipeParseResult> {
-    const res = await fetch(this.url);
-    const text = await res.text();
-    return parseRecipesCsv(text);
-  }
 }

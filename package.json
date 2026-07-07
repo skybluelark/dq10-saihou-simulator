@@ -10,7 +10,9 @@
     "test": "vitest run --exclude \"tests/stats/**\"",
     "test:quick": "vitest run --reporter=dot --exclude \"tests/stats/**\"",
     "test:stats": "vitest run tests/stats",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "recipes:import": "vite-node scripts/recipes-import.ts",
+    "recipes:export": "vite-node scripts/recipes-export.ts"
   },
   "dependencies": {
     "react": "^18.3.1",

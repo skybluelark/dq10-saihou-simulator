@@ -18,13 +18,12 @@ import type {
   Action,
   GameState,
   JudgeResult,
-  RecipeDef,
   ReplayData,
   Rng,
   SimulatorConfig,
   TurnEvent,
 } from '../core';
-import { FetchDataProvider, loadGameData } from '../data';
+import { loadGameData } from '../data';
 import { ClothGrid } from './ClothGrid';
 import { Header } from './Header';
 import { LogPanel } from './LogPanel';
@@ -165,31 +164,8 @@ function App() {
     [data],
   );
 
-  // レシピCSV(実行時 fetch: ARCHITECTURE A5)
-  const [recipes, setRecipes] = useState<RecipeDef[] | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    const provider = new FetchDataProvider(`${import.meta.env.BASE_URL}data/recipes.csv`);
-    provider
-      .loadRecipes()
-      .then((res) => {
-        if (cancelled) return;
-        setRecipes(res.recipes);
-        if (res.errors.length > 0) {
-          setLoadError(
-            `recipes.csv にエラー ${res.errors.length} 件(該当行はスキップ): ` +
-              res.errors.map((e) => `L${e.line} ${e.message}`).join(' / '),
-          );
-        }
-      })
-      .catch((e: unknown) => {
-        if (!cancelled) setLoadError(`recipes.csv の読み込みに失敗しました: ${String(e)}`);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  // レシピ(ビルド時バンドル: ARCHITECTURE A5)
+  const recipes = data.recipes;
 
   // 検証モード: シード指定入力(App が保持。「新しく始める」で解決する)
   const [seedInput, setSeedInput] = useState('');
@@ -212,7 +188,7 @@ function App() {
   );
 
   const recipe = useMemo(() => {
-    if (!recipes || recipes.length === 0) return null;
+    if (recipes.length === 0) return null;
     return recipes.find((r) => r.id === settings.recipeId) ?? recipes[0];
   }, [recipes, settings.recipeId]);
 
@@ -472,12 +448,11 @@ function App() {
   // セッションを再構築する。戻り値はエラーメッセージ(成功時 null)。
   const handleImportReplay = useCallback(
     (text: string): string | null => {
-      if (!recipes) return 'レシピが読み込まれていません';
       const parsed = parseReplay(text);
       if (!parsed.ok) return parsed.error;
       const replay = parsed.replay;
       const rcp = recipes.find((r) => r.id === replay.recipeId);
-      if (!rcp) return `レシピ '${replay.recipeId}' が recipes.csv にありません`;
+      if (!rcp) return `レシピ '${replay.recipeId}' がレシピ一覧にありません`;
 
       const rng = new Mulberry32(replay.seed);
       const created = engine.createSession(rcp, replay.config, rng);
@@ -664,16 +639,10 @@ function App() {
   );
   const levelBase = data.concentration.base[config.level - 1];
 
-  if (loadError && !recipes) {
-    return <div className={styles.loading}>{loadError}</div>;
-  }
-  if (!recipes) {
-    return <div className={styles.loading}>レシピを読み込み中…</div>;
-  }
   if (!recipe) {
     return (
       <div className={styles.loading}>
-        有効なレシピがありません(data/recipes.csv を確認してください)。
+        有効なレシピがありません(src/data/recipes.json を確認してください)。
       </div>
     );
   }
@@ -702,7 +671,6 @@ function App() {
         onBuildReplayText={buildReplayText}
         onOpenReplayDialog={() => setShowReplayDialog(true)}
       />
-      {loadError && <div className={styles.csvWarning}>{loadError}</div>}
       {importWarning && <div className={styles.csvWarning}>{importWarning}</div>}
 
       {showReplayDialog && (

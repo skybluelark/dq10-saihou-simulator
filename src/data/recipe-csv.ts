@@ -1,79 +1,23 @@
 // recipes.csv パーサ (DATA_DESIGN §6)
 // 純関数: CSV文字列 → RecipeDef[] + エラー/警告(行番号つき)。
-// fetch には依存しない(DataProvider 側で分離)。BOM付きUTF-8対応。
+// recipes.json がレシピデータの正になったため(ARCHITECTURE A5)、
+// このパーサは scripts/recipes-import.ts からの取り込み用インターフェースとして使われる。BOM付きUTF-8対応。
 
 import type {
-  Category,
-  ClothType,
   Power,
   RecipeCell,
   RecipeDef,
   RecipeParseResult,
   CsvIssue,
 } from './types';
-
-// ---- 対訳表(CSV日本語トークン → enum) ----
-
-const CATEGORY_MAP: Record<string, Category> = {
-  頭: 'head',
-  体上: 'body_upper',
-  体下: 'body_lower',
-  腕: 'arm',
-  足: 'leg',
-  ぬいぐるみ: 'doll',
-  ラグ: 'rug',
-};
-
-const CLOTH_MAP: Record<string, ClothType> = {
-  通常: 'normal',
-  再生: 'regen',
-  虹: 'rainbow',
-  光: 'light',
-};
-
-// power_order トークン(会心×2は不可: V7)
-const POWER_MAP: Record<string, Power> = {
-  弱い: 'weak',
-  普通: 'normal',
-  強い: 'strong',
-  最強: 'strongest',
-  '？': 'unknown',
-};
-
-// category → 固定の rows/cols とマス数(V3, V6)
-// 頭は 2行×3列のうち4マス(凸形)。cells は固定位置集合(V3-shape)で検証する。
-const CATEGORY_GRID: Record<Category, { rows: number; cols: number; cells: number }> = {
-  head: { rows: 2, cols: 3, cells: 4 },
-  leg: { rows: 2, cols: 2, cells: 4 },
-  body_upper: { rows: 3, cols: 3, cells: 9 },
-  body_lower: { rows: 3, cols: 2, cells: 6 },
-  arm: { rows: 2, cols: 3, cells: 6 },
-  rug: { rows: 2, cols: 3, cells: 6 },
-  doll: { rows: 3, cols: 3, cells: 7 },
-};
-
-// 頭の固定形状(凸形): (1,2),(2,1),(2,2),(2,3) の4マスに完全一致すること(V3-shape)。
-const HEAD_SHAPE: ReadonlySet<string> = new Set(['1,2', '2,1', '2,2', '2,3']);
-
-const HEADER = [
-  'id',
-  'name',
-  'category',
-  'cloth_type',
-  'rows',
-  'cols',
-  'cell_r1c1',
-  'cell_r1c2',
-  'cell_r1c3',
-  'cell_r2c1',
-  'cell_r2c2',
-  'cell_r2c3',
-  'cell_r3c1',
-  'cell_r3c2',
-  'cell_r3c3',
-  'power_order',
-  'notes',
-];
+import {
+  CATEGORY_MAP,
+  CLOTH_MAP,
+  POWER_MAP,
+  CATEGORY_GRID,
+  HEAD_SHAPE,
+  HEADER,
+} from './recipe-schema';
 
 const CELL_START = 6; // cell_r1c1 の列インデックス
 const CELL_COUNT = 9;

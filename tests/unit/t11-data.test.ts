@@ -6,7 +6,11 @@ import {
   loadNeedles,
   loadSkills,
   loadConcentration,
+  loadRecipes,
   parseRecipesCsv,
+  validateRecipesJson,
+  recipesToCsvText,
+  DataValidationError,
 } from '../../src/data';
 import {
   NEEDLE_CRIT_TABLE,
@@ -14,7 +18,6 @@ import {
   CONCENTRATION_BASE,
   EVALUATION_BOUNDARY,
 } from '../fixtures/spec-tables';
-import { realRecipesCsv } from '../fixtures/engine-helpers';
 
 const HEADER =
   'id,name,category,cloth_type,rows,cols,cell_r1c1,cell_r1c2,cell_r1c3,cell_r2c1,cell_r2c2,cell_r2c3,cell_r3c1,cell_r3c2,cell_r3c3,power_order,notes';
@@ -95,16 +98,28 @@ describe('T11 concentration.json', () => {
   });
 });
 
-describe('T11 recipes.csv 正常系(実データ9件)', () => {
-  const result = parseRecipesCsv(realRecipesCsv());
+describe('T11 recipes.json 正常系(実データ9件)', () => {
+  const recipes = loadRecipes();
 
-  it('9件全件ロード・エラーなし', () => {
-    expect(result.errors).toEqual([]);
-    expect(result.recipes).toHaveLength(9);
+  it('9件全件ロード・id一覧が一致', () => {
+    expect(recipes).toHaveLength(9);
+    expect(recipes.map((r) => r.id).sort()).toEqual(
+      [
+        'kentetsu_turban',
+        'kyosho_turban',
+        'kentetsu_koromo_ue',
+        'cathedral_robe',
+        'sopos_koromo_shita',
+        'daikaiketsu_glove',
+        'kuzoku_boots',
+        'wanderers_boots',
+        'wedi_doll_m',
+      ].sort(),
+    );
   });
 
   it('ウェディの人形・男: 7マス(r1c1/r1c3欠け)', () => {
-    const doll = result.recipes.find((r) => r.id === 'wedi_doll_m')!;
+    const doll = recipes.find((r) => r.id === 'wedi_doll_m')!;
     expect(doll.category).toBe('doll');
     expect(doll.clothType).toBe('rainbow');
     expect(doll.cells).toHaveLength(7);
@@ -114,7 +129,7 @@ describe('T11 recipes.csv 正常系(実データ9件)', () => {
   });
 
   it('賢哲のターバン: 頭2行3列(凸形)・虹・基準値231×4', () => {
-    const t = result.recipes.find((r) => r.id === 'kentetsu_turban')!;
+    const t = recipes.find((r) => r.id === 'kentetsu_turban')!;
     expect(t.category).toBe('head');
     expect(t.clothType).toBe('rainbow');
     expect(t.rows).toBe(2);
@@ -129,23 +144,93 @@ describe('T11 recipes.csv 正常系(実データ9件)', () => {
   });
 
   it('ソポスのころも下: 体下3行2列・6マス', () => {
-    const s = result.recipes.find((r) => r.id === 'sopos_koromo_shita')!;
+    const s = recipes.find((r) => r.id === 'sopos_koromo_shita')!;
     expect(s.rows).toBe(3);
     expect(s.cols).toBe(2);
     expect(s.cells).toHaveLength(6);
   });
 
   it('大怪傑のグローブ: 腕2行3列・6マス', () => {
-    const g = result.recipes.find((r) => r.id === 'daikaiketsu_glove')!;
+    const g = recipes.find((r) => r.id === 'daikaiketsu_glove')!;
     expect(g.rows).toBe(2);
     expect(g.cols).toBe(3);
     expect(g.cells).toHaveLength(6);
   });
+});
 
-  it('BOM付きCSVも同一結果', () => {
-    const withBom = '\uFEFF' + realRecipesCsv().replace(/^\uFEFF/, '');
-    const r2 = parseRecipesCsv(withBom);
-    expect(r2.recipes).toEqual(result.recipes);
+// validateRecipesJson の異常系テスト用の最小有効レシピ(頭・凸形4マス)
+function validJsonRecipe(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    id: 'hat_a',
+    name: 'ぼうしA',
+    category: 'head',
+    clothType: 'normal',
+    cells: [
+      { r: 1, c: 2, base: 32 },
+      { r: 2, c: 1, base: 32 },
+      { r: 2, c: 2, base: 30 },
+      { r: 2, c: 3, base: 32 },
+    ],
+    powerCycle: ['weak', 'normal'],
+    ...overrides,
+  };
+}
+
+function wrapRecipes(recipes: unknown[]): unknown {
+  return { version: '1.0', recipes };
+}
+
+describe('T11 validateRecipesJson 異常系', () => {
+  it('不正id(大文字)は例外', () => {
+    expect(() => validateRecipesJson(wrapRecipes([validJsonRecipe({ id: 'Hat_A' })]))).toThrow(
+      DataValidationError,
+    );
+    expect(() => validateRecipesJson(wrapRecipes([validJsonRecipe({ id: 'Hat_A' })]))).toThrow(
+      /id/,
+    );
+  });
+
+  it('cells が (r,c) 昇順でない場合は例外', () => {
+    const bad = validJsonRecipe({
+      cells: [
+        { r: 2, c: 1, base: 32 },
+        { r: 1, c: 2, base: 32 },
+        { r: 2, c: 2, base: 30 },
+        { r: 2, c: 3, base: 32 },
+      ],
+    });
+    expect(() => validateRecipesJson(wrapRecipes([bad]))).toThrow(/昇順/);
+  });
+
+  it('マス数が category の期待値と不一致の場合は例外', () => {
+    const bad = validJsonRecipe({
+      cells: [
+        { r: 1, c: 2, base: 32 },
+        { r: 2, c: 1, base: 32 },
+        { r: 2, c: 2, base: 30 },
+      ],
+    });
+    expect(() => validateRecipesJson(wrapRecipes([bad]))).toThrow(/マス数/);
+  });
+
+  it('powerCycle に critx2 が含まれる場合は例外', () => {
+    const bad = validJsonRecipe({ powerCycle: ['weak', 'critx2'] });
+    expect(() => validateRecipesJson(wrapRecipes([bad]))).toThrow(/powerCycle/);
+  });
+
+  it('category が不正な場合は例外', () => {
+    const bad = validJsonRecipe({ category: 'kabuto' });
+    expect(() => validateRecipesJson(wrapRecipes([bad]))).toThrow(/category/);
+  });
+});
+
+describe('T11 recipes.json ⇔ recipes.csv 往復一致', () => {
+  it('recipesToCsvText → parseRecipesCsv が loadRecipes() と deep equal', () => {
+    const recipes = loadRecipes();
+    const csv = recipesToCsvText(recipes);
+    const result = parseRecipesCsv(csv);
+    expect(result.errors).toEqual([]);
+    expect(result.recipes).toEqual(recipes);
   });
 });
 

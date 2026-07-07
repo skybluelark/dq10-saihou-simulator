@@ -13,14 +13,14 @@ import {
   type SimulatorConfig,
   type TurnEvent,
 } from '../../src/core';
-import { buildEngine, parseRealRecipes, ScriptedRng } from '../fixtures/engine-helpers';
+import { buildEngine, loadRealRecipes, ScriptedRng } from '../fixtures/engine-helpers';
 
 // 光針(開幕チャージ抽選あり)+ 光布・？入りサイクルのレシピで、
 // ターン開始時の乱数消費(？抽選・発光選定)が多発する条件にする。
 const config: SimulatorConfig = { ...DEFAULT_CONFIG, needle: { type: 'hikari', stars: 3 } };
 
 function lightRecipe() {
-  const { recipes } = parseRealRecipes();
+  const recipes = loadRealRecipes();
   return recipes.find((r) => r.id === 'kyosho_turban')!; // 頭 2×2 光布・？×2サイクル
 }
 

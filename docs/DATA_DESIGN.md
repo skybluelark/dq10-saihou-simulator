@@ -1,4 +1,4 @@
-# ドラクエ10 さいほうシミュレータ データ設計書 (v0.2)
+# ドラクエ10 さいほうシミュレータ データ設計書 (v0.3)
 
 作成日: 2026-07-03 / 状態: **承認済み (2026-07-03。修正2点を反映済み)**
 関連文書: [SPEC.md](SPEC.md)(数値の正) / [ARCHITECTURE.md](ARCHITECTURE.md)(A5 データ読み込み方式)
@@ -9,7 +9,7 @@
 2. **ID・enum値は半角英字**(ローマ字/英語)、表示名は `name` フィールドに日本語で持つ。UI・ログは name を使用。
 3. すべてのデータファイルに `version` フィールドを持たせ、コア側で互換チェックする。
 4. 確率は 0〜1 の小数で表現(例: 1% = 0.01)。
-5. パラメータエディタ(F7)の編集対象は game-params.json のみ。他はデータ修正=ファイル編集。
+5. 全マスタはファイル直接編集(パラメータエディタは提供しない: SPEC v1.17)。レシピの正は recipes.json で、recipes.csv は入出力インターフェース(§6)。
 
 ### enum定義
 
@@ -165,7 +165,36 @@
 }
 ```
 
-## 6. recipes.csv → 内部モデルと検証
+## 6. レシピデータ(recipes.json が正、recipes.csv は入出力IF)
+
+**正は `src/data/recipes.json`**(2026-07-07 決定、SPEC v1.18)。recipes.csv は Excel 等での記入用の入出力インターフェースで、変換コマンドで相互変換する:
+
+- `npm run recipes:import` — data/recipes.csv → src/data/recipes.json。V1〜V8 検証を行い、**エラーが1件でもあれば取り込み失敗**(行番号つきで理由を表示)。
+- `npm run recipes:export` — src/data/recipes.json → data/recipes.csv(BOM付きUTF-8)。
+
+### recipes.json スキーマ
+
+```jsonc
+{
+  "version": "1.0",
+  "recipes": [
+    {
+      "id": "cathedral_robe",          // ^[a-z0-9_]+$、一意
+      "name": "カテドラルローブ",
+      "category": "body_upper",        // enum(§0)。rows/cols は category から導出(保持しない)
+      "clothType": "regen",            // enum(§0)
+      "cells": [                        // 存在するマスのみ。(r,c) 昇順であること
+        { "r": 1, "c": 1, "base": 100 }
+      ],
+      "powerCycle": ["normal", "strong", "unknown"],  // enum(§0)。critx2 不可、1要素以上
+      "notes": "任意メモ"              // 省略可
+    }
+  ]
+}
+```
+
+- rows/cols は保持せず、ローダが category の固定グリッド(V3 と同じ対応表)から導出して内部モデル `RecipeDef` を組み立てる(冗長データの乖離防止)。
+- **JSONロード時にも同等の検証**(id形式・一意、enum、セル範囲・正整数・マス数・頭の凸形・powerCycleトークン、cells の (r,c) 昇順)を行い、違反があれば起動失敗とする(部分スキップはしない)。cells の並び順はコアのマス生成順(=乱数消費・表示順)に影響するため昇順を必須とする。
 
 ### 内部モデル(変換後)
 
@@ -175,13 +204,13 @@ interface RecipeDef {
   name: string;
   category: Category;
   clothType: ClothType;
-  rows: number; cols: number;
+  rows: number; cols: number;                       // category から導出
   cells: { r: number; c: number; base: number }[];  // 存在するマスのみ
   powerCycle: Power[];                              // unknown 含む。critx2 は不可
 }
 ```
 
-### バリデーション規則
+### CSVバリデーション規則(取り込み時)
 
 | # | 規則 | 違反時 |
 |---|---|---|
@@ -194,8 +223,8 @@ interface RecipeDef {
 | V7 | power_order: 1トークン以上、トークンは 弱い/普通/強い/最強/？ のみ(会心×2不可) | エラー |
 | V8 | 空行・全列空はスキップ | 警告 |
 
-- エラー行は読み込み対象から除外し、UI上に行番号つきで理由を表示する。
-- CSVの日本語トークン(部位・布・パワー)→enumへの対訳表はローダが持つ。
+- CSVの日本語トークン(部位・布・パワー)→enumへの対訳表は変換層が持つ(export は逆引き)。
+- 取り込み・エクスポートの変換ロジックは純関数として src/data に置き(テスト対象)、scripts/ のコマンドは薄いラッパとする。往復変換(JSON→CSV→JSON)の一致をテストで保証する。
 
 ## 7. 設計判断(2026-07-03 承認済み)
 
@@ -208,7 +237,7 @@ interface RecipeDef {
 
 ## 8. レシピデータの将来の持ち方(W1: アプリ内入力画面)
 
-スマホアプリ化(W1)でレシピ入力画面を設ける際も、**DBは導入せずCSV+端末内ストレージで対応する**方針。
+スマホアプリ化(W1)でレシピ入力画面を設ける際も、**DBは導入せず端末内ストレージで対応する**方針。レシピ入力UIはW1の機能として実施する(2026-07-07 決定。SPEC §4.2 F7)。その時点で**正を端末内ストレージへ移し、recipes.json / recipes.csv はインポート・エクスポート形式に位置づけを変える**(正の所在は常に一意とする)。
 
 - 内部モデル `RecipeDef`(§6)は保存形式に依存しないため、保存先の追加は `DataProvider`(ARCHITECTURE A5)の実装追加で済む。
 - アプリ内で入力・編集したレシピは端末内ストレージ(IndexedDB。Capacitor化時はそのままWebViewのIndexedDBが使える)に構造化JSONとして保存する。
@@ -223,5 +252,6 @@ interface RecipeDef {
 
 ## 9. 更新履歴
 
+- v0.3 (2026-07-07): レシピデータの再設計(SPEC v1.18)。正を src/data/recipes.json に変更し、recipes.csv は入出力IFへ(§6 改稿: JSONスキーマ・変換コマンド・ロード時検証・往復一致テスト)。W1 での正の移行方針を §8 に明記。パラメータエディタ廃止を §0-5 に反映。
 - v0.2 (2026-07-03): 承認反映。ダメージテーブルのデータファイル化を廃止(コア計算式方式へ)、ラグ=2行×3列確定。レシピデータの将来の持ち方(§8)を追記。
 - v0.1 (2026-07-03): 初版ドラフト。全データファイルのスキーマ、recipes.csv検証規則、設計判断6点を提示。

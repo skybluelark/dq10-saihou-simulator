@@ -1,8 +1,5 @@
 // テスト用ヘルパ: エンジン生成・制御可能なRNG・レシピ組み立て。
 
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
 import {
   Engine,
   type EngineData,
@@ -14,13 +11,9 @@ import {
   loadNeedles,
   loadSkills,
   loadConcentration,
-  parseRecipesCsv,
+  loadRecipes,
   type RecipeDef,
-  type RecipeParseResult,
 } from '../../src/data';
-
-const here = dirname(fileURLToPath(import.meta.url));
-const projectDataDir = resolve(here, '../../data');
 
 export function buildEngineData(): EngineData {
   return {
@@ -35,13 +28,8 @@ export function buildEngine(): Engine {
   return new Engine(buildEngineData());
 }
 
-export function realRecipesCsv(): string {
-  // src/data の JSON ではなく data/recipes.csv を fs で読む(パーサは純関数)
-  return readFileSync(resolve(projectDataDir, 'recipes.csv'), 'utf8');
-}
-
-export function parseRealRecipes(): RecipeParseResult {
-  return parseRecipesCsv(realRecipesCsv());
+export function loadRealRecipes(): RecipeDef[] {
+  return loadRecipes();
 }
 
 /**

@@ -1,4 +1,4 @@
-# ドラクエ10 さいほうシミュレータ 方式設計書 (v0.10)
+# ドラクエ10 さいほうシミュレータ 方式設計書 (v0.11)
 
 作成日: 2026-07-03 / 状態: A1〜A10 承認済み (2026-07-03)
 関連文書: [SPEC.md](SPEC.md)(ゲーム仕様) / [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md)(開発計画)
@@ -51,11 +51,11 @@ src/
 
 ## A5. データ読み込み
 
-- `DataProvider` インターフェースで抽象化(W1のアプリ同梱にも対応)。
-- JSON類(game-params / needles / skills / concentration)はビルド時バンドル(ダメージ値はコアが計算式で算出するためデータファイルなし — DATA_DESIGN §2)。
-- recipes.csv は実行時 fetch+自作の軽量CSVパーサ(フォーマット固定のため外部依存なし)。**CSV編集→ブラウザ再読み込みだけで反映**でき、再ビルド不要。
-- F7(レシピ入力: SPEC v1.17 で変更)は DataProvider 配下に localStorage 等の追加レシピソースを重ねる形を想定(保存方式はM4設計で確定)。ゲームパラメータ(game-params.json / needles.json 等)はJSON直接編集のみとし、オーバーライド機構は設けない。
-- W1でのアプリ内レシピ入力は、DataProvider 配下に端末内ストレージ(IndexedDB)実装を追加して対応。CSVはマスタ+インポート/エクスポート形式として維持(DATA_DESIGN §8)。
+- 全マスタ(game-params / needles / skills / concentration / **recipes**)は **JSONのビルド時バンドル**(ダメージ値はコアが計算式で算出するためデータファイルなし — DATA_DESIGN §2)。実行時 fetch は使わない(完全オフライン N2 に合致。配信物へのデータコピーも不要)。
+- **レシピの正は src/data/recipes.json**(SPEC v1.18)。data/recipes.csv は入出力インターフェースで、`npm run recipes:import`(CSV→JSON。V1〜V8検証でエラー時は失敗)/ `npm run recipes:export`(JSON→CSV。BOM付きUTF-8)で相互変換する。CSVパーサ・変換は純関数として src/data に置き、スクリプト(scripts/)は vite-node で実行する薄いラッパとする。
+- JSONロード時にもバリデーションを行い、違反があれば起動失敗とする(壊れたデータを配信しない)。
+- 実行時取得の抽象化(旧 DataProvider)は撤去。W1 でアプリ内レシピ入力を設ける際に、端末内ストレージ(IndexedDB)を含む取得抽象を再導入し、その時点で正を端末内ストレージへ移す(CSV/JSONはインポート・エクスポート形式に変更 — DATA_DESIGN §8)。
+- ゲームパラメータ(game-params.json / needles.json 等)はJSON直接編集のみとし、オーバーライド機構は設けない(SPEC v1.17)。
 
 ## A6. 行動ログ・リプレイ形式
 
@@ -112,6 +112,7 @@ evaluate(state: GameState, config: SimulatorConfig, options: EvaluateOptions)
 
 ## 更新履歴
 
+- v0.11 (2026-07-07): A5を全面改訂(SPEC v1.18)。レシピの正を recipes.json のバンドルに変更、recipes.csv は入出力IF(import/export コマンド)。実行時 fetch と DataProvider 抽象を撤去(W1で再導入)。
 - v0.10 (2026-07-07): A5をF7の変更(パラメータエディタ→レシピ入力: SPEC v1.17)に合わせて改訂。ゲームパラメータのオーバーライド機構は設けない。
 - v0.9 (2026-07-07): A6リプレイ形式を確定(`{v:1, seed, recipeId, config, actions, check?}`、core/replay.ts に実装。SPEC v1.14 M3対応)。sewCell イベントに基礎値の出目 `baseValue` を追加(検証モード表示用。乱数消費順の変更なし)。
 - v0.8 (2026-07-07): A4会心判定条件の表現を修正(「先行ヒット反映後」を削除。全特技で対象マスは相異なるため、行動開始時の残り数値と同義。SPEC v1.13)。
