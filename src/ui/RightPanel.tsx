@@ -30,7 +30,17 @@ export function RightPanel({
   const openingBonus = initialConcentration - levelBase - needle.concentration;
 
   const nextPower: Power = peekNextPower(game);
-  const nextPowerTurn = currentTurn + Math.max(1, game.lockPowerRemaining);
+
+  // サイクルエントリ i が「次に実行される」ターン(SPEC §4.3)。
+  //   現在ターン + ((i − 現在index + 長さ) mod 長さ)
+  //   精神統一固定中は、現在エントリ以外に固定残ターン−1 を後ろへずらす(サイクル停止分)。
+  const cycleExecTurn = (i: number): number => {
+    const len = game.powerCycle.length;
+    if (len === 0) return currentTurn;
+    const offset = (i - game.cycleIndex + len) % len;
+    const lockPush = game.lockPowerRemaining > 0 && offset >= 1 ? game.lockPowerRemaining - 1 : 0;
+    return currentTurn + offset + lockPush;
+  };
 
   // 布特性の発動ターンに当たるパワーへ付す下線色クラス(通常布・終了後は付さない)。
   const traitUnderlineClass = (execTurn: number): string => {
@@ -83,7 +93,7 @@ export function RightPanel({
       <div className={styles.statRow}>
         <span className={styles.statLabel}>ぬいパワー</span>
         <span
-          className={`${styles.powerBadge} ${styles[`power_${game.currentPower}`] ?? ''} ${traitUnderlineClass(currentTurn)}`}
+          className={`${styles.powerBadge} ${styles[`power_${game.currentPower}`] ?? ''}`}
         >
           {POWER_LABELS[game.currentPower]}
         </span>
@@ -91,7 +101,7 @@ export function RightPanel({
           <>
             <span className={styles.powerArrow}>→</span>
             <span
-              className={`${styles.powerBadge} ${styles.powerBadgeNext} ${styles[`power_${nextPower}`] ?? ''} ${traitUnderlineClass(nextPowerTurn)}`}
+              className={`${styles.powerBadge} ${styles.powerBadgeNext} ${styles[`power_${nextPower}`] ?? ''}`}
             >
               {POWER_LABELS[nextPower]}
             </span>
@@ -109,7 +119,7 @@ export function RightPanel({
             {game.powerCycle.map((p, i) => (
               <span
                 key={i}
-                className={`${styles.cycleItem} ${i === game.cycleIndex ? styles.cycleCurrent : ''}`}
+                className={`${styles.cycleItem} ${i === game.cycleIndex ? styles.cycleCurrent : ''} ${traitUnderlineClass(cycleExecTurn(i))}`}
               >
                 {POWER_LABELS[p]}
               </span>
