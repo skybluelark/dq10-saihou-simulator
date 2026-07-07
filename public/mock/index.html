@@ -111,10 +111,11 @@
 
   /* ---- 数値・メッセージ領域(D45: 2行×4列グリッド)
      1行目: ターン/集中力/誤差、2行目1〜3列: メッセージ欄、4列目1〜2行: 1手戻す ---- */
-  /* 1〜3列は内容幅+ゆとりの間隔。誤差の数値部分は22px・4桁分の幅を常時確保し、
-     その上で収まる範囲まで間隔を広げる(D50)。1手戻すは右端へ */
-  .statusGrid { display: grid; grid-template-columns: max-content max-content max-content 1fr;
-    grid-template-rows: auto auto; column-gap: 16px;
+  /* 数値は最大桁数分の幅を予約(ターン2桁・集中力3桁・誤差4桁)し、
+     ラベル位置を桁数によらず固定する。列は行幅に均等配分(D50) */
+  .statusGrid { display: grid;
+    grid-template-columns: max-content max-content max-content max-content;
+    grid-template-rows: auto auto; justify-content: space-between;
     align-items: center; color: #3a2a10; font-weight: bold; }
   /* D50: 1行目(数値行)は高さを広めに取り、ラベルと数値の下端を揃える */
   .stat { display: flex; align-items: flex-end; justify-content: flex-start; gap: 4px;
@@ -122,8 +123,10 @@
   /* 数値サイズは「誤差が4桁」でも下限幅(360dp)ではみ出さない上限
      (列を内容幅に詰めることで 22px を確保) */
   .stat b { font-size: 22px; line-height: 1; }
-  /* 誤差の数値は4桁分の幅を常時確保(桁数変化でレイアウトが動かないように) */
-  .errNum { min-width: 50px; text-align: left; }
+  /* 各数値は最大桁数分の幅を常時確保(桁数変化でラベル位置が動かないように) */
+  .turnNum { min-width: 27px; text-align: left; }
+  .concNum { min-width: 40px; text-align: left; }
+  .errNum { min-width: 52px; text-align: left; }
   /* 集中力のラベルは「残り/集中力」の2行表記(左端揃え) */
   .statLbl2 { font-size: 11px; line-height: 1.2; text-align: left; }
   .undoBtn { grid-column: 4; grid-row: 1 / 3; align-self: center; justify-self: end;
@@ -211,8 +214,8 @@
 
     <!-- D45: 数値・メッセージ領域(2行×4列。メッセージ欄タップでサンプル切替) -->
     <div class="statusGrid">
-      <span class="stat">ターン <b>6</b></span>
-      <span class="stat"><span class="statLbl2">残り<br>集中力</span> <b>168</b></span>
+      <span class="stat">ターン <b class="turnNum">6</b></span>
+      <span class="stat"><span class="statLbl2">残り<br>集中力</span> <b class="concNum">168</b></span>
       <span class="stat">誤差 <b class="errNum">57</b></span>
       <button class="undoBtn" type="button">↩ 1手戻す</button>
       <div class="msgCell" id="msgWin">消費集中力が 半分になった！</div>
