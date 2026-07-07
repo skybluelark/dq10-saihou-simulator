@@ -563,7 +563,8 @@ export class Engine {
     for (let k = 0; k < pick; k++) {
       const cell = state.cells[chosen[k]];
       const correction = this.cellCorrection(state, cell);
-      // 先行ヒット反映後の残り数値で会心判定の要否を決める(SPEC §3.4 v1.12)
+      // 会心判定の要否はマスの残り数値で決める。対象4マスは相異なるため、
+      // ここでの値は行動開始時の残り数値と同じ(SPEC §3.4)。
       const remainingBefore = cell.base - cell.cumulative;
       const baseValue = 12 + rng.nextInt(7);
       let dmg = sewDamage(baseValue, multipliers[k], state.currentPower, correction);
