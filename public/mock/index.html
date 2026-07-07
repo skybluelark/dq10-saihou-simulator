@@ -112,12 +112,12 @@
   .statusGrid { display: grid; grid-template-columns: 1fr 1fr 1fr auto;
     grid-template-rows: auto auto; column-gap: 10px;
     align-items: center; color: #3a2a10; font-weight: bold; }
-  /* D50: 1行目(数値行)は高さを広めに取る */
-  .stat { display: flex; align-items: center; justify-content: center; gap: 5px;
-    font-size: 13px; min-height: 40px; padding-bottom: 2px; }
-  .stat b { font-size: 18px; }
-  /* 集中力のラベルは「残り/集中力」の2行表記 */
-  .statLbl2 { font-size: 11px; line-height: 1.15; text-align: center; }
+  /* D50: 1行目(数値行)は高さを広めに取り、ラベルと数値の下端を揃える */
+  .stat { display: flex; align-items: flex-end; justify-content: center; gap: 5px;
+    font-size: 13px; line-height: 1; min-height: 40px; padding-bottom: 4px; }
+  .stat b { font-size: 18px; line-height: 1; }
+  /* 集中力のラベルは「残り/集中力」の2行表記(左端揃え) */
+  .statLbl2 { font-size: 11px; line-height: 1.2; text-align: left; }
   .undoBtn { grid-column: 4; grid-row: 1 / 3; align-self: center;
     height: 44px; padding: 0 12px; border-radius: 8px; font-size: 12px; font-weight: bold;
     background: linear-gradient(180deg, #23255c, #14163e); color: #fff;
