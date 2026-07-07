@@ -98,24 +98,28 @@ describe('T11 concentration.json', () => {
   });
 });
 
-describe('T11 recipes.json 正常系(実データ9件)', () => {
+describe('T11 recipes.json 正常系(実データ)', () => {
   const recipes = loadRecipes();
 
-  it('9件全件ロード・id一覧が一致', () => {
-    expect(recipes).toHaveLength(9);
-    expect(recipes.map((r) => r.id).sort()).toEqual(
-      [
-        'kentetsu_turban',
-        'kyosho_turban',
-        'kentetsu_koromo_ue',
-        'cathedral_robe',
-        'sopos_koromo_shita',
-        'daikaiketsu_glove',
-        'kuzoku_boots',
-        'wanderers_boots',
-        'wedi_doll_m',
-      ].sort(),
-    );
+  // レシピはユーザーが追加していくデータのため、総件数は固定しない。
+  // 検証(ロード成功=全件バリデーション通過)と、初期サンプル9件の存在・内容を確認する。
+  it('全件ロード(バリデーション通過)・id一意・初期サンプル9件を含む', () => {
+    expect(recipes.length).toBeGreaterThanOrEqual(9);
+    expect(new Set(recipes.map((r) => r.id)).size).toBe(recipes.length);
+    const ids = new Set(recipes.map((r) => r.id));
+    for (const id of [
+      'kentetsu_turban',
+      'kyosho_turban',
+      'kentetsu_koromo_ue',
+      'cathedral_robe',
+      'sopos_koromo_shita',
+      'daikaiketsu_glove',
+      'kuzoku_boots',
+      'wanderers_boots',
+      'wedi_doll_m',
+    ]) {
+      expect(ids.has(id), `id ${id} が存在すること`).toBe(true);
+    }
   });
 
   it('ウェディの人形・男: 7マス(r1c1/r1c3欠け)', () => {

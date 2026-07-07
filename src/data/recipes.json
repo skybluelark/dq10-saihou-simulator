@@ -407,8 +407,4164 @@
         "unknown",
         "weak",
         "strongest"
+      ]
+    },
+    {
+      "id": "kuzoku_bandana",
+      "name": "空賊のバンダナ",
+      "category": "head",
+      "clothType": "light",
+      "cells": [
+        {
+          "r": 1,
+          "c": 2,
+          "base": 250
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 220
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 400
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 220
+        }
       ],
-      "notes": "7マス(r1c1・r1c3なし)。dqxdb由来"
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "unknown",
+        "strongest",
+        "normal",
+        "strong"
+      ]
+    },
+    {
+      "id": "seiyoku_kamikazari",
+      "name": "聖翼の髪飾り",
+      "category": "head",
+      "clothType": "rainbow",
+      "cells": [
+        {
+          "r": 1,
+          "c": 2,
+          "base": 180
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 180
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 300
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 350
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "unknown",
+        "strongest",
+        "normal",
+        "strong"
+      ]
+    },
+    {
+      "id": "lordly_corsage",
+      "name": "ロードリーコサージ",
+      "category": "head",
+      "clothType": "regen",
+      "cells": [
+        {
+          "r": 1,
+          "c": 2,
+          "base": 190
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 300
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 250
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 190
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "unknown",
+        "strongest",
+        "normal",
+        "strong"
+      ]
+    },
+    {
+      "id": "kuzoku_shirt",
+      "name": "空賊のシャツ",
+      "category": "body_upper",
+      "clothType": "light",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 130
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 70
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 130
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 140
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 130
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 140
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 100
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 100
+        },
+        {
+          "r": 3,
+          "c": 3,
+          "base": 100
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "unknown",
+        "strongest",
+        "normal",
+        "strong"
+      ]
+    },
+    {
+      "id": "seiyoku_dress_ue",
+      "name": "聖翼のドレス上",
+      "category": "body_upper",
+      "clothType": "rainbow",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 80
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 80
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 80
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 130
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 180
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 130
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 100
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 100
+        },
+        {
+          "r": 3,
+          "c": 3,
+          "base": 100
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "unknown",
+        "strongest",
+        "normal",
+        "strong"
+      ]
+    },
+    {
+      "id": "lordly_robe_ue",
+      "name": "ロードリーローブ上",
+      "category": "body_upper",
+      "clothType": "regen",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 60
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 120
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 60
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 150
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 120
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 150
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 60
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 150
+        },
+        {
+          "r": 3,
+          "c": 3,
+          "base": 60
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "unknown",
+        "strongest",
+        "normal",
+        "strong"
+      ]
+    },
+    {
+      "id": "kuzoku_zubon",
+      "name": "空賊のズボン",
+      "category": "body_lower",
+      "clothType": "light",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 190
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 300
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 190
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 100
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 190
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 100
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "unknown",
+        "strongest",
+        "normal",
+        "strong"
+      ]
+    },
+    {
+      "id": "seiyoku_dress_shita",
+      "name": "聖翼のドレス下",
+      "category": "body_lower",
+      "clothType": "rainbow",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 100
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 240
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 240
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 100
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 140
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 140
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "unknown",
+        "strongest",
+        "normal",
+        "strong"
+      ]
+    },
+    {
+      "id": "lordly_robe_shita",
+      "name": "ロードリーローブ下",
+      "category": "body_lower",
+      "clothType": "regen",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 100
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 100
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 150
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 150
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 200
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 200
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "unknown",
+        "strongest",
+        "normal",
+        "strong"
+      ]
+    },
+    {
+      "id": "kuzoku_glove",
+      "name": "空賊のグローブ",
+      "category": "arm",
+      "clothType": "light",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 100
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 200
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 220
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 100
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 200
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 220
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "unknown",
+        "strongest",
+        "normal",
+        "strong"
+      ]
+    },
+    {
+      "id": "seiyoku_glove",
+      "name": "聖翼のグローブ",
+      "category": "arm",
+      "clothType": "rainbow",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 140
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 90
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 250
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 90
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 140
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 250
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "unknown",
+        "strongest",
+        "normal",
+        "strong"
+      ]
+    },
+    {
+      "id": "lordly_glove",
+      "name": "ロードリーグローブ",
+      "category": "arm",
+      "clothType": "regen",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 150
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 100
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 210
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 100
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 150
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 210
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "unknown",
+        "strongest",
+        "normal",
+        "strong"
+      ]
+    },
+    {
+      "id": "seiyoku_boots",
+      "name": "聖翼のブーツ",
+      "category": "leg",
+      "clothType": "rainbow",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 300
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 300
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 190
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 190
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "unknown",
+        "strongest",
+        "normal",
+        "strong"
+      ]
+    },
+    {
+      "id": "lordly_boots",
+      "name": "ロードリーブーツ",
+      "category": "leg",
+      "clothType": "regen",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 130
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 330
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 330
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 130
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "unknown",
+        "strongest",
+        "normal",
+        "strong"
+      ]
+    },
+    {
+      "id": "shikkoku_turban",
+      "name": "しっこくのターバン",
+      "category": "head",
+      "clothType": "regen",
+      "cells": [
+        {
+          "r": 1,
+          "c": 2,
+          "base": 340
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 170
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 170
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 340
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "strong",
+        "normal"
+      ]
+    },
+    {
+      "id": "spangle_feather",
+      "name": "スパングルフェザー",
+      "category": "head",
+      "clothType": "light",
+      "cells": [
+        {
+          "r": 1,
+          "c": 2,
+          "base": 200
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 350
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 200
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 500
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "strong",
+        "normal"
+      ]
+    },
+    {
+      "id": "fushigina_boushi",
+      "name": "ふしぎなぼうし",
+      "category": "head",
+      "clothType": "rainbow",
+      "cells": [
+        {
+          "r": 1,
+          "c": 2,
+          "base": 430
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 200
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 300
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 200
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "strong",
+        "normal"
+      ]
+    },
+    {
+      "id": "shikkoku_manto",
+      "name": "しっこくのマント",
+      "category": "body_upper",
+      "clothType": "regen",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 70
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 100
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 70
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 100
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 150
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 100
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 120
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 140
+        },
+        {
+          "r": 3,
+          "c": 3,
+          "base": 120
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "strong",
+        "normal"
+      ]
+    },
+    {
+      "id": "spangle_dress_ue",
+      "name": "スパングルドレス上",
+      "category": "body_upper",
+      "clothType": "light",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 180
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 70
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 180
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 70
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 200
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 70
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 120
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 120
+        },
+        {
+          "r": 3,
+          "c": 3,
+          "base": 120
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "strong",
+        "normal"
+      ]
+    },
+    {
+      "id": "fushigina_bolero_ue",
+      "name": "ふしぎなボレロ上",
+      "category": "body_upper",
+      "clothType": "rainbow",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 140
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 100
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 140
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 100
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 200
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 100
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 80
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 100
+        },
+        {
+          "r": 3,
+          "c": 3,
+          "base": 80
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "strong",
+        "normal"
+      ]
+    },
+    {
+      "id": "spangle_dress_shita",
+      "name": "スパングルドレス下",
+      "category": "body_lower",
+      "clothType": "light",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 90
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 400
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 300
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 90
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 130
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 130
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "strong",
+        "normal"
+      ]
+    },
+    {
+      "id": "fushigina_bolero_shita",
+      "name": "ふしぎなボレロ下",
+      "category": "body_lower",
+      "clothType": "rainbow",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 150
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 180
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 180
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 150
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 200
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 200
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "strong",
+        "normal"
+      ]
+    },
+    {
+      "id": "shikkoku_glove",
+      "name": "しっこくのグローブ",
+      "category": "arm",
+      "clothType": "regen",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 60
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 300
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 170
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 60
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 300
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 170
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "strong",
+        "normal"
+      ]
+    },
+    {
+      "id": "spangle_glove",
+      "name": "スパングルグローブ",
+      "category": "arm",
+      "clothType": "light",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 100
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 150
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 300
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 150
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 100
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 300
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "strong",
+        "normal"
+      ]
+    },
+    {
+      "id": "fushigina_glove",
+      "name": "ふしぎなグローブ",
+      "category": "arm",
+      "clothType": "rainbow",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 70
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 250
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 180
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 70
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 180
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 250
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "strong",
+        "normal"
+      ]
+    },
+    {
+      "id": "shikkoku_boots",
+      "name": "しっこくのブーツ",
+      "category": "leg",
+      "clothType": "regen",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 360
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 130
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 130
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 360
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "strong",
+        "normal"
+      ]
+    },
+    {
+      "id": "spangle_pumps",
+      "name": "スパングルパンプス",
+      "category": "leg",
+      "clothType": "light",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 320
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 320
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 200
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 200
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "strong",
+        "normal"
+      ]
+    },
+    {
+      "id": "fushigina_boots",
+      "name": "ふしぎなブーツ",
+      "category": "leg",
+      "clothType": "rainbow",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 350
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 350
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 180
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 180
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "strong",
+        "normal"
+      ]
+    },
+    {
+      "id": "ranpa_hitaiate",
+      "name": "乱破の額当て",
+      "category": "head",
+      "clothType": "light",
+      "cells": [
+        {
+          "r": 1,
+          "c": 2,
+          "base": 500
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 200
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 200
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 370
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "normal",
+        "normal",
+        "strong",
+        "unknown"
+      ]
+    },
+    {
+      "id": "purodito_heddo",
+      "name": "プロディトヘッド",
+      "category": "head",
+      "clothType": "rainbow",
+      "cells": [
+        {
+          "r": 1,
+          "c": 2,
+          "base": 200
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 285
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 400
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 285
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "normal",
+        "normal",
+        "strong",
+        "unknown"
+      ]
+    },
+    {
+      "id": "osukutoru_crown",
+      "name": "オスクトルクラウン",
+      "category": "head",
+      "clothType": "regen",
+      "cells": [
+        {
+          "r": 1,
+          "c": 2,
+          "base": 330
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 210
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 330
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 210
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "normal",
+        "normal",
+        "strong",
+        "unknown"
+      ]
+    },
+    {
+      "id": "ranpa_shinobishouzoku_ue",
+      "name": "乱破の忍び装束上",
+      "category": "body_upper",
+      "clothType": "light",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 220
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 80
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 80
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 100
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 120
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 120
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 130
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 130
+        },
+        {
+          "r": 3,
+          "c": 3,
+          "base": 130
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "normal",
+        "normal",
+        "strong",
+        "unknown"
+      ]
+    },
+    {
+      "id": "purodito_suit_ue",
+      "name": "プロディトスーツ上",
+      "category": "body_upper",
+      "clothType": "rainbow",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 90
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 70
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 90
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 160
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 200
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 160
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 120
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 100
+        },
+        {
+          "r": 3,
+          "c": 3,
+          "base": 120
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "normal",
+        "normal",
+        "strong",
+        "unknown"
+      ]
+    },
+    {
+      "id": "osukutoru_robe_ue",
+      "name": "オスクトルローブ上",
+      "category": "body_upper",
+      "clothType": "regen",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 120
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 80
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 120
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 70
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 160
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 70
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 140
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 140
+        },
+        {
+          "r": 3,
+          "c": 3,
+          "base": 140
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "normal",
+        "normal",
+        "strong",
+        "unknown"
+      ]
+    },
+    {
+      "id": "ranpa_shinobishouzoku_shita",
+      "name": "乱破の忍び装束下",
+      "category": "body_lower",
+      "clothType": "light",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 170
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 120
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 120
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 140
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 220
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 220
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "normal",
+        "normal",
+        "strong",
+        "unknown"
+      ]
+    },
+    {
+      "id": "purodito_suit_shita",
+      "name": "プロディトスーツ下",
+      "category": "body_lower",
+      "clothType": "rainbow",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 90
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 300
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 270
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 250
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 120
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 120
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "normal",
+        "normal",
+        "strong",
+        "unknown"
+      ]
+    },
+    {
+      "id": "osukutoru_robe_shita",
+      "name": "オスクトルローブ下",
+      "category": "body_lower",
+      "clothType": "regen",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 180
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 120
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 120
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 180
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 240
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 240
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "normal",
+        "normal",
+        "strong",
+        "unknown"
+      ]
+    },
+    {
+      "id": "ranpa_tekkou",
+      "name": "乱破の手甲",
+      "category": "arm",
+      "clothType": "light",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 280
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 100
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 160
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 100
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 280
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 160
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "normal",
+        "normal",
+        "strong",
+        "unknown"
+      ]
+    },
+    {
+      "id": "purodito_glove",
+      "name": "プロディトグローブ",
+      "category": "arm",
+      "clothType": "rainbow",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 330
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 330
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 100
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 100
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 100
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 200
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "normal",
+        "normal",
+        "strong",
+        "unknown"
+      ]
+    },
+    {
+      "id": "osukutoru_glove",
+      "name": "オスクトルグローブ",
+      "category": "arm",
+      "clothType": "regen",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 140
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 180
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 70
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 180
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 70
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 340
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "normal",
+        "normal",
+        "strong",
+        "unknown"
+      ]
+    },
+    {
+      "id": "ranpa_kyahan",
+      "name": "乱破の脚半",
+      "category": "leg",
+      "clothType": "light",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 150
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 370
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 370
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 260
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "normal",
+        "normal",
+        "strong",
+        "unknown"
+      ]
+    },
+    {
+      "id": "purodito_shoes",
+      "name": "プロディトシューズ",
+      "category": "leg",
+      "clothType": "rainbow",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 130
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 210
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 360
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 300
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "normal",
+        "normal",
+        "strong",
+        "unknown"
+      ]
+    },
+    {
+      "id": "osukutoru_boots",
+      "name": "オスクトルブーツ",
+      "category": "leg",
+      "clothType": "regen",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 370
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 300
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 190
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 140
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "normal",
+        "normal",
+        "strong",
+        "unknown"
+      ]
+    },
+    {
+      "id": "onmitsu_hachimaki",
+      "name": "隠密のはちまき",
+      "category": "head",
+      "clothType": "light",
+      "cells": [
+        {
+          "r": 1,
+          "c": 2,
+          "base": 220
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 190
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 510
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 430
+        }
+      ],
+      "powerCycle": [
+        "strong",
+        "strongest",
+        "unknown",
+        "weak",
+        "unknown",
+        "strong",
+        "unknown",
+        "unknown",
+        "normal",
+        "unknown"
+      ]
+    },
+    {
+      "id": "zuiun_kamikazari",
+      "name": "瑞雲の髪飾り",
+      "category": "head",
+      "clothType": "rainbow",
+      "cells": [
+        {
+          "r": 1,
+          "c": 2,
+          "base": 420
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 480
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 270
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 140
+        }
+      ],
+      "powerCycle": [
+        "strong",
+        "strongest",
+        "unknown",
+        "weak",
+        "unknown",
+        "strong",
+        "unknown",
+        "unknown",
+        "normal",
+        "unknown"
+      ]
+    },
+    {
+      "id": "onmyohakase_boushi",
+      "name": "陰陽博士のぼうし",
+      "category": "head",
+      "clothType": "regen",
+      "cells": [
+        {
+          "r": 1,
+          "c": 2,
+          "base": 300
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 200
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 260
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 340
+        }
+      ],
+      "powerCycle": [
+        "strong",
+        "strongest",
+        "unknown",
+        "weak",
+        "unknown",
+        "strong",
+        "unknown",
+        "unknown",
+        "normal",
+        "unknown"
+      ]
+    },
+    {
+      "id": "onmitsu_shouzoku_ue",
+      "name": "隠密の装束上",
+      "category": "body_upper",
+      "clothType": "light",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 210
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 100
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 180
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 110
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 140
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 130
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 90
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 120
+        },
+        {
+          "r": 3,
+          "c": 3,
+          "base": 100
+        }
+      ],
+      "powerCycle": [
+        "strong",
+        "strongest",
+        "unknown",
+        "weak",
+        "unknown",
+        "strong",
+        "unknown",
+        "unknown",
+        "normal",
+        "unknown"
+      ]
+    },
+    {
+      "id": "zuiun_doufuku_ue",
+      "name": "瑞雲の道服上",
+      "category": "body_upper",
+      "clothType": "rainbow",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 230
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 160
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 220
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 110
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 100
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 120
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 90
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 140
+        },
+        {
+          "r": 3,
+          "c": 3,
+          "base": 90
+        }
+      ],
+      "powerCycle": [
+        "strong",
+        "strongest",
+        "unknown",
+        "weak",
+        "unknown",
+        "strong",
+        "unknown",
+        "unknown",
+        "normal",
+        "unknown"
+      ]
+    },
+    {
+      "id": "onmyohakase_koromo_ue",
+      "name": "陰陽博士のころも上",
+      "category": "body_upper",
+      "clothType": "rainbow",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 150
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 180
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 150
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 90
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 150
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 90
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 130
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 100
+        },
+        {
+          "r": 3,
+          "c": 3,
+          "base": 110
+        }
+      ],
+      "powerCycle": [
+        "strong",
+        "strongest",
+        "unknown",
+        "weak",
+        "unknown",
+        "strong",
+        "unknown",
+        "unknown",
+        "normal",
+        "unknown"
+      ]
+    },
+    {
+      "id": "onmitsu_shouzoku_shita",
+      "name": "隠密の装束下",
+      "category": "body_lower",
+      "clothType": "light",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 280
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 370
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 90
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 150
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 170
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 190
+        }
+      ],
+      "powerCycle": [
+        "strong",
+        "strongest",
+        "unknown",
+        "weak",
+        "unknown",
+        "strong",
+        "unknown",
+        "unknown",
+        "normal",
+        "unknown"
+      ]
+    },
+    {
+      "id": "zuiun_doufuku_shita",
+      "name": "瑞雲の道服下",
+      "category": "body_lower",
+      "clothType": "rainbow",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 290
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 250
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 140
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 210
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 190
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 120
+        }
+      ],
+      "powerCycle": [
+        "strong",
+        "strongest",
+        "unknown",
+        "weak",
+        "unknown",
+        "strong",
+        "unknown",
+        "unknown",
+        "normal",
+        "unknown"
+      ]
+    },
+    {
+      "id": "onmyohakase_koromo_shita",
+      "name": "陰陽博士のころも下",
+      "category": "body_lower",
+      "clothType": "regen",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 220
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 240
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 140
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 170
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 160
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 130
+        }
+      ],
+      "powerCycle": [
+        "strong",
+        "strongest",
+        "unknown",
+        "weak",
+        "unknown",
+        "strong",
+        "unknown",
+        "unknown",
+        "normal",
+        "unknown"
+      ]
+    },
+    {
+      "id": "onmitsu_tekkou",
+      "name": "隠密の手甲",
+      "category": "arm",
+      "clothType": "regen",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 160
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 100
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 190
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 350
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 120
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 290
+        }
+      ],
+      "powerCycle": [
+        "strong",
+        "strongest",
+        "unknown",
+        "weak",
+        "unknown",
+        "strong",
+        "unknown",
+        "unknown",
+        "normal",
+        "unknown"
+      ]
+    },
+    {
+      "id": "zuiun_kote",
+      "name": "瑞雲のこて",
+      "category": "arm",
+      "clothType": "light",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 270
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 380
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 240
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 150
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 120
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 180
+        }
+      ],
+      "powerCycle": [
+        "strong",
+        "strongest",
+        "unknown",
+        "weak",
+        "unknown",
+        "strong",
+        "unknown",
+        "unknown",
+        "normal",
+        "unknown"
+      ]
+    },
+    {
+      "id": "onmyohakase_tebukuro",
+      "name": "陰陽博士のてぶくろ",
+      "category": "arm",
+      "clothType": "regen",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 170
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 160
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 270
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 120
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 290
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 130
+        }
+      ],
+      "powerCycle": [
+        "strong",
+        "strongest",
+        "unknown",
+        "weak",
+        "unknown",
+        "strong",
+        "unknown",
+        "unknown",
+        "normal",
+        "unknown"
+      ]
+    },
+    {
+      "id": "onmitsu_kyahan",
+      "name": "隠密の脚半",
+      "category": "leg",
+      "clothType": "light",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 460
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 250
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 170
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 420
+        }
+      ],
+      "powerCycle": [
+        "strong",
+        "strongest",
+        "unknown",
+        "weak",
+        "unknown",
+        "strong",
+        "unknown",
+        "unknown",
+        "normal",
+        "unknown"
+      ]
+    },
+    {
+      "id": "zuiun_fukagutsu",
+      "name": "瑞雲の深沓",
+      "category": "leg",
+      "clothType": "rainbow",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 350
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 420
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 120
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 260
+        }
+      ],
+      "powerCycle": [
+        "strong",
+        "strongest",
+        "unknown",
+        "weak",
+        "unknown",
+        "strong",
+        "unknown",
+        "unknown",
+        "normal",
+        "unknown"
+      ]
+    },
+    {
+      "id": "onmyohakase_kutsu",
+      "name": "陰陽博士のくつ",
+      "category": "leg",
+      "clothType": "rainbow",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 120
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 450
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 390
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 170
+        }
+      ],
+      "powerCycle": [
+        "strong",
+        "strongest",
+        "unknown",
+        "weak",
+        "unknown",
+        "strong",
+        "unknown",
+        "unknown",
+        "normal",
+        "unknown"
+      ]
+    },
+    {
+      "id": "reppu_cap",
+      "name": "烈風のキャップ",
+      "category": "head",
+      "clothType": "regen",
+      "cells": [
+        {
+          "r": 1,
+          "c": 2,
+          "base": 420
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 290
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 140
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 320
+        }
+      ],
+      "powerCycle": [
+        "normal",
+        "strongest",
+        "unknown",
+        "strong",
+        "unknown",
+        "weak",
+        "unknown",
+        "unknown",
+        "normal",
+        "unknown"
+      ]
+    },
+    {
+      "id": "yoseikyo_hanagami",
+      "name": "妖精郷の花髪",
+      "category": "head",
+      "clothType": "rainbow",
+      "cells": [
+        {
+          "r": 1,
+          "c": 2,
+          "base": 290
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 150
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 450
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 490
+        }
+      ],
+      "powerCycle": [
+        "normal",
+        "strongest",
+        "unknown",
+        "strong",
+        "unknown",
+        "weak",
+        "unknown",
+        "unknown",
+        "normal",
+        "unknown"
+      ]
+    },
+    {
+      "id": "antique_toque",
+      "name": "アンテイクトーク",
+      "category": "head",
+      "clothType": "light",
+      "cells": [
+        {
+          "r": 1,
+          "c": 2,
+          "base": 460
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 410
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 180
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 310
+        }
+      ],
+      "powerCycle": [
+        "normal",
+        "strongest",
+        "unknown",
+        "strong",
+        "unknown",
+        "weak",
+        "unknown",
+        "unknown",
+        "normal",
+        "unknown"
+      ]
+    },
+    {
+      "id": "reppu_koromo_ue",
+      "name": "烈風のころも上",
+      "category": "body_upper",
+      "clothType": "regen",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 100
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 150
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 100
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 140
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 120
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 90
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 170
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 90
+        },
+        {
+          "r": 3,
+          "c": 3,
+          "base": 150
+        }
+      ],
+      "powerCycle": [
+        "normal",
+        "strongest",
+        "unknown",
+        "strong",
+        "unknown",
+        "weak",
+        "unknown",
+        "unknown",
+        "normal",
+        "unknown"
+      ]
+    },
+    {
+      "id": "yoseikyo_butoufuku_ue",
+      "name": "妖精郷の舞踏服上",
+      "category": "body_upper",
+      "clothType": "light",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 120
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 160
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 110
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 130
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 90
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 190
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 100
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 130
+        },
+        {
+          "r": 3,
+          "c": 3,
+          "base": 90
+        }
+      ],
+      "powerCycle": [
+        "normal",
+        "strongest",
+        "unknown",
+        "strong",
+        "unknown",
+        "weak",
+        "unknown",
+        "unknown",
+        "normal",
+        "unknown"
+      ]
+    },
+    {
+      "id": "antique_dress_ue",
+      "name": "アンテイクドレス上",
+      "category": "body_upper",
+      "clothType": "regen",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 180
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 100
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 190
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 120
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 90
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 130
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 110
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 160
+        },
+        {
+          "r": 3,
+          "c": 3,
+          "base": 80
+        }
+      ],
+      "powerCycle": [
+        "normal",
+        "strongest",
+        "unknown",
+        "strong",
+        "unknown",
+        "weak",
+        "unknown",
+        "unknown",
+        "normal",
+        "unknown"
+      ]
+    },
+    {
+      "id": "reppu_koromo_shita",
+      "name": "烈風のころも下",
+      "category": "body_lower",
+      "clothType": "regen",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 180
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 200
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 270
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 110
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 90
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 240
+        }
+      ],
+      "powerCycle": [
+        "normal",
+        "strongest",
+        "unknown",
+        "strong",
+        "unknown",
+        "weak",
+        "unknown",
+        "unknown",
+        "normal",
+        "unknown"
+      ]
+    },
+    {
+      "id": "yoseikyo_butoufuku_shita",
+      "name": "妖精郷の舞踏服下",
+      "category": "body_lower",
+      "clothType": "rainbow",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 80
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 270
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 260
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 100
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 140
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 290
+        }
+      ],
+      "powerCycle": [
+        "normal",
+        "strongest",
+        "unknown",
+        "strong",
+        "unknown",
+        "weak",
+        "unknown",
+        "unknown",
+        "normal",
+        "unknown"
+      ]
+    },
+    {
+      "id": "antique_dress_shita",
+      "name": "アンテイクドレス下",
+      "category": "body_lower",
+      "clothType": "light",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 290
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 100
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 140
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 260
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 340
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 90
+        }
+      ],
+      "powerCycle": [
+        "normal",
+        "strongest",
+        "unknown",
+        "strong",
+        "unknown",
+        "weak",
+        "unknown",
+        "unknown",
+        "normal",
+        "unknown"
+      ]
+    },
+    {
+      "id": "reppu_glove",
+      "name": "烈風のグローブ",
+      "category": "arm",
+      "clothType": "regen",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 210
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 120
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 320
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 290
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 90
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 140
+        }
+      ],
+      "powerCycle": [
+        "normal",
+        "strongest",
+        "unknown",
+        "strong",
+        "unknown",
+        "weak",
+        "unknown",
+        "unknown",
+        "normal",
+        "unknown"
+      ]
+    },
+    {
+      "id": "yoseikyo_udewa",
+      "name": "妖精郷のうでわ",
+      "category": "arm",
+      "clothType": "light",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 220
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 90
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 190
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 380
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 130
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 290
+        }
+      ],
+      "powerCycle": [
+        "normal",
+        "strongest",
+        "unknown",
+        "strong",
+        "unknown",
+        "weak",
+        "unknown",
+        "unknown",
+        "normal",
+        "unknown"
+      ]
+    },
+    {
+      "id": "antique_glove",
+      "name": "アンテイクグローブ",
+      "category": "arm",
+      "clothType": "rainbow",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 140
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 350
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 130
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 190
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 90
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 230
+        }
+      ],
+      "powerCycle": [
+        "normal",
+        "strongest",
+        "unknown",
+        "strong",
+        "unknown",
+        "weak",
+        "unknown",
+        "unknown",
+        "normal",
+        "unknown"
+      ]
+    },
+    {
+      "id": "reppu_boots",
+      "name": "烈風のブーツ",
+      "category": "leg",
+      "clothType": "regen",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 200
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 380
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 110
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 450
+        }
+      ],
+      "powerCycle": [
+        "normal",
+        "strongest",
+        "unknown",
+        "strong",
+        "unknown",
+        "weak",
+        "unknown",
+        "unknown",
+        "normal",
+        "unknown"
+      ]
+    },
+    {
+      "id": "yoseikyo_boots",
+      "name": "妖精郷のブーツ",
+      "category": "leg",
+      "clothType": "light",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 510
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 140
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 210
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 490
+        }
+      ],
+      "powerCycle": [
+        "normal",
+        "strongest",
+        "unknown",
+        "strong",
+        "unknown",
+        "weak",
+        "unknown",
+        "unknown",
+        "normal",
+        "unknown"
+      ]
+    },
+    {
+      "id": "antique_shoes",
+      "name": "アンテイクシューズ",
+      "category": "leg",
+      "clothType": "rainbow",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 120
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 250
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 470
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 360
+        }
+      ],
+      "powerCycle": [
+        "normal",
+        "strongest",
+        "unknown",
+        "strong",
+        "unknown",
+        "weak",
+        "unknown",
+        "unknown",
+        "normal",
+        "unknown"
+      ]
+    },
+    {
+      "id": "tsukikage_hitaiate",
+      "name": "月影の額当て",
+      "category": "head",
+      "clothType": "light",
+      "cells": [
+        {
+          "r": 1,
+          "c": 2,
+          "base": 500
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 380
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 130
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 440
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "normal",
+        "normal",
+        "strong",
+        "unknown"
+      ]
+    },
+    {
+      "id": "nokutoru_crown",
+      "name": "ノクトルクラウン",
+      "category": "head",
+      "clothType": "regen",
+      "cells": [
+        {
+          "r": 1,
+          "c": 2,
+          "base": 340
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 480
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 150
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 230
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "normal",
+        "normal",
+        "strong",
+        "unknown"
+      ]
+    },
+    {
+      "id": "eisei_circlet",
+      "name": "叡聖のサークレット",
+      "category": "head",
+      "clothType": "rainbow",
+      "cells": [
+        {
+          "r": 1,
+          "c": 2,
+          "base": 450
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 140
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 300
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 400
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "normal",
+        "normal",
+        "strong",
+        "unknown"
+      ]
+    },
+    {
+      "id": "tsukikage_shouzoku_ue",
+      "name": "月影の装束上",
+      "category": "body_upper",
+      "clothType": "light",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 130
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 85
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 110
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 80
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 110
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 160
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 150
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 100
+        },
+        {
+          "r": 3,
+          "c": 3,
+          "base": 180
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "normal",
+        "normal",
+        "strong",
+        "unknown"
+      ]
+    },
+    {
+      "id": "nokutoru_cape_ue",
+      "name": "ノクトルケープ上",
+      "category": "body_upper",
+      "clothType": "rainbow",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 90
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 120
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 150
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 140
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 110
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 100
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 220
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 90
+        },
+        {
+          "r": 3,
+          "c": 3,
+          "base": 190
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "normal",
+        "normal",
+        "strong",
+        "unknown"
+      ]
+    },
+    {
+      "id": "eisei_hakasefuku",
+      "name": "叡聖の博士服",
+      "category": "body_upper",
+      "clothType": "rainbow",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 240
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 150
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 170
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 130
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 110
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 90
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 80
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 130
+        },
+        {
+          "r": 3,
+          "c": 3,
+          "base": 110
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "normal",
+        "normal",
+        "strong",
+        "unknown"
+      ]
+    },
+    {
+      "id": "tsukikage_shouzoku_shita",
+      "name": "月影の装束下",
+      "category": "body_lower",
+      "clothType": "light",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 150
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 270
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 320
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 90
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 120
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 280
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "normal",
+        "normal",
+        "strong",
+        "unknown"
+      ]
+    },
+    {
+      "id": "nokutoru_cape_shita",
+      "name": "ノクトルケープ下",
+      "category": "body_lower",
+      "clothType": "regen",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 160
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 170
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 90
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 210
+        },
+        {
+          "r": 3,
+          "c": 1,
+          "base": 270
+        },
+        {
+          "r": 3,
+          "c": 2,
+          "base": 160
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "normal",
+        "normal",
+        "strong",
+        "unknown"
+      ]
+    },
+    {
+      "id": "tsukikage_kote",
+      "name": "月影のこて",
+      "category": "arm",
+      "clothType": "light",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 340
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 100
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 320
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 180
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 150
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 170
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "normal",
+        "normal",
+        "strong",
+        "unknown"
+      ]
+    },
+    {
+      "id": "nokutoru_glove",
+      "name": "ノクトルグローブ",
+      "category": "arm",
+      "clothType": "light",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 360
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 90
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 160
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 110
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 250
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 330
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "normal",
+        "normal",
+        "strong",
+        "unknown"
+      ]
+    },
+    {
+      "id": "eisei_glove",
+      "name": "叡聖のグローブ",
+      "category": "arm",
+      "clothType": "rainbow",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 180
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 130
+        },
+        {
+          "r": 1,
+          "c": 3,
+          "base": 350
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 230
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 100
+        },
+        {
+          "r": 2,
+          "c": 3,
+          "base": 120
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "normal",
+        "normal",
+        "strong",
+        "unknown"
+      ]
+    },
+    {
+      "id": "tsukikage_fukagutsu",
+      "name": "月影の深沓",
+      "category": "leg",
+      "clothType": "light",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 410
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 120
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 250
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 520
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "normal",
+        "normal",
+        "strong",
+        "unknown"
+      ]
+    },
+    {
+      "id": "nokutoru_boots",
+      "name": "ノクトルブーツ",
+      "category": "leg",
+      "clothType": "regen",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 100
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 500
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 390
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 190
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "normal",
+        "normal",
+        "strong",
+        "unknown"
+      ]
+    },
+    {
+      "id": "eisei_boots",
+      "name": "叡聖のブーツ",
+      "category": "leg",
+      "clothType": "rainbow",
+      "cells": [
+        {
+          "r": 1,
+          "c": 1,
+          "base": 450
+        },
+        {
+          "r": 1,
+          "c": 2,
+          "base": 240
+        },
+        {
+          "r": 2,
+          "c": 1,
+          "base": 130
+        },
+        {
+          "r": 2,
+          "c": 2,
+          "base": 410
+        }
+      ],
+      "powerCycle": [
+        "weak",
+        "unknown",
+        "strongest",
+        "unknown",
+        "unknown",
+        "normal",
+        "normal",
+        "strong",
+        "unknown"
+      ]
     }
   ]
 }
