@@ -103,16 +103,23 @@
   .c-done   { background: #58c26a; color: #fff; }
   .c-over   { background: #e2574d; color: #fff; }
 
-  /* ---- ターン・集中力 / 誤差 の2行 + 1手戻す ---- */
-  .numArea { display: flex; flex-direction: column; gap: 2px; color: #3a2a10; font-weight: bold; }
-  .numLine { display: flex; align-items: center; justify-content: center; gap: 18px; font-size: 13px; }
-  .numLine b { font-size: 18px; }
-  .undoBtn { height: 36px; padding: 0 12px; border-radius: 8px; font-size: 12px; font-weight: bold;
+  /* ---- 数値・メッセージ領域(D45: 2行×4列グリッド)
+     1行目: ターン/集中力/誤差、2行目1〜3列: メッセージ欄、4列目1〜2行: 1手戻す ---- */
+  .statusGrid { display: grid; grid-template-columns: 1fr 1fr 1fr auto;
+    grid-template-rows: auto auto; column-gap: 10px;
+    align-items: center; color: #3a2a10; font-weight: bold; }
+  .stat { display: flex; align-items: baseline; justify-content: center; gap: 5px;
+    font-size: 13px; padding-bottom: 5px; }
+  .stat b { font-size: 18px; }
+  .undoBtn { grid-column: 4; grid-row: 1 / 3; align-self: center;
+    height: 44px; padding: 0 12px; border-radius: 8px; font-size: 12px; font-weight: bold;
     background: linear-gradient(180deg, #23255c, #14163e); color: #fff;
     border: 2px solid #fff; box-shadow: 0 0 0 2px #caa74f; }
-
-  /* ---- メッセージ欄(D45) ---- */
-  .msgWin { min-height: 40px; padding: 8px 12px; display: flex; align-items: center;
+  /* メッセージ欄: ウィンドウ調にしない(ボタンと混同するため)。
+     上辺の罫線(1〜3列目の幅)で数値行と区別する */
+  .msgCell { grid-column: 1 / 4; grid-row: 2;
+    border-top: 2px solid rgba(60, 40, 10, .45);
+    min-height: 38px; padding: 6px 4px 0; display: flex; align-items: center;
     font-size: 13px; line-height: 1.5; cursor: pointer; user-select: none; }
 
   /* ---- 特技 5行4列 ---- */
@@ -184,14 +191,14 @@
       </div>
     </section>
 
-    <!-- 数値2行 + 1手戻す -->
-    <div class="numArea">
-      <div class="numLine"><span>ターン <b>6</b></span><span>集中力 <b>168</b></span></div>
-      <div class="numLine"><span>誤差 <b>57</b></span><button class="undoBtn" type="button">↩ 1手戻す</button></div>
+    <!-- D45: 数値・メッセージ領域(2行×4列。メッセージ欄タップでサンプル切替) -->
+    <div class="statusGrid">
+      <span class="stat">ターン <b>6</b></span>
+      <span class="stat">集中力 <b>168</b></span>
+      <span class="stat">誤差 <b>57</b></span>
+      <button class="undoBtn" type="button">↩ 1手戻す</button>
+      <div class="msgCell" id="msgWin">消費集中力が 半分になった！</div>
     </div>
-
-    <!-- D45: メッセージ欄(タップでサンプル切替) -->
-    <div class="msgWin win" id="msgWin">消費集中力が 半分になった!</div>
 
     <!-- 特技 5行4列(§5.3.1) -->
     <section class="skills" id="skills">
@@ -233,11 +240,11 @@
 
   // メッセージ欄: タップで文言サンプルを順送り(D45 の全パターン確認用)
   const messages = [
-    '消費集中力が 半分になった!',
-    '消費集中力が1.5倍で 会心率アップ!',
-    '1つのマスの 威力と会心率がアップ!',
-    '奇跡の効果で 集中力が 30アップ!',
-    '光の効果で ひっさつチャージ!!',
+    '消費集中力が 半分になった！',
+    '消費集中力が1.5倍で 会心率アップ！',
+    '1つのマスの 威力と会心率がアップ！',
+    '奇跡の効果で 集中力が 30アップ！',
+    '光の効果で ひっさつチャージ！！',
     '',
   ];
   let msgIdx = 0;
