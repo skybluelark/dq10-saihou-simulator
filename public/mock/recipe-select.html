@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>レシピ選択画面モック</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+    display: flex; flex-direction: column; align-items: center;
+    min-height: 100dvh;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    background:
+      radial-gradient(circle at 30% 15%, rgba(255,244,205,.55), transparent 55%),
+      linear-gradient(180deg, #cbb98f, #b7a276);
+    color: #fff;
+  }
+  .frame { width: 100%; max-width: 430px; min-height: 100dvh; display: flex; flex-direction: column; }
+
+  .adArea {
+    height: 50px; flex: 0 0 auto;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(60,40,10,.12);
+    border-bottom: 1px dashed rgba(60,40,10,.45); color: rgba(60,40,10,.55);
+    font-size: 12px; letter-spacing: .15em;
+  }
+
+  header { display: flex; align-items: center; gap: 6px; height: 50px; padding: 0 6px; flex: 0 0 auto; }
+  .hdrBtn {
+    width: 76px; height: 40px; flex: 0 0 auto;
+    display: flex; align-items: center; justify-content: center; gap: 2px;
+    border-radius: 8px; font-size: 14px; font-weight: bold;
+    background: linear-gradient(180deg, #6b4a26, #4c3116); color: #ffe9b8;
+    border: 1px solid #2e1d0a; box-shadow: inset 0 1px 0 rgba(255,230,160,.5), 0 2px 3px rgba(40,20,0,.4);
+  }
+  .hdrSpacer { width: 76px; flex: 0 0 auto; }
+  .hdrTitle { flex: 1 1 auto; text-align: center; font-size: 20px; font-weight: bold;
+    color: #3a2a10; text-shadow: 0 1px 0 rgba(255,255,255,.5);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  main { flex: 1 1 auto; display: flex; flex-direction: column; gap: 8px; padding: 6px 12px 10px; min-height: 0; }
+
+  .win {
+    background: linear-gradient(180deg, #23255c, #14163e); color: #fff;
+    border: 2px solid #fff; border-radius: 8px;
+    box-shadow: 0 0 0 1px #14163e, 0 0 0 3px #caa74f, 0 3px 6px rgba(40,20,0,.35);
+  }
+
+  /* ---- 部位タブ(横スクロール) ---- */
+  .catTabs { display: flex; gap: 6px; overflow-x: auto; padding: 2px;
+    scrollbar-width: none; flex: 0 0 auto; }
+  .catTabs::-webkit-scrollbar { display: none; }
+  .catTab { flex: 0 0 auto; height: 36px; padding: 0 14px; border-radius: 18px;
+    font-size: 13px; font-weight: bold;
+    background: rgba(60,40,10,.18); color: #4a3616; border: 1px solid rgba(60,40,10,.35); }
+  .catTab.on { background: linear-gradient(180deg, #23255c, #14163e); color: #fff;
+    border: 1px solid #fff; box-shadow: 0 0 0 2px #caa74f; }
+
+  /* ---- レシピ一覧(この画面ではリストが高さの伸縮を吸収する) ---- */
+  .recipeList { flex: 1 1 auto; min-height: 120px; overflow-y: auto; padding: 6px; }
+  .recipeRow { display: flex; align-items: center; gap: 8px; width: 100%;
+    min-height: 48px; padding: 4px 8px; border-radius: 6px; border: none;
+    background: transparent; color: #fff; font: inherit; text-align: left; }
+  .recipeRow + .recipeRow { border-top: 1px solid rgba(255,255,255,.18); border-radius: 0; }
+  .recipeRow.sel { background: linear-gradient(180deg, #b6903a, #8d6a1f); border-radius: 6px; }
+  .recipeName { flex: 1 1 auto; font-size: 15px; font-weight: bold; }
+  .clothBadge { flex: 0 0 auto; font-size: 11px; font-weight: bold; padding: 3px 8px; border-radius: 10px; }
+  .cb-regen   { background: #2e9e44; color: #fff; }
+  .cb-rainbow { background: #d9c23a; color: #4a3a00; }
+  .cb-light   { background: #e77fb4; color: #fff; }
+  .cb-normal  { background: #b9a77f; color: #3a2c10; }
+
+  /* ---- 針・★ ---- */
+  .needlePanel { padding: 8px; flex: 0 0 auto; display: flex; flex-direction: column; gap: 8px; }
+  .rowLabel { font-size: 12px; font-weight: bold; color: #ffe9b8; }
+  .needleRow { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 2px; }
+  .needleRow::-webkit-scrollbar { display: none; }
+  .needleChip { flex: 0 0 auto; height: 34px; padding: 0 10px; border-radius: 8px;
+    font-size: 12px; font-weight: bold; background: #2c2f6b; color: #cdd3ff;
+    border: 1px solid rgba(255,255,255,.5); }
+  .needleChip.on { background: linear-gradient(180deg, #b6903a, #8d6a1f); color: #fff; border-color: #fff; }
+  .starRow { display: flex; gap: 6px; align-items: center; }
+  .starChip { flex: 0 0 auto; width: 52px; height: 32px; border-radius: 8px;
+    font-size: 13px; font-weight: bold; background: #2c2f6b; color: #cdd3ff;
+    border: 1px solid rgba(255,255,255,.5); }
+  .starChip.on { background: linear-gradient(180deg, #b6903a, #8d6a1f); color: #fff; border-color: #fff; }
+
+  /* ---- 開始集中力の内訳(D8) ---- */
+  .concLine { text-align: center; font-size: 13px; font-weight: bold; color: #3a2a10; flex: 0 0 auto; }
+  .concLine b { font-size: 20px; }
+  .effectNote { text-align: center; font-size: 11px; color: #6b4a26; min-height: 15px; flex: 0 0 auto; }
+
+  /* ---- はじめる ---- */
+  .startBtn { flex: 0 0 auto; height: 52px; margin: 0 24px; border-radius: 10px;
+    font-size: 18px; font-weight: bold; letter-spacing: .3em; text-indent: .3em;
+    background: linear-gradient(180deg, #b6903a, #8d6a1f); color: #fff;
+    border: 2px solid #fff; box-shadow: 0 0 0 1px #14163e, 0 0 0 3px #caa74f, 0 3px 6px rgba(40,20,0,.35); }
+
+  .caption { text-align: center; font-size: 10px; color: rgba(60,40,10,.55); padding: 2px 0 6px; flex: 0 0 auto; }
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="adArea">アンカー広告(全幅・高さ50〜90dp可変)</div>
+
+  <header>
+    <button class="hdrBtn" type="button" title="トップへ(モックでは未遷移)">◀ もどる</button>
+    <div class="hdrTitle">レシピをえらぶ</div>
+    <div class="hdrSpacer"></div>
+  </header>
+
+  <main>
+    <!-- 部位タブ -->
+    <nav class="catTabs" id="catTabs">
+      <button class="catTab on" type="button">体上</button>
+      <button class="catTab" type="button">体下</button>
+      <button class="catTab" type="button">頭</button>
+      <button class="catTab" type="button">腕</button>
+      <button class="catTab" type="button">足</button>
+      <button class="catTab" type="button">ラグ</button>
+      <button class="catTab" type="button">人形</button>
+    </nav>
+
+    <!-- レシピ一覧(実データより体上8件) -->
+    <section class="recipeList win" id="recipeList">
+      <button class="recipeRow" type="button"><span class="recipeName">賢哲のころも上</span><span class="clothBadge cb-rainbow">虹布</span></button>
+      <button class="recipeRow sel" type="button"><span class="recipeName">カテドラルローブ</span><span class="clothBadge cb-regen">再生布</span></button>
+      <button class="recipeRow" type="button"><span class="recipeName">空賊のシャツ</span><span class="clothBadge cb-light">光布</span></button>
+      <button class="recipeRow" type="button"><span class="recipeName">聖翼のドレス上</span><span class="clothBadge cb-rainbow">虹布</span></button>
+      <button class="recipeRow" type="button"><span class="recipeName">ロードリーローブ上</span><span class="clothBadge cb-regen">再生布</span></button>
+      <button class="recipeRow" type="button"><span class="recipeName">しっこくのマント</span><span class="clothBadge cb-regen">再生布</span></button>
+      <button class="recipeRow" type="button"><span class="recipeName">スパングルドレス上</span><span class="clothBadge cb-light">光布</span></button>
+      <button class="recipeRow" type="button"><span class="recipeName">ふしぎなボレロ上</span><span class="clothBadge cb-rainbow">虹布</span></button>
+    </section>
+
+    <!-- 針・★ -->
+    <section class="needlePanel win">
+      <div>
+        <div class="rowLabel">針</div>
+        <div class="needleRow" id="needleRow"></div>
+      </div>
+      <div>
+        <div class="rowLabel">★</div>
+        <div class="starRow" id="starRow">
+          <button class="starChip on" type="button">★0</button>
+          <button class="starChip" type="button">★1</button>
+          <button class="starChip" type="button">★2</button>
+          <button class="starChip" type="button">★3</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 開始集中力の内訳(D8) -->
+    <div class="concLine" id="concLine">開始集中力 <b>207</b>(基礎207 + 針0)</div>
+    <div class="effectNote" id="effectNote"></div>
+
+    <button class="startBtn" type="button" onclick="location.href='./index.html'">はじめる</button>
+  </main>
+
+  <div class="caption">レシピ選択画面モック v1 — タブ/レシピ/針/★は選択可・「はじめる」でプレイ画面モックへ</div>
+</div>
+
+<script>
+  // 針の実データ(needles.json より)
+  const needles = [
+    { name: '銅のさいほう針', conc: 0 },
+    { name: '鉄のさいほう針', conc: 10 },
+    { name: '銀のさいほう針', conc: 15 },
+    { name: 'プラチナさいほう針', conc: 25 },
+    { name: '超さいほう針', conc: 35 },
+    { name: '奇跡のさいほう針', conc: 50, note: '開幕効果: 30%で 集中力+30' },
+    { name: '光のさいほう針', conc: 45, note: '開幕効果: 10%で ひっさつチャージ' },
+  ];
+  const LEVEL_BASE = 207; // Lv80基礎
+
+  const needleRow = document.getElementById('needleRow');
+  const concLine = document.getElementById('concLine');
+  const effectNote = document.getElementById('effectNote');
+  needles.forEach((n, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'needleChip' + (i === 0 ? ' on' : '');
+    b.textContent = n.name;
+    b.addEventListener('click', () => {
+      needleRow.querySelectorAll('.on').forEach(x => x.classList.remove('on'));
+      b.classList.add('on');
+      const total = LEVEL_BASE + n.conc;
+      concLine.innerHTML = '開始集中力 <b>' + total + '</b>(基礎' + LEVEL_BASE + ' + 針' + n.conc + ')';
+      effectNote.textContent = n.note || '';
+    });
+    needleRow.appendChild(b);
+  });
+
+  // 単一選択のトグル共通
+  function singleSelect(containerId, cls) {
+    const c = document.getElementById(containerId);
+    c.addEventListener('click', (e) => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      c.querySelectorAll('.' + cls).forEach(x => x.classList.remove(cls));
+      btn.classList.add(cls);
+    });
+  }
+  singleSelect('catTabs', 'on');
+  singleSelect('starRow', 'on');
+  singleSelect('recipeList', 'sel');
+</script>
+</body>
+</html>
