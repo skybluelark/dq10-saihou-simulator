@@ -16,6 +16,7 @@ import {
 } from '../core';
 import type {
   Action,
+  CellState,
   GameState,
   JudgeResult,
   ReplayData,
@@ -227,6 +228,32 @@ function App() {
   // 遅延表示待ちのバルーン生成タイマー(再生布の回復分をダメージ表示後に出すため)
   const pendingSpawnTimersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
 
+  // 再生布の2段階表示(SPEC §4.3 v1.20): 回復吹き出しが出るまでグリッドに表示する
+  // 「回復前のマス値」。非 null の間だけ表示を上書きする(セッションの論理状態は即時更新済み)。
+  const [preRegenCells, setPreRegenCells] = useState<CellState[] | null>(null);
+  const preRegenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearPreRegen = useCallback(() => {
+    if (preRegenTimerRef.current) {
+      clearTimeout(preRegenTimerRef.current);
+      preRegenTimerRef.current = null;
+    }
+    setPreRegenCells(null);
+  }, []);
+
+  // 回復前のマス値を delayMs の間だけ表示する(回復吹き出しの表示と同時に解除される)
+  const showPreRegenCells = useCallback(
+    (cells: CellState[], delayMs: number) => {
+      if (preRegenTimerRef.current) clearTimeout(preRegenTimerRef.current);
+      setPreRegenCells(cells);
+      preRegenTimerRef.current = setTimeout(() => {
+        preRegenTimerRef.current = null;
+        setPreRegenCells(null);
+      }, delayMs);
+    },
+    [],
+  );
+
   // 必殺チャージの一時演出(グリッド中央のオーバーレイ)。値はアニメーション再生成用キー。
   const [hissatsuFx, setHissatsuFx] = useState<number | null>(null);
   const hissatsuFxTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -266,7 +293,7 @@ function App() {
     }, HISSATSU_FX_MS);
   }, []);
 
-  // バルーン・保留タイマー・必殺演出のクリア(新規セッション開始/アンドゥで共通)
+  // バルーン・保留タイマー・必殺演出・再生2段階表示のクリア(新規セッション開始/アンドゥで共通)
   const clearTransientFx = useCallback(() => {
     for (const t of balloonTimersRef.current.values()) clearTimeout(t);
     balloonTimersRef.current.clear();
@@ -278,7 +305,8 @@ function App() {
       hissatsuFxTimerRef.current = null;
     }
     setHissatsuFx(null);
-  }, []);
+    clearPreRegen();
+  }, [clearPreRegen]);
 
   // アンマウント時にタイマーを掃除
   useEffect(() => {
@@ -290,6 +318,7 @@ function App() {
       for (const t of pending) clearTimeout(t);
       pending.clear();
       if (hissatsuFxTimerRef.current) clearTimeout(hissatsuFxTimerRef.current);
+      if (preRegenTimerRef.current) clearTimeout(preRegenTimerRef.current);
     };
   }, []);
 
@@ -351,6 +380,7 @@ function App() {
       if (before.finished) return;
       if (lastAppliedRef.current === before) return; // 同一状態への二重適用を防止
       lastAppliedRef.current = before;
+      clearPreRegen(); // 前の再生2段階表示が残っていれば解除(新しい行動の表示を妨げない)
       let rng: Rng;
       if (atEdge) {
         const r = rngRef.current;
@@ -387,6 +417,11 @@ function App() {
         // 次ターン開始(begun)由来の吹き出し(再生布の回復等)は、同じ画面更新の
         // ダメージ吹き出しの表示後に分けて表示する(SPEC §4.3)
         spawnBalloonsDelayed(deriveBalloons(begun.events), BALLOON_LIFETIME_MS);
+        // 再生ターンはマスの残り数値も回復吹き出しと同期して2段階で変化させる
+        // (この時点の game.cells = 行動適用後・回復適用前の値。SPEC §4.3 v1.20)
+        if (begun.events.some((e) => e.kind === 'clothRegen')) {
+          showPreRegenCells(game.cells, BALLOON_LIFETIME_MS);
+        }
         hissatsuCharged ||= begun.events.some((e) => e.kind === 'hissatsuCharge');
         game = begun.state;
       }
@@ -404,7 +439,16 @@ function App() {
           };
       dispatch({ type: 'applied', game, entries, result, record });
     },
-    [engine, config, ui.session, spawnBalloons, spawnBalloonsDelayed, triggerHissatsuFx],
+    [
+      engine,
+      config,
+      ui.session,
+      spawnBalloons,
+      spawnBalloonsDelayed,
+      triggerHissatsuFx,
+      clearPreRegen,
+      showPreRegenCells,
+    ],
   );
 
   const canUndo = ui.session !== null && ui.session.position > 0;
@@ -613,10 +657,18 @@ function App() {
     return previewPositions(data.skills, skill, ui.anchor, currentGame);
   }, [currentGame, ui.selectedSkillId, ui.anchor, skillMap, data]);
 
-  // 誤差評価値(現在合計)は常時表示
+  // グリッド表示用の状態: 再生布の2段階表示中は回復前のマス値で上書きする(SPEC §4.3 v1.20)。
+  // セッションの論理状態(currentGame)は即時更新済みで、行動・履歴の判定には影響しない。
+  const displayGame = useMemo(() => {
+    if (!currentGame) return null;
+    if (!preRegenCells || currentGame.finished) return currentGame;
+    return { ...currentGame, cells: preRegenCells };
+  }, [currentGame, preRegenCells]);
+
+  // 誤差評価値(現在合計)は常時表示(2段階表示中は回復前の値と同期させる)
   const currentJudge = useMemo(
-    () => (currentGame ? engine.judge(currentGame) : null),
-    [engine, currentGame],
+    () => (displayGame ? engine.judge(displayGame) : null),
+    [engine, displayGame],
   );
 
   // 行動ログ表示行(現在ターンのハイライト用にターン番号を付与。検証モードのトグルで
@@ -696,7 +748,7 @@ function App() {
 
           <main className={styles.main}>
             <ClothGrid
-              game={currentGame}
+              game={displayGame ?? currentGame}
               yellowRange={data.params.gauge.yellowRange}
               anchor={ui.anchor}
               targets={previewTargets}
