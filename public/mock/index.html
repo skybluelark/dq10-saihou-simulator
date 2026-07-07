@@ -74,8 +74,12 @@
   .pw-max    { background: #dd5252; color: #fff; }
   .pw-q      { background: #9a9aa5; color: #fff; }
   .chipCurrent { outline: 2px solid #fff; outline-offset: 2px; }
-  /* D5: 精神統一固定中は淡い青の発光(クラス付与で確認可) */
-  .chipLocked { box-shadow: 0 0 10px 4px rgba(120,180,255,.9); }
+  /* D5: 精神統一固定中は残りターン数と同数の「きらめき」バッジ(縦長楕円)を付ける。
+     実装時は画像素材に置き換える(ここではCSSによる仮表現) */
+  .sparkles { position: absolute; top: -8px; left: 4px; display: flex; gap: 2px; }
+  .spark { width: 7px; height: 13px; border-radius: 50%;
+    background: radial-gradient(ellipse at 50% 35%, #ffffff 0%, #fff8c8 45%, #ffd34d 100%);
+    box-shadow: 0 0 4px 1px rgba(255, 240, 150, .9); }
   /* 布特性バッジ(案1・T番号なし): 発動ターンのエントリに特性色バッジ。次周回到達分は半透明 */
   .traitBadge { position: absolute; right: -5px; top: -5px; width: 15px; height: 15px;
     border-radius: 50%; font-size: 10px; line-height: 15px; text-align: center; color: #fff;
@@ -120,15 +124,18 @@
   .msgCell { grid-column: 1 / 4; grid-row: 2;
     border-top: 2px solid rgba(60, 40, 10, .45);
     min-height: 38px; padding: 6px 4px 0; display: flex; align-items: center;
+    justify-content: center; text-align: center;
     font-size: 13px; line-height: 1.5; cursor: pointer; user-select: none; }
 
   /* ---- 特技 5行4列 ---- */
-  .skills { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .skills { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
   .skill { position: relative; height: 44px; border-radius: 8px;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
     background: linear-gradient(180deg, #23255c, #14163e); color: #fff;
     border: 2px solid #fff; box-shadow: 0 0 0 1px #14163e, 0 0 0 2px #caa74f, 0 2px 4px rgba(40,20,0,.3); }
   .skName { font-size: 12px; font-weight: bold; white-space: nowrap; }
+  /* ぬいパワーシフトのみ特技名2行(+コスト)の3行レイアウト(ボタン幅の均等化) */
+  .skName2 { display: flex; flex-direction: column; align-items: center; line-height: 1.05; }
   .skCost { font-size: 10px; opacity: .75; }
   .skill:disabled { opacity: .4; }
   .skill.selected { background: linear-gradient(180deg, #b6903a, #8d6a1f); }
@@ -155,14 +162,14 @@
       <div class="powerInner">
         <span class="powerLabel">ぬいパワー</span>
         <div class="viewCompact">
-          <span class="chip chipL pw-strong">強い</span>
-          <span class="chip chipS pw-q">?</span>
-          <span class="chip chipS pw-weak">弱い</span>
-          <span class="chip chipS pw-max">最強</span>
+          <span class="chip chipL pw-strong">強い<span class="sparkles"><i class="spark"></i><i class="spark"></i></span></span>
+          <span class="chip chipL pw-q">?</span>
+          <span class="chip chipL pw-weak">弱い</span>
+          <span class="chip chipL pw-max">最強</span>
         </div>
         <div class="viewCycle">
           <span class="chip chipS pw-normal">普通</span>
-          <span class="chip chipS pw-strong chipCurrent">強い</span>
+          <span class="chip chipS pw-strong chipCurrent">強い<span class="sparkles"><i class="spark"></i><i class="spark"></i></span></span>
           <span class="chip chipS pw-q">?</span>
           <span class="chip chipS pw-weak">弱い</span>
           <span class="chip chipS pw-max">最強<span class="traitBadge tb-regen">再</span></span>
@@ -205,7 +212,7 @@
       <button class="skill" type="button"><span class="skName">ヨコぬい</span><span class="skCost">8</span></button>
       <button class="skill" type="button"><span class="skName">逆たすきぬい</span><span class="skCost">7</span></button>
       <button class="skill" type="button"><span class="skName">2倍ぬい</span><span class="skCost">9</span></button>
-      <button class="skill" type="button"><span class="skName">ぬいパワーシフト</span><span class="skCost">7</span></button>
+      <button class="skill" type="button"><span class="skName skName2"><span>ぬいパワー</span><span>シフト</span></span><span class="skCost">7</span></button>
 
       <button class="skill" type="button"><span class="skName">水平ぬい</span><span class="skCost">10</span></button>
       <button class="skill" type="button"><span class="skName">巻きこみぬい</span><span class="skCost">13</span></button>
@@ -229,7 +236,7 @@
     </section>
   </main>
 
-  <div class="caption">UIモック v2(トーンB)— パワー行タップ=サイクル開閉(横スクロール可)/ メッセージ欄タップ=文言サンプル切替</div>
+  <div class="caption">UIモック v2.2(トーンB)— パワー行タップ=サイクル開閉(横スクロール可)/ メッセージ欄タップ=文言切替 / きらめき2個=精神統一残り2の表示例</div>
 </div>
 
 <script>
