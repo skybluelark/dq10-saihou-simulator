@@ -197,6 +197,81 @@ describe('T4 「次に来るぬいパワー」(peekNextPower, SPEC §4.3)', () =
   });
 });
 
+describe('T4 「会心×2」の内部区別と精神統一の固定 (SPEC §3.3/§3.4, 実機確認 2026-07-07)', () => {
+  it('シフト会心ターンを固定すると、固定中も会心率×2補正が持続する', () => {
+    const engine = buildEngine();
+    // サイクル: weak, normal, strong
+    const { state } = engine.createSession(
+      recipe(['weak', 'normal', 'strong']),
+      config,
+      new ScriptedRng([]),
+    );
+
+    // T1(weak): ぬいパワーシフト。候補[normal,strong,strongest,critx2]、0.9→critx2。
+    const { state: s1 } = engine.applyAction(
+      state,
+      { type: 'skill', skillId: 'power_shift' },
+      config,
+      new ScriptedRng([0.9]),
+    );
+
+    // T2(シフト会心 critx2): 精神統一 → シフト会心の区別ごと固定される。
+    const { state: s2, events: e2 } = engine.applyAction(
+      s1,
+      { type: 'skill', skillId: 'seishin_toitsu' },
+      config,
+      new ScriptedRng([]),
+    );
+    expect(e2.find((e) => e.kind === 'turnStart')).toMatchObject({ power: 'critx2' });
+    expect(e2.find((e) => e.kind === 'powerLock')).toMatchObject({ power: 'critx2', turns: 3 });
+
+    // T3(固定中): 会心率×2が持続。銅★0+コツ+パッシブ=0.021、×2=0.042。
+    // ロール0.03は「補正なしなら不発(>0.021)、シフト会心なら会心(<0.042)」の境界値。
+    const { state: s3, events: e3 } = engine.applyAction(
+      s2,
+      { type: 'sew', skillId: 'nuu', anchor: { r: 1, c: 1 } },
+      config,
+      new ScriptedRng([baseValueRoll(12), 0.03, HISSATSU_NO]),
+    );
+    expect(e3.find((e) => e.kind === 'turnStart')).toMatchObject({ power: 'critx2' });
+    expect(e3.find((e) => e.kind === 'sewCell')).toMatchObject({ crit: true, damage: 24 });
+
+    // T4(固定中): 補正込みでも上回るロール(0.05>0.042)は不発 = 会心確定ではない。
+    const { events: e4 } = engine.applyAction(
+      s3,
+      { type: 'sew', skillId: 'nuu', anchor: { r: 1, c: 1 } },
+      config,
+      new ScriptedRng([baseValueRoll(12), 0.05, HISSATSU_NO]),
+    );
+    expect(e4.find((e) => e.kind === 'turnStart')).toMatchObject({ power: 'critx2' });
+    expect(e4.find((e) => e.kind === 'sewCell')).toMatchObject({ crit: false });
+  });
+
+  it('ランダム会心ターンを固定すると、補正なしの「会心×2」が続く', () => {
+    const engine = buildEngine();
+    const { state } = engine.createSession(recipe(['unknown']), config, new ScriptedRng([]));
+
+    // T1: ？抽選 0.9 → critx2(ランダム会心)。精神統一で固定。
+    const { state: s1, events: e1 } = engine.applyAction(
+      state,
+      { type: 'skill', skillId: 'seishin_toitsu' },
+      config,
+      new ScriptedRng([0.9]),
+    );
+    expect(e1.find((e) => e.kind === 'powerLock')).toMatchObject({ power: 'critx2', turns: 3 });
+
+    // T2(固定中): 補正なし。ロール0.03 > 0.021 → 不発(シフト会心なら会心になる値)。
+    const { events: e2 } = engine.applyAction(
+      s1,
+      { type: 'sew', skillId: 'nuu', anchor: { r: 1, c: 1 } },
+      config,
+      new ScriptedRng([baseValueRoll(12), 0.03, HISSATSU_NO]),
+    );
+    expect(e2.find((e) => e.kind === 'turnStart')).toMatchObject({ power: 'critx2' });
+    expect(e2.find((e) => e.kind === 'sewCell')).toMatchObject({ crit: false, damage: 12 });
+  });
+});
+
 describe('T4 精神統一固定中のぬいパワーシフト (SPEC §3.3/§4.3)', () => {
   it('固定解除後に実行されるパワーが変わり、シフト会心はその実行ターンに乗る', () => {
     const engine = buildEngine();

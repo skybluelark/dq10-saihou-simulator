@@ -51,6 +51,9 @@ export interface GameState {
   // 精神統一によるパワー固定(残りターン数)。0 = 固定なし
   lockPowerRemaining: number;
   lockedPower: Power | null;
+  // 固定したパワーがシフト会心か(SPEC §3.3: 「会心×2」はシフト/ランダムで内部的に
+  // 別パワー扱いであり、固定はその区別ごと引き継ぐ。シフト会心固定=固定中も×2持続)
+  lockedShiftCrit: boolean;
 
   // 次ターンの強制パワー(ぬいパワーシフトの結果)。null = なし
   forcedNextPower: Power | null;

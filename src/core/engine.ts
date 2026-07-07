@@ -134,6 +134,7 @@ export class Engine {
       currentPower: 'normal',
       lockPowerRemaining: 0,
       lockedPower: null,
+      lockedShiftCrit: false,
       forcedNextPower: null,
       shiftCritThisTurn: false,
       randomCritThisTurn: false,
@@ -174,6 +175,7 @@ export class Engine {
       currentPower: snapshot.currentPower ?? 'normal',
       lockPowerRemaining: snapshot.lockPowerRemaining ?? 0,
       lockedPower: snapshot.lockedPower ?? null,
+      lockedShiftCrit: snapshot.lockedShiftCrit ?? false,
       forcedNextPower: snapshot.forcedNextPower ?? null,
       shiftCritThisTurn: snapshot.shiftCritThisTurn ?? false,
       randomCritThisTurn: snapshot.randomCritThisTurn ?? false,
@@ -224,6 +226,9 @@ export class Engine {
     let shiftCrit = false; // シフト由来の会心×2が「このターン」に実行されるか
     if (state.lockPowerRemaining > 0 && state.lockedPower) {
       power = state.lockedPower;
+      // シフト会心を固定した場合は固定中も×2補正が持続する(SPEC §3.3。
+      // 「会心×2」はシフト/ランダムで内部的に別パワーであり、固定は区別ごと引き継ぐ)
+      shiftCrit = state.lockedShiftCrit;
     } else {
       if (state.forcedNextPower) {
         power = state.forcedNextPower;
@@ -624,6 +629,9 @@ export class Engine {
         // lockPowerRemaining は使用ターンの endTurn で1減るため +1 して持つ。
         const dur = skill.duration ?? 3;
         state.lockedPower = state.currentPower;
+        // 使用ターンがシフト会心なら、その区別ごと固定する(固定中も×2補正が持続)。
+        // ランダム会心(randomCritThisTurn)の固定は補正なしの「会心×2」が続く(SPEC §3.3)。
+        state.lockedShiftCrit = state.shiftCritThisTurn;
         state.lockPowerRemaining = dur + 1;
         events.push({ kind: 'powerLock', power: state.currentPower, turns: dur });
         break;
@@ -711,7 +719,10 @@ export class Engine {
     // 精神統一の残りターン数を減らす
     if (state.lockPowerRemaining > 0) {
       state.lockPowerRemaining -= 1;
-      if (state.lockPowerRemaining === 0) state.lockedPower = null;
+      if (state.lockPowerRemaining === 0) {
+        state.lockedPower = null;
+        state.lockedShiftCrit = false;
+      }
     }
 
     // サイクル前進(精神統一の固定中は前進しない)
