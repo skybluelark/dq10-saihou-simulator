@@ -659,7 +659,7 @@ function App() {
               result={session.result}
               params={data.params}
               onNewSession={handleNewSession}
-              showUndo={settings.verifyMode}
+              verifyMode={settings.verifyMode}
               onUndo={handleUndo}
               onBuildReplayText={buildReplayText}
             />

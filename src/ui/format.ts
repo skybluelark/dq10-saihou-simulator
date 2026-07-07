@@ -2,7 +2,6 @@
 // 例: 「T4: 2倍ぬい → (2,2) -28 会心! (消費9)」「T5: 布特性: 消費集中力半減」
 
 import type { Power, Star, TurnEvent } from '../core';
-import { DEBUG_MODE } from './debug';
 
 export const POWER_LABELS: Record<Power, string> = {
   weak: '弱い',
@@ -34,16 +33,13 @@ function formatSew(s: SewCellEvent, showRolls: boolean): string {
   const sign = s.damage < 0 ? '+' : '-';
   const crit = s.crit ? ' 会心!' : '';
   const capped = s.capped && s.damage >= 0 ? '(頭打ち)' : '';
-  // 検証モード時: 基礎値の出目・会心率を [] 内に付記する(SPEC §4.3)。
-  // 検証モードでないときはデバッグモードのみ、会心判定に用いた会心率を付記する(従来どおり)。
+  // 検証モード時のみ: 基礎値の出目・会心率を [] 内に付記する(SPEC §4.3)。
   let rate = '';
   if (showRolls) {
     rate =
       s.critRate !== undefined
         ? ` [出目${s.baseValue} 会心率${(s.critRate * 100).toFixed(1)}%]`
         : ` [出目${s.baseValue}]`;
-  } else if (DEBUG_MODE && s.critRate !== undefined) {
-    rate = `(会心率${(s.critRate * 100).toFixed(1)}%)`;
   }
   return `(${s.r},${s.c}) ${sign}${Math.abs(s.damage)}${crit}${capped}${rate}`;
 }

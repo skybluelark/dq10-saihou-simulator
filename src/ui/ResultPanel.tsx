@@ -1,12 +1,11 @@
 // 結果表示 (F4): ★数・大成功/失敗の別・誤差評価値合計と★3ライン・
-// マス別誤差内訳(ゲージ外9換算の明示)・使用ターン数・残集中力。
+// マス別誤差内訳(ゲージ外9換算の明示。検証モード時のみ)・使用ターン数・残集中力。
 
 import { useState } from 'react';
 import { cellErrorScore } from '../core';
 import type { GameParams, GameState, JudgeResult } from '../core';
 import { copyReplayText } from './clipboard';
 import { STAR_LABELS } from './format';
-import { DEBUG_MODE } from './debug';
 import styles from './App.module.css';
 
 interface ResultPanelProps {
@@ -14,7 +13,7 @@ interface ResultPanelProps {
   result: JudgeResult;
   params: GameParams;
   onNewSession: () => void;
-  showUndo: boolean;
+  verifyMode: boolean; // 検証モード時: 1手戻すボタンとマス別誤差内訳を表示(SPEC §4.3)
   onUndo: () => void;
   onBuildReplayText: () => string | null;
 }
@@ -24,7 +23,7 @@ export function ResultPanel({
   result,
   params,
   onNewSession,
-  showUndo,
+  verifyMode,
   onUndo,
   onBuildReplayText,
 }: ResultPanelProps) {
@@ -56,7 +55,7 @@ export function ResultPanel({
         誤差評価値合計 <strong>{result.totalError}</strong>(★3ライン: ≤{star3Line}) /
         使用ターン数 <strong>{game.turn}</strong> / 残集中力 <strong>{game.concentration}</strong>
       </div>
-      {DEBUG_MODE && (
+      {verifyMode && (
         <table className={styles.resultTable}>
           <thead>
             <tr>
@@ -87,7 +86,7 @@ export function ResultPanel({
         </table>
       )}
       <div className={styles.resultActions}>
-        {showUndo && (
+        {verifyMode && (
           <button type="button" className={styles.undoButton} onClick={onUndo}>
             1手戻す
           </button>
