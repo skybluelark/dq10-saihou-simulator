@@ -747,6 +747,14 @@ function App() {
           )}
 
           <main className={styles.main}>
+            <RightPanel
+              game={currentGame}
+              params={data.params}
+              needle={needle}
+              levelBase={levelBase}
+              initialConcentration={session.initialConcentration}
+              showCyclePreview={settings.showCyclePreview}
+            />
             <ClothGrid
               game={displayGame ?? currentGame}
               yellowRange={data.params.gauge.yellowRange}
@@ -758,14 +766,6 @@ function App() {
               balloons={balloons}
               hissatsuFx={hissatsuFx}
               onCellClick={handleCellClick}
-            />
-            <RightPanel
-              game={currentGame}
-              params={data.params}
-              needle={needle}
-              levelBase={levelBase}
-              initialConcentration={session.initialConcentration}
-              showCyclePreview={settings.showCyclePreview}
             />
           </main>
 

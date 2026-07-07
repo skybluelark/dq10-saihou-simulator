@@ -124,13 +124,14 @@
   cursor: not-allowed;
 }
 
-/* ---- メイン(左グリッド+右パネル) ---- */
+/* ---- メイン(上=状態表示パネル、下=布グリッド。SPEC §4.3 v1.21) ---- */
 
 .main {
   display: flex;
-  gap: 20px;
+  flex-direction: column;
+  gap: 16px;
   margin-top: 16px;
-  align-items: flex-start;
+  align-items: stretch;
 }
 
 /* ---- 布グリッド ---- */
@@ -145,6 +146,9 @@
   gap: 6px;
   padding: 10px;
   border-radius: 10px;
+  /* 幅を指定しないと、幅の広い兄弟要素(凡例行など)に合わせてコンテナが伸び、
+     布タイプ背景の右余白だけ広がるため、マス領域にフィットさせる(SPEC §4.3 v1.21) */
+  width: fit-content;
 }
 
 /* ---- 布タイプ別グリッド背景(淡色。マス自体の状態色より優先度を下げるため

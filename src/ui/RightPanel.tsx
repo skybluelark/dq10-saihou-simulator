@@ -1,5 +1,6 @@
-// 右パネル (F2/F3): ターン数・現在ぬいパワー・サイクル表示・集中力・
-// 布特性の次回発動・必殺チャージ/無我バッジ。
+// 状態表示パネル (F2/F3。布グリッド上部に配置: SPEC §4.3 v1.21):
+// ターン数・現在ぬいパワー・サイクル表示・集中力・布特性の次回発動・
+// 必殺チャージ/無我バッジ。
 
 import { isTraitTurn, peekNextPower, rainbowMode } from '../core';
 import type { GameParams, GameState, NeedleDef, Power } from '../core';
