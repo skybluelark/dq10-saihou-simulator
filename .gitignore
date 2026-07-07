@@ -2,3 +2,6 @@ node_modules
 dist
 coverage
 *.tsbuildinfo
+
+# ローカル作業用データ(実測メモ・バックアップ等。リポジトリには含めない)
+data/sample/
