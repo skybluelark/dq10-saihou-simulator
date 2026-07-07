@@ -1,4 +1,4 @@
-# ドラクエ10 さいほうシミュレータ 方式設計書 (v0.9)
+# ドラクエ10 さいほうシミュレータ 方式設計書 (v0.10)
 
 作成日: 2026-07-03 / 状態: A1〜A10 承認済み (2026-07-03)
 関連文書: [SPEC.md](SPEC.md)(ゲーム仕様) / [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md)(開発計画)
@@ -54,7 +54,7 @@ src/
 - `DataProvider` インターフェースで抽象化(W1のアプリ同梱にも対応)。
 - JSON類(game-params / needles / skills / concentration)はビルド時バンドル(ダメージ値はコアが計算式で算出するためデータファイルなし — DATA_DESIGN §2)。
 - recipes.csv は実行時 fetch+自作の軽量CSVパーサ(フォーマット固定のため外部依存なし)。**CSV編集→ブラウザ再読み込みだけで反映**でき、再ビルド不要。
-- F7 パラメータエディタの編集値は「バンドル値+localStorage のオーバーライド」として重ねる。
+- F7(レシピ入力: SPEC v1.17 で変更)は DataProvider 配下に localStorage 等の追加レシピソースを重ねる形を想定(保存方式はM4設計で確定)。ゲームパラメータ(game-params.json / needles.json 等)はJSON直接編集のみとし、オーバーライド機構は設けない。
 - W1でのアプリ内レシピ入力は、DataProvider 配下に端末内ストレージ(IndexedDB)実装を追加して対応。CSVはマスタ+インポート/エクスポート形式として維持(DATA_DESIGN §8)。
 
 ## A6. 行動ログ・リプレイ形式
@@ -112,6 +112,7 @@ evaluate(state: GameState, config: SimulatorConfig, options: EvaluateOptions)
 
 ## 更新履歴
 
+- v0.10 (2026-07-07): A5をF7の変更(パラメータエディタ→レシピ入力: SPEC v1.17)に合わせて改訂。ゲームパラメータのオーバーライド機構は設けない。
 - v0.9 (2026-07-07): A6リプレイ形式を確定(`{v:1, seed, recipeId, config, actions, check?}`、core/replay.ts に実装。SPEC v1.14 M3対応)。sewCell イベントに基礎値の出目 `baseValue` を追加(検証モード表示用。乱数消費順の変更なし)。
 - v0.8 (2026-07-07): A4会心判定条件の表現を修正(「先行ヒット反映後」を削除。全特技で対象マスは相異なるため、行動開始時の残り数値と同義。SPEC v1.13)。
 - v0.7 (2026-07-07): SPEC v1.12(残り0以下のマスは会心判定なし)に伴いA4を改訂(会心判定ロールは残り数値>0のマスのみ消費)。T9ゴールデンの差分は本変更で説明できることを確認のこと。
