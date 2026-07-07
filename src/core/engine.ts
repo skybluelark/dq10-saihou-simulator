@@ -442,18 +442,22 @@ export class Engine {
     aimOverride?: boolean,
   ): number {
     const correction = this.cellCorrection(state, cell);
+    const remainingBefore = cell.base - cell.cumulative;
     // [基礎値ロール]
     const baseValue = 12 + rng.nextInt(7); // 12..18
     let damage = sewDamage(baseValue, skillMultiplier, state.currentPower, correction);
 
-    // [会心判定]
-    const { crit: isCrit, rate: critRate } = this.rollCrit(state, cell, config, rng, aimOverride);
+    // [会心判定] 残り数値0以下のマスには会心判定自体が行われない(乱数消費なし。SPEC §3.4 v1.12)
+    let isCrit = false;
+    let critRate: number | undefined;
+    if (remainingBefore > 0) {
+      ({ crit: isCrit, rate: critRate } = this.rollCrit(state, cell, config, rng, aimOverride));
+    }
     let capped = false;
     if (isCrit) {
       damage *= 2;
     }
     // 累積が基準値を超える場合は基準値で頭打ち(残り0)
-    const remainingBefore = cell.base - cell.cumulative;
     if (damage > remainingBefore) {
       // 会心・非会心とも縫いすぎ判定は同様だが、頭打ちフラグは会心の頭打ちのみ立てる
       if (isCrit) {
@@ -552,20 +556,26 @@ export class Engine {
       damage: number; // 適用後の実ダメージ(頭打ち後)
       crit: boolean;
       capped: boolean;
-      critRate: number;
+      critRate?: number;
     }
     const rolls: Roll[] = [];
     let total = 0;
     for (let k = 0; k < pick; k++) {
       const cell = state.cells[chosen[k]];
       const correction = this.cellCorrection(state, cell);
+      // 先行ヒット反映後の残り数値で会心判定の要否を決める(SPEC §3.4 v1.12)
+      const remainingBefore = cell.base - cell.cumulative;
       const baseValue = 12 + rng.nextInt(7);
       let dmg = sewDamage(baseValue, multipliers[k], state.currentPower, correction);
-      const { crit: isCrit, rate: critRate } = this.rollCrit(state, cell, config, rng);
+      // [会心判定] 残り数値0以下のマスには行われない(乱数消費なし)
+      let isCrit = false;
+      let critRate: number | undefined;
+      if (remainingBefore > 0) {
+        ({ crit: isCrit, rate: critRate } = this.rollCrit(state, cell, config, rng));
+      }
       if (isCrit) dmg *= 2;
 
       // 会心の基準値頭打ちは各マス(生成マス)基準で適用
-      const remainingBefore = cell.base - cell.cumulative;
       let capped = false;
       if (isCrit && dmg > remainingBefore) {
         dmg = remainingBefore;

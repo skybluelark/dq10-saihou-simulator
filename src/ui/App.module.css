@@ -446,27 +446,35 @@
   color: #999;
 }
 
-.powerBadgeNext {
-  opacity: 0.6;
-  transform: scale(0.88);
-  font-size: 12px;
+/* サイクル表示の下線(布特性の発動ターン予告)。
+   バッジの枠に接しない独立した直線として、バッジの下へ離して描画する(SPEC §4.3)。 */
+.traitUnderlineHalf::after,
+.traitUnderlineUp::after,
+.traitUnderlineRegen::after,
+.traitUnderlineLight::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: -6px;
+  height: 3px;
+  border-radius: 2px;
 }
 
-/* サイクル表示の下線。.cycleItem の border 指定に打ち勝つよう複合セレクタで詳細度を上げる。 */
-.cycleItem.traitUnderlineHalf {
-  border-bottom: 3px solid #29b6f6;
+.traitUnderlineHalf::after {
+  background: #29b6f6;
 }
 
-.cycleItem.traitUnderlineUp {
-  border-bottom: 3px solid #ffca28;
+.traitUnderlineUp::after {
+  background: #ffca28;
 }
 
-.cycleItem.traitUnderlineRegen {
-  border-bottom: 3px solid #66bb6a;
+.traitUnderlineRegen::after {
+  background: #66bb6a;
 }
 
-.cycleItem.traitUnderlineLight {
-  border-bottom: 3px solid #ec407a;
+.traitUnderlineLight::after {
+  background: #ec407a;
 }
 
 .lockNote {
@@ -483,11 +491,13 @@
 
 .cycleRow {
   display: flex;
-  gap: 4px;
+  gap: 10px 4px; /* 行間は下線(バッジ下 -6px)と重ならない幅を確保 */
   flex-wrap: wrap;
+  padding-bottom: 6px; /* 最下行の下線の描画余白 */
 }
 
 .cycleItem {
+  position: relative; /* 下線(::after)の基準 */
   padding: 2px 8px;
   border-radius: 10px;
   font-size: 12px;

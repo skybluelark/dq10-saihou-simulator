@@ -67,6 +67,81 @@ describe('T1 会心の頭打ち・縫いすぎ', () => {
   });
 });
 
+describe('T1 残り数値0以下のマスは会心判定なし (SPEC §3.4 v1.12)', () => {
+  it('残り0のマス: 会心判定を消費しない(基礎値+必殺のみ)、crit=false・critRateなし', () => {
+    const engine = buildEngine();
+    const state = engine.createStateFromSnapshot({
+      recipeId: 'z',
+      cells: [{ r: 1, c: 1, base: 100, cumulative: 100, shitsuke: false }], // 残り0
+      powerCycle: ['normal'],
+      concentration: 207,
+    });
+    // 消費: 基礎値1 + 必殺1 = 2(会心判定なし)。会心分を入れないことで消費超過も検出する
+    const rng = new ScriptedRng([baseValueRoll(12), HISSATSU_NO]);
+    const { state: s2, events } = engine.applyAction(
+      state,
+      { type: 'sew', skillId: 'nuu', anchor: { r: 1, c: 1 } },
+      config,
+      rng,
+    );
+    expect(rng.consumed()).toBe(2);
+    const sew = events.find((e) => e.kind === 'sewCell');
+    expect(sew).toMatchObject({ crit: false, damage: 12 }); // 縫いすぎは許容(残り-12)
+    expect(sew && 'critRate' in sew ? sew.critRate : undefined).toBeUndefined();
+    expect(s2.cells[0].base - s2.cells[0].cumulative).toBe(-12);
+  });
+
+  it('残りマイナス(縫いすぎ済み)のマスも同様に会心判定なし', () => {
+    const engine = buildEngine();
+    const state = engine.createStateFromSnapshot({
+      recipeId: 'z',
+      cells: [{ r: 1, c: 1, base: 100, cumulative: 105, shitsuke: false }], // 残り-5
+      powerCycle: ['normal'],
+      concentration: 207,
+    });
+    const rng = new ScriptedRng([baseValueRoll(12), HISSATSU_NO]);
+    const { events } = engine.applyAction(
+      state,
+      { type: 'sew', skillId: 'nuu', anchor: { r: 1, c: 1 } },
+      config,
+      rng,
+    );
+    expect(rng.consumed()).toBe(2);
+    expect(events.find((e) => e.kind === 'sewCell')).toMatchObject({ crit: false });
+  });
+
+  it('みだれぬい: 残り0のマスへのヒットは会心判定を消費しない', () => {
+    const engine = buildEngine();
+    // 4マス全て残り0 → 会心判定0回。消費 = 対象選択4 + 基礎値4 + 必殺1 = 9
+    const state = engine.createStateFromSnapshot({
+      recipeId: 'z',
+      category: 'head',
+      rows: 2,
+      cols: 2,
+      cells: [
+        { r: 1, c: 1, base: 100, cumulative: 100, shitsuke: false },
+        { r: 1, c: 2, base: 100, cumulative: 100, shitsuke: false },
+        { r: 2, c: 1, base: 100, cumulative: 100, shitsuke: false },
+        { r: 2, c: 2, base: 100, cumulative: 100, shitsuke: false },
+      ],
+      powerCycle: ['normal'],
+      concentration: 207,
+    });
+    const rng = new ScriptedRng([
+      0.1, 0.1, 0.1, 0.1, // 対象選択(4マス布=全マス)
+      baseValueRoll(12), baseValueRoll(12), baseValueRoll(12), baseValueRoll(12), // 基礎値×4(会心なし)
+      HISSATSU_NO,
+    ]);
+    const { events } = engine.applyAction(state, { type: 'skill', skillId: 'midare_nui' }, config, rng);
+    expect(rng.consumed()).toBe(9);
+    const sews = events.filter((e) => e.kind === 'sewCell');
+    expect(sews).toHaveLength(4);
+    for (const s of sews) {
+      expect(s).toMatchObject({ crit: false });
+    }
+  });
+});
+
 describe('T1 糸ほぐし', () => {
   it('会心判定が呼ばれない(乱数は基礎値のみ消費)', () => {
     const engine = buildEngine();

@@ -31,14 +31,23 @@ export function RightPanel({
 
   const nextPower: Power = peekNextPower(game);
 
-  // サイクルエントリ i が「次に実行される」ターン(SPEC §4.3)。
-  //   現在ターン + ((i − 現在index + 長さ) mod 長さ)
-  //   精神統一固定中は、現在エントリ以外に固定残ターン−1 を後ろへずらす(サイクル停止分)。
+  // サイクルエントリ i の下線判定に使うターン(SPEC §4.3)。
+  //   非現在エントリ: 次に実行されるターン = 現在ターン + ((i − 現在index + 長さ) mod 長さ)
+  //     (精神統一固定中は固定残ターン−1 を後ろへずらす=サイクル停止分)
+  //   現在エントリ: 固定中は残り固定期間 [現在ターン, 現在ターン+残−1] に発動ターンが
+  //     含まれればそのターン(固定中にイベントターンが来るケースの予告)。非固定時は現在ターン。
   const cycleExecTurn = (i: number): number => {
     const len = game.powerCycle.length;
     if (len === 0) return currentTurn;
     const offset = (i - game.cycleIndex + len) % len;
-    const lockPush = game.lockPowerRemaining > 0 && offset >= 1 ? game.lockPowerRemaining - 1 : 0;
+    if (offset === 0) {
+      const span = Math.max(1, game.lockPowerRemaining); // 固定中はその残り期間、非固定は当ターンのみ
+      for (let k = 0; k < span; k++) {
+        if (isTraitTurn(currentTurn + k, params)) return currentTurn + k;
+      }
+      return currentTurn; // 期間内に発動ターンなし(下線なしになる)
+    }
+    const lockPush = game.lockPowerRemaining > 0 ? game.lockPowerRemaining - 1 : 0;
     return currentTurn + offset + lockPush;
   };
 
@@ -100,9 +109,7 @@ export function RightPanel({
         {showCyclePreview && (
           <>
             <span className={styles.powerArrow}>→</span>
-            <span
-              className={`${styles.powerBadge} ${styles.powerBadgeNext} ${styles[`power_${nextPower}`] ?? ''}`}
-            >
+            <span className={`${styles.powerBadge} ${styles[`power_${nextPower}`] ?? ''}`}>
               {POWER_LABELS[nextPower]}
             </span>
           </>
