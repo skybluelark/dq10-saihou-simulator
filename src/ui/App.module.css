@@ -253,10 +253,10 @@
   font-weight: bold;
   white-space: nowrap;
   color: #fff;
-  background: rgba(123, 31, 162, 0.9); /* 紫系 */
-  border: 3px solid #ce93d8;
+  background: rgba(230, 126, 34, 0.92); /* オレンジ系 */
+  border: 3px solid #ffcc80;
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
-  box-shadow: 0 4px 18px rgba(123, 31, 162, 0.5);
+  box-shadow: 0 4px 18px rgba(230, 126, 34, 0.5);
   animation: hissatsuPop 1.2s ease-out forwards;
 }
 
@@ -439,6 +439,33 @@
 
 .power_critx2 {
   background: #f48fb1;
+}
+
+.powerArrow {
+  font-size: 14px;
+  color: #999;
+}
+
+.powerBadgeNext {
+  opacity: 0.6;
+  transform: scale(0.88);
+  font-size: 12px;
+}
+
+.traitUnderlineHalf {
+  border-bottom: 3px solid #29b6f6;
+}
+
+.traitUnderlineUp {
+  border-bottom: 3px solid #ffca28;
+}
+
+.traitUnderlineRegen {
+  border-bottom: 3px solid #66bb6a;
+}
+
+.traitUnderlineLight {
+  border-bottom: 3px solid #ec407a;
 }
 
 .lockNote {

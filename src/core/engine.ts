@@ -221,12 +221,17 @@ export class Engine {
     // パワー確定: 精神統一で固定中ならそのパワー。そうでなければ強制次パワー or サイクル。
     let power: Power;
     let drawnPower: Power | undefined;
+    let shiftCrit = false; // シフト由来の会心×2が「このターン」に実行されるか
     if (state.lockPowerRemaining > 0 && state.lockedPower) {
       power = state.lockedPower;
     } else {
       if (state.forcedNextPower) {
         power = state.forcedNextPower;
         state.forcedNextPower = null;
+        // 強制次パワーはぬいパワーシフトのみが設定する。会心×2はシフト由来のため、
+        // そのパワーが実際に実行されるこのターンにシフト会心補正を付ける(SPEC §3.3)。
+        // 精神統一の固定中はこの分岐に入らず、固定解除後まで持ち越される。
+        shiftCrit = power === 'critx2';
       } else {
         power = state.powerCycle.length > 0 ? state.powerCycle[state.cycleIndex] : 'normal';
       }
@@ -240,12 +245,8 @@ export class Engine {
 
     state.currentPower = power;
     // シフト会心/ランダム会心の判定(当ターン)
-    const internal = state as GameStateInternal;
-    state.shiftCritThisTurn = internal.shiftFlagPending === true;
+    state.shiftCritThisTurn = shiftCrit;
     state.randomCritThisTurn = drawnPower === 'critx2';
-
-    // シフト会心フラグの掃除
-    delete internal.shiftFlagPending;
 
     const nextTurn = state.turn + 1;
 
@@ -633,10 +634,9 @@ export class Engine {
         const candidates = SHIFT_CANDIDATES.filter((p) => p !== from);
         const to = candidates[rng.nextInt(candidates.length)];
         state.forcedNextPower = to;
-        const shiftCrit = to === 'critx2';
-        // 次ターン開始時にシフト会心フラグを立てるためのペンディング
-        (state as GameStateInternal).shiftPendingNext = shiftCrit;
-        events.push({ kind: 'powerShift', from, to, shiftCrit });
+        // シフト会心補正は forcedNextPower(=to)が実行されるターンに startTurn 側で付ける。
+        // 精神統一の固定中に使うと、固定解除後のそのパワー実行ターンまで持ち越される(SPEC §3.3)。
+        events.push({ kind: 'powerShift', from, to, shiftCrit: to === 'critx2' });
         break;
       }
       case 'cellCorrection': {
@@ -714,13 +714,6 @@ export class Engine {
       if (state.lockPowerRemaining === 0) state.lockedPower = null;
     }
 
-    // シフトのペンディングを次ターンのフラグへ移す
-    const internal = state as GameStateInternal;
-    if (internal.shiftPendingNext !== undefined) {
-      internal.shiftFlagPending = internal.shiftPendingNext;
-      delete internal.shiftPendingNext;
-    }
-
     // サイクル前進(精神統一の固定中は前進しない)
     if (state.lockPowerRemaining === 0 && state.powerCycle.length > 0) {
       state.cycleIndex = (state.cycleIndex + 1) % state.powerCycle.length;
@@ -775,17 +768,9 @@ export class Engine {
   }
 }
 
-// ---- 内部拡張(シリアライズ対象外の一時フラグ) ----
-
-interface GameStateInternal extends GameState {
-  shiftPendingNext?: boolean; // シフト使用ターンで立て、endTurnでshiftFlagPendingへ
-  shiftFlagPending?: boolean; // 次ターン開始時にシフト会心として扱う
-}
-
 // ---- ヘルパ ----
 
 function cloneState(state: GameState): GameState {
-  // 内部一時フラグ(shiftPendingNext / shiftFlagPending)もスプレッドで引き継がれる。
   return {
     ...state,
     cells: state.cells.map((c) => ({ ...c })),
@@ -806,6 +791,20 @@ export function rainbowMode(turn: number, params: GameParams): 'half' | 'up' {
   const { firstTurn, interval } = params.clothTrait;
   const occurrence = (turn - firstTurn) / interval; // 0,1,2,...
   return occurrence % 2 === 0 ? 'half' : 'up';
+}
+
+/**
+ * UI表示用「次に来るぬいパワー」(SPEC §4.3)。
+ * ぬいパワーシフトによる強制次パワーがあればそれを、なければサイクルの次エントリを返す。
+ * 精神統一の固定中でも、固定解除後に最初に実行されるパワー(=固定期間中は据え置かれ、
+ * 強制次パワーはこの分岐で消費されず持ち越される値)を示す。「？」は「？」のまま返す。
+ * その実行ターン番号は `currentTurn + max(1, state.lockPowerRemaining)`。
+ */
+export function peekNextPower(state: GameState): Power {
+  if (state.forcedNextPower) return state.forcedNextPower;
+  const cycle = state.powerCycle;
+  if (cycle.length === 0) return 'normal';
+  return cycle[(state.cycleIndex + 1) % cycle.length];
 }
 
 // ---- ライン系特技のアンカー自動置換 (SPEC §3.3 2026-07-06確定) ----

@@ -1,8 +1,8 @@
 // 右パネル (F2/F3): ターン数・現在ぬいパワー・サイクル表示・集中力・
 // 布特性の次回発動・必殺チャージ/無我バッジ。
 
-import { isTraitTurn, rainbowMode } from '../core';
-import type { GameParams, GameState, NeedleDef } from '../core';
+import { isTraitTurn, peekNextPower, rainbowMode } from '../core';
+import type { GameParams, GameState, NeedleDef, Power } from '../core';
 import { CLOTH_LABELS, POWER_LABELS } from './format';
 import { nextTraitTurn } from './helpers';
 import styles from './App.module.css';
@@ -28,6 +28,27 @@ export function RightPanel({
   const currentTurn = game.finished ? game.turn : game.turn + 1;
   const concMax = Math.max(initialConcentration, game.concentration);
   const openingBonus = initialConcentration - levelBase - needle.concentration;
+
+  const nextPower: Power = peekNextPower(game);
+  const nextPowerTurn = currentTurn + Math.max(1, game.lockPowerRemaining);
+
+  // 布特性の発動ターンに当たるパワーへ付す下線色クラス(通常布・終了後は付さない)。
+  const traitUnderlineClass = (execTurn: number): string => {
+    if (game.finished || game.clothType === 'normal') return '';
+    if (!isTraitTurn(execTurn, params)) return '';
+    switch (game.clothType) {
+      case 'rainbow':
+        return rainbowMode(execTurn, params) === 'half'
+          ? styles.traitUnderlineHalf
+          : styles.traitUnderlineUp;
+      case 'regen':
+        return styles.traitUnderlineRegen;
+      case 'light':
+        return styles.traitUnderlineLight;
+      default:
+        return '';
+    }
+  };
 
   const traitInfo = (): string => {
     if (game.clothType === 'normal') {
@@ -61,9 +82,21 @@ export function RightPanel({
 
       <div className={styles.statRow}>
         <span className={styles.statLabel}>ぬいパワー</span>
-        <span className={`${styles.powerBadge} ${styles[`power_${game.currentPower}`] ?? ''}`}>
+        <span
+          className={`${styles.powerBadge} ${styles[`power_${game.currentPower}`] ?? ''} ${traitUnderlineClass(currentTurn)}`}
+        >
           {POWER_LABELS[game.currentPower]}
         </span>
+        {showCyclePreview && (
+          <>
+            <span className={styles.powerArrow}>→</span>
+            <span
+              className={`${styles.powerBadge} ${styles.powerBadgeNext} ${styles[`power_${nextPower}`] ?? ''} ${traitUnderlineClass(nextPowerTurn)}`}
+            >
+              {POWER_LABELS[nextPower]}
+            </span>
+          </>
+        )}
         {game.lockPowerRemaining > 0 && (
           <span className={styles.lockNote}>精神統一固定中(残{game.lockPowerRemaining})</span>
         )}

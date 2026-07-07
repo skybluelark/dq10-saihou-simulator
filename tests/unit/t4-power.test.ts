@@ -1,7 +1,13 @@
 // T4. ターン進行・ぬいパワー (SPEC §3.2) + 精神統一・シフト (§3.3)
 
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_CONFIG, type SimulatorConfig, type RecipeDef, type Power } from '../../src/core';
+import {
+  DEFAULT_CONFIG,
+  peekNextPower,
+  type SimulatorConfig,
+  type RecipeDef,
+  type Power,
+} from '../../src/core';
 import {
   buildEngine,
   ScriptedRng,
@@ -177,5 +183,81 @@ describe('T4 ぬいパワーシフト', () => {
     expect(e2.find((e) => e.kind === 'turnStart')).toMatchObject({ power: 'critx2' });
     expect(e2.find((e) => e.kind === 'sewCell')).toMatchObject({ crit: true });
     expect(s2.cells[0].cumulative).toBe(24); // 会心2倍(×2補正が効いている証跡)
+  });
+});
+
+describe('T4 「次に来るぬいパワー」(peekNextPower, SPEC §4.3)', () => {
+  it('通常時はサイクルの次エントリを返す', () => {
+    const engine = buildEngine();
+    const created = engine.createSession(recipe(['weak', 'strong', 'normal']), config, new ScriptedRng([]));
+    // 開幕処理(beginTurn)で currentPower=weak(idx0) が確定。次に来る=strong(idx1)。
+    const { state } = engine.beginTurn(created.state, new ScriptedRng([]));
+    expect(state.currentPower).toBe('weak');
+    expect(peekNextPower(state)).toBe('strong');
+  });
+});
+
+describe('T4 精神統一固定中のぬいパワーシフト (SPEC §3.3/§4.3)', () => {
+  it('固定解除後に実行されるパワーが変わり、シフト会心はその実行ターンに乗る', () => {
+    const engine = buildEngine();
+    // サイクル: strong, weak, normal
+    const { state } = engine.createSession(
+      recipe(['strong', 'weak', 'normal']),
+      config,
+      new ScriptedRng([]),
+    );
+
+    // T1: currentPower=strong を精神統一で固定(T2〜T4)。
+    const { state: s1, events: e1 } = engine.applyAction(
+      state,
+      { type: 'skill', skillId: 'seishin_toitsu' },
+      config,
+      new ScriptedRng([]),
+    );
+    expect(e1.find((e) => e.kind === 'powerLock')).toMatchObject({ power: 'strong', turns: 3 });
+    // 固定中の「次に来るパワー」= 固定解除後のサイクル続き(weak)。
+    expect(peekNextPower(s1)).toBe('weak');
+
+    // T2(固定中=strong): ぬいパワーシフト。from=strong、候補[weak,normal,strongest,critx2]。
+    // critx2 は index3 → nextInt(4): 0.9→3。
+    const { state: s2, events: e2 } = engine.applyAction(
+      s1,
+      { type: 'skill', skillId: 'power_shift' },
+      config,
+      new ScriptedRng([0.9]),
+    );
+    expect(e2.find((e) => e.kind === 'turnStart')).toMatchObject({ power: 'strong' }); // 固定中
+    expect(e2.find((e) => e.kind === 'powerShift')).toMatchObject({
+      from: 'strong',
+      to: 'critx2',
+      shiftCrit: true,
+    });
+    // シフト後、「次に来るパワー」= 固定解除後に実行される critx2 に変わる。
+    expect(peekNextPower(s2)).toBe('critx2');
+
+    // T3・T4(固定中=strong)。シフト会心フラグはここでは消費されない。
+    let s = s2;
+    for (let t = 0; t < 2; t++) {
+      const { state: sn, events } = engine.applyAction(
+        s,
+        { type: 'sew', skillId: 'nuu', anchor: { r: 1, c: 1 } },
+        config,
+        new ScriptedRng([baseValueRoll(12), CRIT_NO, HISSATSU_NO]),
+      );
+      expect(events.find((e) => e.kind === 'turnStart')).toMatchObject({ power: 'strong' });
+      s = sn;
+    }
+
+    // T5: 固定解除。forcedNextPower=critx2 が実行され、シフト会心×2 が「このターン」に乗る。
+    // 銅★0+コツ+パッシブ=0.021、シフト会心×2=0.042。会心ロール0.03 は
+    // 「補正なしなら不発(>0.021)、シフト会心なら会心(<0.042)」の境界値。
+    const { events: e5 } = engine.applyAction(
+      s,
+      { type: 'sew', skillId: 'nuu', anchor: { r: 1, c: 1 } },
+      config,
+      new ScriptedRng([baseValueRoll(12), 0.03, HISSATSU_NO]),
+    );
+    expect(e5.find((e) => e.kind === 'turnStart')).toMatchObject({ power: 'critx2' });
+    expect(e5.find((e) => e.kind === 'sewCell')).toMatchObject({ crit: true, damage: 24 });
   });
 });
