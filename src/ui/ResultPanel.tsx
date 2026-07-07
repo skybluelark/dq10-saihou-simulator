@@ -4,7 +4,7 @@
 import { cellErrorScore } from '../core';
 import type { GameParams, GameState, JudgeResult } from '../core';
 import { STAR_LABELS } from './format';
-import uiConfig from './ui-config.json';
+import { DEBUG_MODE } from './debug';
 import styles from './App.module.css';
 
 interface ResultPanelProps {
@@ -33,7 +33,7 @@ export function ResultPanel({ game, result, params, onNewSession }: ResultPanelP
         誤差評価値合計 <strong>{result.totalError}</strong>(★3ライン: ≤{star3Line}) /
         使用ターン数 <strong>{game.turn}</strong> / 残集中力 <strong>{game.concentration}</strong>
       </div>
-      {uiConfig.debugMode && (
+      {DEBUG_MODE && (
         <table className={styles.resultTable}>
           <thead>
             <tr>

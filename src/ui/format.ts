@@ -2,7 +2,7 @@
 // 例: 「T4: 2倍ぬい → (2,2) -28 会心! (消費9)」「T5: 布特性: 消費集中力半減」
 
 import type { Power, Star, TurnEvent } from '../core';
-import uiConfig from './ui-config.json';
+import { DEBUG_MODE } from './debug';
 
 export const POWER_LABELS: Record<Power, string> = {
   weak: '弱い',
@@ -36,7 +36,7 @@ function formatSew(s: SewCellEvent): string {
   const capped = s.capped && s.damage >= 0 ? '(頭打ち)' : '';
   // デバッグモード時のみ、会心判定に用いた会心率を付記する(糸ほぐし等 critRate なしは対象外)
   const rate =
-    uiConfig.debugMode && s.critRate !== undefined
+    DEBUG_MODE && s.critRate !== undefined
       ? `(会心率${(s.critRate * 100).toFixed(1)}%)`
       : '';
   return `(${s.r},${s.c}) ${sign}${Math.abs(s.damage)}${crit}${capped}${rate}`;
