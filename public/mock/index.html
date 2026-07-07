@@ -112,9 +112,12 @@
   .statusGrid { display: grid; grid-template-columns: 1fr 1fr 1fr auto;
     grid-template-rows: auto auto; column-gap: 10px;
     align-items: center; color: #3a2a10; font-weight: bold; }
-  .stat { display: flex; align-items: baseline; justify-content: center; gap: 5px;
-    font-size: 13px; padding-bottom: 5px; }
+  /* D50: 1行目(数値行)は高さを広めに取る */
+  .stat { display: flex; align-items: center; justify-content: center; gap: 5px;
+    font-size: 13px; min-height: 40px; padding-bottom: 2px; }
   .stat b { font-size: 18px; }
+  /* 集中力のラベルは「残り/集中力」の2行表記 */
+  .statLbl2 { font-size: 11px; line-height: 1.15; text-align: center; }
   .undoBtn { grid-column: 4; grid-row: 1 / 3; align-self: center;
     height: 44px; padding: 0 12px; border-radius: 8px; font-size: 12px; font-weight: bold;
     background: linear-gradient(180deg, #23255c, #14163e); color: #fff;
@@ -123,9 +126,9 @@
      上辺の罫線(1〜3列目の幅)で数値行と区別する */
   .msgCell { grid-column: 1 / 4; grid-row: 2;
     border-top: 2px solid rgba(60, 40, 10, .45);
-    min-height: 38px; padding: 6px 4px 0; display: flex; align-items: center;
+    min-height: 28px; padding: 4px 4px 0; display: flex; align-items: center;
     justify-content: center; text-align: center;
-    font-size: 13px; line-height: 1.5; cursor: pointer; user-select: none; }
+    font-size: 13px; line-height: 1.4; cursor: pointer; user-select: none; }
 
   /* ---- 特技 5行4列 ---- */
   .skills { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
@@ -201,7 +204,7 @@
     <!-- D45: 数値・メッセージ領域(2行×4列。メッセージ欄タップでサンプル切替) -->
     <div class="statusGrid">
       <span class="stat">ターン <b>6</b></span>
-      <span class="stat">集中力 <b>168</b></span>
+      <span class="stat"><span class="statLbl2">残り<br>集中力</span> <b>168</b></span>
       <span class="stat">誤差 <b>57</b></span>
       <button class="undoBtn" type="button">↩ 1手戻す</button>
       <div class="msgCell" id="msgWin">消費集中力が 半分になった！</div>
