@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>スマホ版UIモック</title>
 <style>
-  /* ============ 共通レイアウト(テーマ非依存) ============ */
+  /* ============ レイアウト ============ */
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; }
   body {
@@ -13,178 +13,163 @@
     display: flex; flex-direction: column; align-items: center;
     min-height: 100dvh;
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-  }
-  /* S7: タブレット・PCでは幅430相当で頭打ちにして中央寄せ */
-  .frame { width: 100%; max-width: 430px; min-height: 100dvh; display: flex; flex-direction: column; }
-
-  header {
-    display: flex; align-items: center; gap: 8px;
-    height: 52px; padding: 0 8px; flex: 0 0 auto;
-  }
-  .backBtn { display: flex; align-items: center; gap: 2px; min-width: 72px; height: 40px;
-    justify-content: center; border-radius: 10px; font-size: 14px; font-weight: bold; border: none; }
-  .hdrTitle { flex: 1 1 auto; text-align: center; font-size: 16px; font-weight: bold;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .hdrIcon { width: 40px; height: 40px; border-radius: 10px; border: none; font-size: 18px; }
-
-  /* S2: 固定要素はそのまま、上下余白を伸ばして中央寄せ */
-  main { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center;
-    gap: 14px; padding: 8px 12px 12px; }
-
-  /* ---- ぬいパワー行(タップでサイクル開閉) ---- */
-  .powerRow { border-radius: 12px; padding: 8px 10px; cursor: pointer; user-select: none; }
-  .powerInner { display: flex; align-items: center; gap: 10px; min-height: 44px; }
-  .powerLabel { font-size: 13px; font-weight: bold; padding: 6px 10px; border-radius: 8px; flex: 0 0 auto; }
-  .chips { display: flex; align-items: flex-start; gap: 10px; flex: 1 1 auto; }
-  .chipWrap { display: flex; flex-direction: column; align-items: center; gap: 3px; position: relative; }
-  .chip { position: relative; display: flex; align-items: center; justify-content: center;
-    border-radius: 10px; font-weight: bold; }
-  .chipL { min-width: 64px; height: 36px; font-size: 16px; }
-  .chipS { min-width: 52px; height: 30px; font-size: 13px; opacity: .95; }
-  .chipTurn { font-size: 10px; line-height: 1; opacity: .8; }
-  .pw-weak   { background: #7da7d9; color: #fff; }
-  .pw-normal { background: #63b663; color: #fff; }
-  .pw-strong { background: #ef9f45; color: #fff; }
-  .pw-max    { background: #dd5252; color: #fff; }
-  .pw-q      { background: #9a9aa5; color: #fff; }
-  .chipCurrent { outline: 3px solid currentColor; outline-offset: 2px; }
-  /* D5: 精神統一固定中は淡い青の発光(サンプルは非適用。クラス付与で確認可) */
-  .chipLocked { box-shadow: 0 0 10px 4px rgba(120,180,255,.9); }
-  /* 布特性バッジ(案1): 発動ターンのエントリに特性色バッジ。次周回到達分は半透明 */
-  .traitBadge { position: absolute; right: -6px; top: -6px; width: 16px; height: 16px;
-    border-radius: 50%; font-size: 10px; line-height: 16px; text-align: center; color: #fff; }
-  .tb-regen { background: #2e9e44; }
-  .tb-faded { opacity: .45; }
-  .chevron { flex: 0 0 auto; font-size: 12px; opacity: .6; transition: transform .15s; }
-  .cycleOpen .chevron { transform: rotate(180deg); }
-  .viewCompact, .viewCycle { display: flex; align-items: center; gap: 10px; flex: 1 1 auto; }
-  .viewCycle { display: none; }
-  .cycleOpen .viewCompact { display: none; }
-  .cycleOpen .viewCycle { display: flex; }
-
-  /* ---- 布グリッド ---- */
-  .gridArea { display: flex; justify-content: center; }
-  .grid { display: grid; grid-template-columns: repeat(3, 88px); gap: 8px;
-    padding: 12px; border-radius: 14px; }
-  .cell { width: 88px; height: 76px; border-radius: 10px; display: flex; align-items: center;
-    justify-content: center; font-size: 30px; font-weight: bold; border: none; }
-  .c-normal { background: #ffffff; color: #333; }
-  .c-yellow { background: #ffe66b; color: #6b5900; }
-  .c-done   { background: #58c26a; color: #fff; }
-  .c-over   { background: #e2574d; color: #fff; }
-
-  /* ---- ターン・集中力・誤差の行 ---- */
-  .numLine { display: flex; align-items: center; justify-content: center; gap: 14px;
-    font-size: 14px; flex-wrap: wrap; }
-  .numLine b { font-size: 19px; }
-  .undoBtn { height: 40px; padding: 0 14px; border-radius: 10px; border: none;
-    font-size: 13px; font-weight: bold; }
-
-  /* ---- 特技 5行4列 ---- */
-  .skills { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-  .skill { position: relative; height: 48px; border-radius: 10px; border: none;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; }
-  .skName { font-size: 12px; font-weight: bold; white-space: nowrap; }
-  .skCost { font-size: 10px; opacity: .75; }
-  .skill:disabled { opacity: .4; }
-
-  .caption { text-align: center; font-size: 10px; opacity: .55; padding: 4px 0 8px; flex: 0 0 auto; }
-
-  /* テーマ切替(モック専用ツール) */
-  .themeSwitch { position: fixed; right: 10px; bottom: calc(10px + env(safe-area-inset-bottom));
-    z-index: 10; display: flex; gap: 4px; background: rgba(0,0,0,.55); padding: 5px; border-radius: 999px; }
-  .themeSwitch button { border: none; border-radius: 999px; padding: 6px 12px; font-size: 12px;
-    font-weight: bold; background: transparent; color: #fff; }
-  .themeSwitch button.on { background: #fff; color: #222; }
-
-  /* ============ テーマA: モダン(寄せない案) ============ */
-  body.themeA { background: linear-gradient(180deg, #eef1f7, #dfe5f0); color: #2a2f3a; }
-  .themeA .backBtn, .themeA .hdrIcon { background: #ffffffcc; color: #3a4664; box-shadow: 0 1px 3px rgba(30,40,80,.15); }
-  .themeA .hdrTitle { color: #2c3654; }
-  .themeA .powerRow { background: #ffffff; box-shadow: 0 2px 8px rgba(30,40,80,.10); }
-  .themeA .powerLabel { background: #eef1fb; color: #45507a; }
-  .themeA .grid { background: #dff0dd; box-shadow: inset 0 0 0 1px rgba(46,110,60,.25), 0 2px 8px rgba(30,40,80,.10); }
-  .themeA .cell { box-shadow: 0 1px 2px rgba(30,40,80,.18); }
-  .themeA .undoBtn { background: #ffffff; color: #3a4664; box-shadow: 0 1px 3px rgba(30,40,80,.15); }
-  .themeA .skill { background: #ffffff; color: #2f3850; box-shadow: 0 1px 3px rgba(30,40,80,.14); }
-  .themeA .skill.selected { background: #4a67c8; color: #fff; }
-  .themeA .skill.selected .skCost { color: #dfe6ff; opacity: 1; }
-  .themeA .skill.finish { background: #f6efe2; color: #7a5b1e; }
-  .themeA .chipTurn { color: #55607e; }
-
-  /* ============ テーマB: DQ雰囲気寄せ(和風RPG調) ============ */
-  body.themeB {
+    /* トーンB(決定): 羊皮紙調の背景 */
     background:
       radial-gradient(circle at 30% 15%, rgba(255,244,205,.55), transparent 55%),
       linear-gradient(180deg, #cbb98f, #b7a276);
     color: #fff;
   }
-  .themeB .hdrTitle { color: #3a2a10; text-shadow: 0 1px 0 rgba(255,255,255,.5); }
-  .themeB .backBtn, .themeB .hdrIcon {
+  /* S7: タブレット・PCでは幅430相当で頭打ちにして中央寄せ */
+  .frame { width: 100%; max-width: 430px; min-height: 100dvh; display: flex; flex-direction: column; }
+
+  /* ---- 広告領域(最上部・ヘッダーと同程度の高さ) ---- */
+  .adArea {
+    height: 50px; margin: 4px 8px 0; border-radius: 8px; flex: 0 0 auto;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px dashed rgba(60,40,10,.45); color: rgba(60,40,10,.55);
+    font-size: 12px; letter-spacing: .2em;
+  }
+
+  header { display: flex; align-items: center; gap: 8px; height: 50px; padding: 0 8px; flex: 0 0 auto; }
+  .hdrBtn {
+    width: 76px; height: 40px; flex: 0 0 auto;
+    display: flex; align-items: center; justify-content: center; gap: 2px;
+    border-radius: 8px; font-size: 14px; font-weight: bold;
     background: linear-gradient(180deg, #6b4a26, #4c3116); color: #ffe9b8;
     border: 1px solid #2e1d0a; box-shadow: inset 0 1px 0 rgba(255,230,160,.5), 0 2px 3px rgba(40,20,0,.4);
   }
-  .themeB .powerRow, .themeB .skill, .themeB .undoBtn {
+  .hdrTitle { flex: 1 1 auto; text-align: center; font-size: 16px; font-weight: bold;
+    color: #3a2a10; text-shadow: 0 1px 0 rgba(255,255,255,.5);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* S2: 固定要素はそのまま、上下余白を伸ばして中央寄せ */
+  main { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center;
+    gap: 8px; padding: 6px 12px 8px; }
+
+  /* ---- ウィンドウ共通(紺+白枠+金縁) ---- */
+  .win {
     background: linear-gradient(180deg, #23255c, #14163e); color: #fff;
-    border: 2px solid #fff; box-shadow: 0 0 0 1px #14163e, 0 0 0 3px #caa74f, 0 3px 6px rgba(40,20,0,.35);
-    border-radius: 8px;
+    border: 2px solid #fff; border-radius: 8px;
+    box-shadow: 0 0 0 1px #14163e, 0 0 0 3px #caa74f, 0 3px 6px rgba(40,20,0,.35);
   }
-  .themeB .powerLabel { background: #caa74f; color: #241a05; }
-  .themeB .grid {
+
+  /* ---- ぬいパワー行(タップでサイクル開閉。横スクロール対応) ---- */
+  .powerRow { padding: 6px 8px; cursor: pointer; user-select: none; }
+  .powerInner { display: flex; align-items: center; gap: 8px; min-height: 34px; }
+  .powerLabel { font-size: 12px; font-weight: bold; padding: 4px 8px; border-radius: 6px;
+    background: #caa74f; color: #241a05; flex: 0 0 auto; }
+  .viewCompact, .viewCycle { display: flex; align-items: center; gap: 6px; flex: 1 1 auto; min-width: 0; }
+  .viewCycle { display: none; overflow-x: auto; padding: 4px 2px;
+    scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .viewCycle::-webkit-scrollbar { display: none; }
+  .cycleOpen .viewCompact { display: none; }
+  .cycleOpen .viewCycle { display: flex; }
+  .chip { position: relative; display: flex; align-items: center; justify-content: center;
+    border-radius: 8px; font-weight: bold; flex: 0 0 auto; }
+  .chipL { min-width: 58px; height: 32px; font-size: 15px; }
+  .chipS { min-width: 46px; height: 27px; font-size: 12px; }
+  .pw-weak   { background: #7da7d9; color: #fff; }
+  .pw-normal { background: #63b663; color: #fff; }
+  .pw-strong { background: #ef9f45; color: #fff; }
+  .pw-max    { background: #dd5252; color: #fff; }
+  .pw-q      { background: #9a9aa5; color: #fff; }
+  .chipCurrent { outline: 2px solid #fff; outline-offset: 2px; }
+  /* D5: 精神統一固定中は淡い青の発光(クラス付与で確認可) */
+  .chipLocked { box-shadow: 0 0 10px 4px rgba(120,180,255,.9); }
+  /* 布特性バッジ(案1・T番号なし): 発動ターンのエントリに特性色バッジ。次周回到達分は半透明 */
+  .traitBadge { position: absolute; right: -5px; top: -5px; width: 15px; height: 15px;
+    border-radius: 50%; font-size: 10px; line-height: 15px; text-align: center; color: #fff;
+    border: 1px solid rgba(255,255,255,.8); }
+  .tb-regen { background: #2e9e44; }
+  .tb-faded { opacity: .45; }
+  .chevron { flex: 0 0 auto; font-size: 11px; opacity: .6; transition: transform .15s; }
+  .cycleOpen .chevron { transform: rotate(180deg); }
+
+  /* ---- 布グリッド(D48: 縦のみ縮小可) ---- */
+  .gridArea { display: flex; justify-content: center; }
+  .grid { display: grid; grid-template-columns: repeat(3, 88px); gap: 8px;
+    padding: 10px; border-radius: 12px;
     background:
       repeating-linear-gradient(45deg, rgba(255,255,255,.06) 0 6px, transparent 6px 12px),
       linear-gradient(180deg, #3f7a46, #2f5f36);
     border: 2px solid #fff; box-shadow: 0 0 0 3px #caa74f, 0 3px 8px rgba(40,20,0,.35);
   }
-  .themeB .cell { border: 1px solid rgba(0,0,0,.25); box-shadow: inset 0 1px 0 rgba(255,255,255,.55), 0 2px 2px rgba(20,30,10,.3); }
-  .themeB .c-normal { background: #f7f1de; color: #3a3220; }
-  .themeB .numLine { color: #3a2a10; font-weight: bold; }
-  .themeB .skill.selected { background: linear-gradient(180deg, #b6903a, #8d6a1f); color: #fff; border-color: #fff; }
-  .themeB .skill.finish { background: linear-gradient(180deg, #7c2f2f, #571c1c); }
-  .themeB .chipTurn { color: #ffe9b8; }
-  .themeB .viewCycle .chipTurn { color: #fff; }
+  .cell { width: 88px; height: 58px; border-radius: 9px; display: flex; align-items: center;
+    justify-content: center; font-size: 28px; font-weight: bold;
+    border: 1px solid rgba(0,0,0,.25);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.55), 0 2px 2px rgba(20,30,10,.3); }
+  .c-normal { background: #f7f1de; color: #3a3220; }
+  .c-yellow { background: #ffe66b; color: #6b5900; }
+  .c-done   { background: #58c26a; color: #fff; }
+  .c-over   { background: #e2574d; color: #fff; }
+
+  /* ---- ターン・集中力 / 誤差 の2行 + 1手戻す ---- */
+  .numArea { display: flex; flex-direction: column; gap: 2px; color: #3a2a10; font-weight: bold; }
+  .numLine { display: flex; align-items: center; justify-content: center; gap: 18px; font-size: 13px; }
+  .numLine b { font-size: 18px; }
+  .undoBtn { height: 36px; padding: 0 12px; border-radius: 8px; font-size: 12px; font-weight: bold;
+    background: linear-gradient(180deg, #23255c, #14163e); color: #fff;
+    border: 2px solid #fff; box-shadow: 0 0 0 2px #caa74f; }
+
+  /* ---- メッセージ欄(D45) ---- */
+  .msgWin { min-height: 40px; padding: 8px 12px; display: flex; align-items: center;
+    font-size: 13px; line-height: 1.5; cursor: pointer; user-select: none; }
+
+  /* ---- 特技 5行4列 ---- */
+  .skills { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .skill { position: relative; height: 44px; border-radius: 8px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+    background: linear-gradient(180deg, #23255c, #14163e); color: #fff;
+    border: 2px solid #fff; box-shadow: 0 0 0 1px #14163e, 0 0 0 2px #caa74f, 0 2px 4px rgba(40,20,0,.3); }
+  .skName { font-size: 12px; font-weight: bold; white-space: nowrap; }
+  .skCost { font-size: 10px; opacity: .75; }
+  .skill:disabled { opacity: .4; }
+  .skill.selected { background: linear-gradient(180deg, #b6903a, #8d6a1f); }
+  .skill.finish { background: linear-gradient(180deg, #7c2f2f, #571c1c); }
+
+  .caption { text-align: center; font-size: 10px; color: rgba(60,40,10,.55); padding: 2px 0 6px; flex: 0 0 auto; }
 </style>
 </head>
-<body class="themeA">
+<body>
 <div class="frame">
+  <!-- D46: 広告表示領域(ヘッダーと同程度の高さ) -->
+  <div class="adArea">広告表示領域</div>
+
+  <!-- D47: 左右ボタンは同サイズ、レシピ名は中央 -->
   <header>
-    <button class="backBtn" type="button">◀ 戻る</button>
+    <button class="hdrBtn" type="button">◀ 戻る</button>
     <div class="hdrTitle">カテドラルローブ</div>
-    <button class="hdrIcon" type="button" title="行動ログ">📜</button>
+    <button class="hdrBtn" type="button">ログ</button>
   </header>
 
   <main>
-    <!-- ぬいパワー行: タップで「現在+次」⇔「サイクル全体」を切替(案A) -->
-    <section class="powerRow" id="powerRow">
+    <!-- ぬいパワー行: 現在+3つ先。タップでサイクル全体(横スクロール)に切替 -->
+    <section class="powerRow win" id="powerRow">
       <div class="powerInner">
         <span class="powerLabel">ぬいパワー</span>
         <div class="viewCompact">
-          <div class="chipWrap"><span class="chip chipL pw-strong">強い</span></div>
-          <div class="chipWrap"><span class="chip chipS pw-weak">弱い</span><span class="chipTurn">つぎ</span></div>
+          <span class="chip chipL pw-strong">強い</span>
+          <span class="chip chipS pw-q">?</span>
+          <span class="chip chipS pw-weak">弱い</span>
+          <span class="chip chipS pw-max">最強</span>
         </div>
         <div class="viewCycle">
-          <div class="chipWrap">
-            <span class="chip chipS pw-normal">普通<span class="traitBadge tb-regen tb-faded">再</span></span>
-            <span class="chipTurn">T9</span>
-          </div>
-          <div class="chipWrap">
-            <span class="chip chipS pw-strong chipCurrent">強い</span>
-            <span class="chipTurn">T6</span>
-          </div>
-          <div class="chipWrap">
-            <span class="chip chipS pw-weak">弱い</span>
-            <span class="chipTurn">T7</span>
-          </div>
-          <div class="chipWrap">
-            <span class="chip chipS pw-max">最強</span>
-            <span class="chipTurn">T8</span>
-          </div>
+          <span class="chip chipS pw-normal">普通</span>
+          <span class="chip chipS pw-strong chipCurrent">強い</span>
+          <span class="chip chipS pw-q">?</span>
+          <span class="chip chipS pw-weak">弱い</span>
+          <span class="chip chipS pw-max">最強<span class="traitBadge tb-regen">再</span></span>
+          <span class="chip chipS pw-normal">普通</span>
+          <span class="chip chipS pw-strong">強い</span>
+          <span class="chip chipS pw-weak">弱い</span>
+          <span class="chip chipS pw-q">?<span class="traitBadge tb-regen">再</span></span>
+          <span class="chip chipS pw-max">最強</span>
         </div>
         <span class="chevron">▼</span>
       </div>
     </section>
 
-    <!-- 布グリッド(再生布: 緑の下地) -->
+    <!-- 布グリッド(再生布) -->
     <section class="gridArea">
       <div class="grid">
         <button class="cell c-normal" type="button">46</button>
@@ -199,15 +184,16 @@
       </div>
     </section>
 
-    <!-- ターン・集中力・誤差 + 1手戻す(常設) -->
-    <div class="numLine">
-      <span>ターン <b>6</b></span>
-      <span>集中力 <b>168</b></span>
-      <span>誤差 <b>57</b></span>
-      <button class="undoBtn" type="button">↩ 1手戻す</button>
+    <!-- 数値2行 + 1手戻す -->
+    <div class="numArea">
+      <div class="numLine"><span>ターン <b>6</b></span><span>集中力 <b>168</b></span></div>
+      <div class="numLine"><span>誤差 <b>57</b></span><button class="undoBtn" type="button">↩ 1手戻す</button></div>
     </div>
 
-    <!-- 特技 5行4列(§5.3.1 デフォルト配置) -->
+    <!-- D45: メッセージ欄(タップでサンプル切替) -->
+    <div class="msgWin win" id="msgWin">消費集中力が 半分になった!</div>
+
+    <!-- 特技 5行4列(§5.3.1) -->
     <section class="skills" id="skills">
       <button class="skill" type="button"><span class="skName">ヨコぬい</span><span class="skCost">8</span></button>
       <button class="skill" type="button"><span class="skName">逆たすきぬい</span><span class="skCost">7</span></button>
@@ -236,29 +222,29 @@
     </section>
   </main>
 
-  <div class="caption">UIモック v1 — 動くのはテーマ切替・ぬいパワー行タップ(サイクル開閉)・特技選択のみ</div>
-</div>
-
-<div class="themeSwitch">
-  <button id="btnA" class="on" type="button">A モダン</button>
-  <button id="btnB" type="button">B DQ風</button>
+  <div class="caption">UIモック v2(トーンB)— パワー行タップ=サイクル開閉(横スクロール可)/ メッセージ欄タップ=文言サンプル切替</div>
 </div>
 
 <script>
-  // テーマ切替
-  const btnA = document.getElementById('btnA');
-  const btnB = document.getElementById('btnB');
-  function setTheme(t) {
-    document.body.className = t;
-    btnA.classList.toggle('on', t === 'themeA');
-    btnB.classList.toggle('on', t === 'themeB');
-  }
-  btnA.addEventListener('click', () => setTheme('themeA'));
-  btnB.addEventListener('click', () => setTheme('themeB'));
-
   // ぬいパワー行: サイクル開閉(案A: その場トグル)
   document.getElementById('powerRow').addEventListener('click', (e) => {
     e.currentTarget.classList.toggle('cycleOpen');
+  });
+
+  // メッセージ欄: タップで文言サンプルを順送り(D45 の全パターン確認用)
+  const messages = [
+    '消費集中力が 半分になった!',
+    '消費集中力が1.5倍で 会心率アップ!',
+    '1つのマスの 威力と会心率がアップ!',
+    '奇跡の効果で 集中力が 30アップ!',
+    '光の効果で ひっさつチャージ!!',
+    '',
+  ];
+  let msgIdx = 0;
+  const msgWin = document.getElementById('msgWin');
+  msgWin.addEventListener('click', () => {
+    msgIdx = (msgIdx + 1) % messages.length;
+    msgWin.textContent = messages[msgIdx];
   });
 
   // 特技選択(単一選択のトグル)
