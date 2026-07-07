@@ -22,12 +22,13 @@
   /* S7: タブレット・PCでは幅430相当で頭打ちにして中央寄せ */
   .frame { width: 100%; max-width: 430px; min-height: 100dvh; display: flex; flex-direction: column; }
 
-  /* ---- 広告領域(最上部・ヘッダーと同程度の高さ) ---- */
+  /* ---- 広告領域(最上部・アンカーバナー想定: 全幅・高さはSDK取得値で可変 50〜90dp) ---- */
   .adArea {
-    height: 50px; margin: 4px 8px 0; border-radius: 8px; flex: 0 0 auto;
+    height: 50px; flex: 0 0 auto;
     display: flex; align-items: center; justify-content: center;
-    border: 2px dashed rgba(60,40,10,.45); color: rgba(60,40,10,.55);
-    font-size: 12px; letter-spacing: .2em;
+    background: rgba(60,40,10,.12);
+    border-bottom: 1px dashed rgba(60,40,10,.45); color: rgba(60,40,10,.55);
+    font-size: 12px; letter-spacing: .15em;
   }
 
   header { display: flex; align-items: center; gap: 8px; height: 50px; padding: 0 8px; flex: 0 0 auto; }
@@ -150,7 +151,7 @@
 <body>
 <div class="frame">
   <!-- D46: 広告表示領域(ヘッダーと同程度の高さ) -->
-  <div class="adArea">広告表示領域</div>
+  <div class="adArea">アンカー広告(全幅・高さ50〜90dp可変)</div>
 
   <!-- D47: 左右ボタンは同サイズ、レシピ名は中央 -->
   <header>
