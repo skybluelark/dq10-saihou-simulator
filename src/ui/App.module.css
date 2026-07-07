@@ -512,6 +512,30 @@
   background: #ec407a;
 }
 
+/* 次の周回(サイクル一巡後)で発動ターンへ到達するエントリの下線は点線(SPEC §4.3 v1.19) */
+.traitUnderlineNextCycle::after {
+  height: 0;
+  border-radius: 0;
+  background: none;
+  border-top: 3px dotted;
+}
+
+.traitUnderlineHalf.traitUnderlineNextCycle::after {
+  border-top-color: #29b6f6;
+}
+
+.traitUnderlineUp.traitUnderlineNextCycle::after {
+  border-top-color: #ffca28;
+}
+
+.traitUnderlineRegen.traitUnderlineNextCycle::after {
+  border-top-color: #66bb6a;
+}
+
+.traitUnderlineLight.traitUnderlineNextCycle::after {
+  border-top-color: #ec407a;
+}
+
 .lockNote {
   font-size: 11px;
   color: #9b30d0;

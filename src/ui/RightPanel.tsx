@@ -69,6 +69,15 @@ export function RightPanel({
     }
   };
 
+  // エントリ i の下線クラス。発動ターンへ次の周回(サイクル一巡後)で到達するエントリ
+  // (=現在位置より前のエントリ)は点線で描画する(SPEC §4.3 v1.19)。
+  const cycleUnderlineClass = (i: number): string => {
+    const base = traitUnderlineClass(cycleExecTurn(i));
+    if (base === '') return '';
+    const nextCycle = i < game.cycleIndex;
+    return nextCycle ? `${base} ${styles.traitUnderlineNextCycle}` : base;
+  };
+
   const traitInfo = (): string => {
     if (game.clothType === 'normal') {
       return 'なし(通常布)';
@@ -126,7 +135,7 @@ export function RightPanel({
             {game.powerCycle.map((p, i) => (
               <span
                 key={i}
-                className={`${styles.cycleItem} ${i === game.cycleIndex ? styles.cycleCurrent : ''} ${traitUnderlineClass(cycleExecTurn(i))}`}
+                className={`${styles.cycleItem} ${i === game.cycleIndex ? styles.cycleCurrent : ''} ${cycleUnderlineClass(i)}`}
               >
                 {POWER_LABELS[p]}
               </span>
