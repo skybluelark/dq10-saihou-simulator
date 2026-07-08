@@ -122,9 +122,10 @@
   /* ---- 数値・メッセージ領域(D45: 2行×4列グリッド)
      1行目: ターン/集中力/誤差、2行目1〜3列: メッセージ欄、4列目1〜2行: 1手戻す ---- */
   /* 数値は最大桁数分の幅を予約(ターン2桁・集中力3桁・誤差4桁)し、
-     ラベル位置を桁数によらず固定する。列は行幅に均等配分(D50) */
+     ラベル位置を桁数によらず固定する。列は行幅に均等配分(D50)。
+     4列目は特技ボタン列(4列グリッド・gap6)と同じ幅 */
   .statusGrid { display: grid;
-    grid-template-columns: max-content max-content max-content max-content;
+    grid-template-columns: max-content max-content max-content calc((100% - 18px) / 4);
     grid-template-rows: auto auto; justify-content: space-between;
     align-items: center; color: #3a2a10; font-weight: bold; }
   /* D50: 1行目(数値行)は高さを広めに取り、ラベルと数値の下端を揃える */
@@ -139,8 +140,8 @@
   .errNum { min-width: 52px; text-align: left; }
   /* 集中力のラベルは「残り/集中力」の2行表記(左端揃え) */
   .statLbl2 { font-size: 11px; line-height: 1.2; text-align: left; }
-  .undoBtn { grid-column: 4; grid-row: 1 / 3; align-self: center; justify-self: end;
-    height: 44px; padding: 0 4px; font-size: 12px; font-weight: bold;
+  .undoBtn { grid-column: 4; grid-row: 1 / 3; align-self: center; justify-self: stretch;
+    width: 100%; height: 44px; padding: 0 4px; font-size: 12px; font-weight: bold;
     color: #fff; background: none;
     border: 6px solid transparent;
     border-image: url('./assets/btn_skill_normal.svg') 12 fill / 6px stretch; }
