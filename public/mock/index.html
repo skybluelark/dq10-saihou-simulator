@@ -35,9 +35,9 @@
   .hdrBtn {
     width: 76px; height: 40px; flex: 0 0 auto;
     display: flex; align-items: center; justify-content: center; gap: 2px;
-    border-radius: 8px; font-size: 14px; font-weight: bold;
-    background: linear-gradient(180deg, #6b4a26, #4c3116); color: #ffe9b8;
-    border: 1px solid #2e1d0a; box-shadow: inset 0 1px 0 rgba(255,230,160,.5), 0 2px 3px rgba(40,20,0,.4);
+    border: none; font-size: 14px; font-weight: bold;
+    background: url('./assets/btn_header.svg') center / 100% 100% no-repeat; color: #ffe9b8;
+    filter: drop-shadow(0 2px 3px rgba(40,20,0,.4));
   }
   /* レシピ名: 最大9文字が下限幅(360dp)で収まるサイズ */
   .hdrTitle { flex: 1 1 auto; text-align: center; font-size: 20px; font-weight: bold;
@@ -48,18 +48,19 @@
   main { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center;
     gap: 8px; padding: 6px 12px 8px; }
 
-  /* ---- ウィンドウ共通(紺+白枠+金縁) ---- */
+  /* ---- ウィンドウ共通(SVG素材 panel_window の 9-slice) ---- */
   .win {
-    background: linear-gradient(180deg, #23255c, #14163e); color: #fff;
-    border: 2px solid #fff; border-radius: 8px;
-    box-shadow: 0 0 0 1px #14163e, 0 0 0 3px #caa74f, 0 3px 6px rgba(40,20,0,.35);
+    color: #fff;
+    border: 8px solid transparent;
+    border-image: url('./assets/panel_window.svg') 16 fill / 8px stretch;
+    box-shadow: 0 3px 6px rgba(40,20,0,.35);
   }
 
   /* ---- ぬいパワー行(タップでサイクル開閉。横スクロール対応) ---- */
-  .powerRow { padding: 6px 8px; cursor: pointer; user-select: none; }
+  .powerRow { padding: 2px 6px; cursor: pointer; user-select: none; }
   .powerInner { display: flex; align-items: center; gap: 8px; min-height: 34px; }
-  .powerLabel { font-size: 12px; font-weight: bold; padding: 4px 8px; border-radius: 6px;
-    background: #caa74f; color: #241a05; flex: 0 0 auto; }
+  .powerLabel { font-size: 12px; font-weight: bold; padding: 4px 8px; flex: 0 0 auto;
+    background: url('./assets/label_power.svg') center / 100% 100% no-repeat; color: #241a05; }
   .viewCompact, .viewCycle { display: flex; align-items: center; gap: 6px; flex: 1 1 auto; min-width: 0; }
   .viewCycle { display: none; overflow-x: auto; padding: 4px 2px;
     scrollbar-width: none; -webkit-overflow-scrolling: touch; }
@@ -70,23 +71,26 @@
     border-radius: 8px; font-weight: bold; flex: 0 0 auto; }
   .chipL { min-width: 58px; height: 32px; font-size: 15px; }
   .chipS { min-width: 46px; height: 27px; font-size: 12px; }
-  .pw-weak   { background: #7da7d9; color: #fff; }
-  .pw-normal { background: #63b663; color: #fff; }
-  .pw-strong { background: #ef9f45; color: #fff; }
-  .pw-max    { background: #dd5252; color: #fff; }
-  .pw-q      { background: #9a9aa5; color: #fff; }
+  /* ぬいパワー: SVGプレート+フォント文字の合成(§4.6 決定) */
+  .chip { color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.5);
+    background-size: 100% 100%; background-repeat: no-repeat; }
+  .pw-weak   { background-image: url('./assets/icon_power_weak.svg'); }
+  .pw-normal { background-image: url('./assets/icon_power_normal.svg'); }
+  .pw-strong { background-image: url('./assets/icon_power_strong.svg'); }
+  .pw-max    { background-image: url('./assets/icon_power_max.svg'); }
+  .pw-q      { background-image: url('./assets/icon_power_q.svg'); }
   .chipCurrent { outline: 2px solid #fff; outline-offset: 2px; }
   /* D5: 精神統一固定中は残りターン数と同数の「きらめき」バッジ(縦長楕円)を付ける。
      実装時は画像素材に置き換える(ここではCSSによる仮表現) */
   .sparkles { position: absolute; top: -8px; left: 4px; display: flex; gap: 2px; }
-  .spark { width: 7px; height: 13px; border-radius: 50%;
-    background: radial-gradient(ellipse at 50% 35%, #ffffff 0%, #fff8c8 45%, #ffd34d 100%);
-    box-shadow: 0 0 4px 1px rgba(255, 240, 150, .9); }
+  .spark { width: 7px; height: 13px;
+    background: url('./assets/badge_sparkle.svg') center / 100% 100% no-repeat;
+    filter: drop-shadow(0 0 3px rgba(255, 240, 150, .9)); }
   /* 布特性バッジ(案1・T番号なし): 発動ターンのエントリに特性色バッジ。次周回到達分は半透明 */
   .traitBadge { position: absolute; right: -5px; top: -5px; width: 15px; height: 15px;
-    border-radius: 50%; font-size: 10px; line-height: 15px; text-align: center; color: #fff;
-    border: 1px solid rgba(255,255,255,.8); }
-  .tb-regen { background: #2e9e44; }
+    font-size: 10px; line-height: 15px; text-align: center; color: #fff;
+    background-size: 100% 100%; background-repeat: no-repeat; }
+  .tb-regen { background-image: url('./assets/badge_trait_regen.svg'); }
   .tb-faded { opacity: .45; }
   .chevron { flex: 0 0 auto; font-size: 11px; opacity: .6; transition: transform .15s; }
   .cycleOpen .chevron { transform: rotate(180deg); }
@@ -94,20 +98,26 @@
   /* ---- 布グリッド(D48: 縦のみ縮小可) ---- */
   .gridArea { display: flex; justify-content: center; }
   .grid { display: grid; grid-template-columns: repeat(3, 88px); gap: 8px;
-    padding: 10px; border-radius: 12px;
+    padding: 4px; border-radius: 12px;
     background:
       repeating-linear-gradient(45deg, rgba(255,255,255,.06) 0 6px, transparent 6px 12px),
       linear-gradient(180deg, #3f7a46, #2f5f36);
-    border: 2px solid #fff; box-shadow: 0 0 0 3px #caa74f, 0 3px 8px rgba(40,20,0,.35);
+    background-clip: padding-box;
+    border: 10px solid transparent;
+    border-image: url('./assets/panel_grid_regen.svg') 20 / 10px stretch;
+    box-shadow: 0 3px 8px rgba(40,20,0,.35);
   }
-  .cell { width: 88px; height: 58px; border-radius: 9px; display: flex; align-items: center;
-    justify-content: center; font-size: 28px; font-weight: bold;
-    border: 1px solid rgba(0,0,0,.25);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.55), 0 2px 2px rgba(20,30,10,.3); }
-  .c-normal { background: #f7f1de; color: #3a3220; }
-  .c-yellow { background: #ffe66b; color: #6b5900; }
-  .c-done   { background: #58c26a; color: #fff; }
-  .c-over   { background: #e2574d; color: #fff; }
+  .cell { position: relative; width: 88px; height: 58px; display: flex; align-items: center;
+    justify-content: center; font-size: 28px; font-weight: bold; border: none;
+    background-size: 100% 100%; background-repeat: no-repeat;
+    filter: drop-shadow(0 2px 2px rgba(20,30,10,.3)); }
+  .c-normal { background-image: url('./assets/cell_normal.svg'); color: #3a3220; }
+  .c-yellow { background-image: url('./assets/cell_yellow.svg'); color: #6b5900; }
+  .c-done   { background-image: url('./assets/cell_done.svg'); color: #fff; }
+  .c-over   { background-image: url('./assets/cell_over.svg'); color: #fff; }
+  /* しつけがけ枠(オーバーレイ素材のデモ) */
+  .cellShitsuke::after { content: ''; position: absolute; inset: 0;
+    background: url('./assets/cell_ol_shitsuke.svg') center / 100% 100% no-repeat; }
 
   /* ---- 数値・メッセージ領域(D45: 2行×4列グリッド)
      1行目: ターン/集中力/誤差、2行目1〜3列: メッセージ欄、4列目1〜2行: 1手戻す ---- */
@@ -130,9 +140,10 @@
   /* 集中力のラベルは「残り/集中力」の2行表記(左端揃え) */
   .statLbl2 { font-size: 11px; line-height: 1.2; text-align: left; }
   .undoBtn { grid-column: 4; grid-row: 1 / 3; align-self: center; justify-self: end;
-    height: 44px; padding: 0 8px; border-radius: 8px; font-size: 12px; font-weight: bold;
-    background: linear-gradient(180deg, #23255c, #14163e); color: #fff;
-    border: 2px solid #fff; box-shadow: 0 0 0 2px #caa74f; }
+    height: 44px; padding: 0 4px; font-size: 12px; font-weight: bold;
+    color: #fff; background: none;
+    border: 6px solid transparent;
+    border-image: url('./assets/btn_skill_normal.svg') 12 fill / 6px stretch; }
   /* メッセージ欄: ウィンドウ調にしない(ボタンと混同するため)。
      上辺の罫線(1〜3列目の幅)で数値行と区別する */
   .msgCell { grid-column: 1 / 4; grid-row: 2;
@@ -143,17 +154,19 @@
 
   /* ---- 特技 5行4列 ---- */
   .skills { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
-  .skill { position: relative; height: 44px; border-radius: 8px;
+  .skill { position: relative; height: 44px;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
-    background: linear-gradient(180deg, #23255c, #14163e); color: #fff;
-    border: 2px solid #fff; box-shadow: 0 0 0 1px #14163e, 0 0 0 2px #caa74f, 0 2px 4px rgba(40,20,0,.3); }
+    color: #fff; background: none;
+    border: 6px solid transparent;
+    border-image: url('./assets/btn_skill_normal.svg') 12 fill / 6px stretch;
+    box-shadow: 0 2px 4px rgba(40,20,0,.3); }
   .skName { font-size: 12px; font-weight: bold; white-space: nowrap; }
   /* ぬいパワーシフトのみ特技名2行(+コスト)の3行レイアウト(ボタン幅の均等化) */
   .skName2 { display: flex; flex-direction: column; align-items: center; line-height: 1.05; }
   .skCost { font-size: 10px; opacity: .75; }
   .skill:disabled { opacity: .4; }
-  .skill.selected { background: linear-gradient(180deg, #b6903a, #8d6a1f); }
-  .skill.finish { background: linear-gradient(180deg, #7c2f2f, #571c1c); }
+  .skill.selected { border-image-source: url('./assets/btn_skill_selected.svg'); }
+  .skill.finish { border-image-source: url('./assets/btn_finish.svg'); }
 
   .caption { text-align: center; font-size: 10px; color: rgba(60,40,10,.55); padding: 2px 0 6px; flex: 0 0 auto; }
 
@@ -163,11 +176,12 @@
     display: flex; align-items: center; justify-content: center;
     padding: 24px; }
   .resultScrim[hidden] { display: none; }
-  .resultWin { width: 100%; max-width: 320px; padding: 18px 16px 16px;
+  .resultWin { width: 100%; max-width: 320px; padding: 12px 10px 10px;
     display: flex; flex-direction: column; align-items: center; gap: 12px;
-    background: linear-gradient(180deg, #23255c, #14163e); color: #fff;
-    border: 2px solid #fff; border-radius: 10px;
-    box-shadow: 0 0 0 1px #14163e, 0 0 0 4px #caa74f, 0 8px 24px rgba(0,0,0,.5); }
+    color: #fff; background: none;
+    border: 8px solid transparent;
+    border-image: url('./assets/panel_window.svg') 16 fill / 8px stretch;
+    box-shadow: 0 8px 24px rgba(0,0,0,.5); }
   .resultLabel { font-size: 14px; font-weight: bold; color: #ffe9b8; letter-spacing: .2em; text-indent: .2em; }
   .resultStars { font-size: 40px; line-height: 1; letter-spacing: .1em;
     color: #ffd34d; text-shadow: 0 0 8px rgba(255, 211, 77, .6); }
@@ -234,7 +248,7 @@
         <button class="cell c-done" type="button">0</button>
         <button class="cell c-normal" type="button">27</button>
         <button class="cell c-normal" type="button">88</button>
-        <button class="cell c-normal" type="button">12</button>
+        <button class="cell c-normal cellShitsuke" type="button">12</button>
         <button class="cell c-done" type="button">0</button>
         <button class="cell c-over" type="button">-6</button>
         <button class="cell c-normal" type="button">62</button>
