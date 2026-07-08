@@ -68,9 +68,15 @@
   .filterPanel.open { display: flex; }
   .filterRow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
   .filterLabel { font-size: 11px; font-weight: bold; color: #ffe9b8; width: 88px; flex: 0 0 auto; }
-  .fChip { height: 28px; padding: 0 10px; border-radius: 14px; font-size: 11px; font-weight: bold;
+  /* 装備可能レベルの選択肢は横スクロール(「すべて」+実在Lvの降順) */
+  .fChipScroll { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none;
+    flex: 1 1 auto; min-width: 0; padding: 2px 0; }
+  .fChipScroll::-webkit-scrollbar { display: none; }
+  .fChip { flex: 0 0 auto; height: 28px; padding: 0 10px; border-radius: 14px; font-size: 11px; font-weight: bold;
     background: #2c2f6b; color: #cdd3ff; border: 1px solid rgba(255,255,255,.5); }
   .fChip.on { background: linear-gradient(180deg, #b6903a, #8d6a1f); color: #fff; border-color: #fff; }
+  /* ソート記号は小型三角(▾/▴)。本体文字より一回り小さく表示 */
+  .sortMark { font-size: 10px; }
 
   /* ---- レシピ一覧(この画面ではリストが高さの伸縮を吸収する) ---- */
   .recipeList { flex: 1 1 auto; min-height: 120px; overflow-y: auto; padding: 6px; }
@@ -102,9 +108,12 @@
     font-size: 13px; font-weight: bold; background: #2c2f6b; color: #cdd3ff;
     border: 1px solid rgba(255,255,255,.5); }
   .starChip.on { background: linear-gradient(180deg, #b6903a, #8d6a1f); color: #fff; border-color: #fff; }
-  /* 開始集中力: できのよさ行の右側余白に表示(内訳・開幕効果の記載なし) */
-  .concInline { margin-left: auto; font-size: 12px; font-weight: bold; color: #ffe9b8; }
-  .concInline b { font-size: 18px; color: #fff; }
+  /* 開始集中力: できのよさの右側。ラベル同士の縦位置を揃え、数値はラベル下に中央配置 */
+  .bottomRow { display: flex; align-items: flex-start; gap: 12px; }
+  .starCol { flex: 0 0 auto; display: flex; flex-direction: column; gap: 4px; }
+  .starCol .rowLabel, .concCol .rowLabel { line-height: 1; }
+  .concCol { flex: 1 1 auto; display: flex; flex-direction: column; gap: 4px; align-items: center; }
+  .concNum { font-size: 20px; font-weight: bold; color: #fff; line-height: 32px; }
 
   /* ---- はじめる ---- */
   .startBtn { flex: 0 0 auto; height: 52px; margin: 0 24px; border-radius: 10px;
@@ -140,20 +149,12 @@
     <!-- フィルター(デフォルトたたみ)+ソート -->
     <div class="toolRow">
       <button class="toolBtn" id="filterToggle" type="button">フィルター ▸</button>
-      <button class="toolBtn sortBtn" id="sortBtn" type="button">装備Lv ▼</button>
+      <button class="toolBtn sortBtn" id="sortBtn" type="button">装備Lv <span class="sortMark">▼</span></button>
     </div>
     <section class="filterPanel win" id="filterPanel">
       <div class="filterRow">
-        <span class="filterLabel">必要職人レベル</span>
-        <button class="fChip on" type="button">すべて</button>
-        <button class="fChip" type="button">〜59</button>
-        <button class="fChip" type="button">60〜</button>
-      </div>
-      <div class="filterRow">
         <span class="filterLabel">装備可能レベル</span>
-        <button class="fChip on" type="button">すべて</button>
-        <button class="fChip" type="button">〜99</button>
-        <button class="fChip" type="button">100〜</button>
+        <div class="fChipScroll" id="lvChips"><!-- すべて+実在Lv降順(JSで生成) --></div>
       </div>
       <div class="filterRow">
         <span class="filterLabel">布特性</span>
@@ -174,14 +175,19 @@
         <div class="rowLabel">さいほう針</div>
         <div class="needleRow" id="needleRow"></div>
       </div>
-      <div>
-        <div class="rowLabel">できのよさ</div>
-        <div class="starRow" id="starRow">
-          <button class="starChip" type="button">★0</button>
-          <button class="starChip" type="button">★1</button>
-          <button class="starChip" type="button">★2</button>
-          <button class="starChip" type="button">★3</button>
-          <span class="concInline">開始集中力 <b id="concVal">207</b></span>
+      <div class="bottomRow">
+        <div class="starCol">
+          <div class="rowLabel">できのよさ</div>
+          <div class="starRow" id="starRow">
+            <button class="starChip" type="button">★0</button>
+            <button class="starChip" type="button">★1</button>
+            <button class="starChip" type="button">★2</button>
+            <button class="starChip" type="button">★3</button>
+          </div>
+        </div>
+        <div class="concCol">
+          <div class="rowLabel">開始集中力</div>
+          <div class="concNum" id="concVal">207</div>
         </div>
       </div>
     </section>
@@ -225,12 +231,23 @@
   }
   renderList();
 
-  // ---- ソート(装備Lv 降順▼/昇順▲のみ) ----
+  // ---- ソート(装備Lv 降順▼/昇順▲のみ。記号は小型表示) ----
   const sortBtn = document.getElementById('sortBtn');
   sortBtn.addEventListener('click', () => {
     sortDesc = !sortDesc;
-    sortBtn.textContent = sortDesc ? '装備Lv ▼' : '装備Lv ▲';
+    sortBtn.innerHTML = '装備Lv <span class="sortMark">' + (sortDesc ? '▼' : '▲') + '</span>';
     renderList();
+  });
+
+  // ---- 装備可能レベルの選択肢(「すべて」+実在Lvの降順、横スクロール) ----
+  const lvChips = document.getElementById('lvChips');
+  const lvValues = [...new Set(recipes.map(r => r.lv))].sort((a, b) => b - a);
+  ['すべて', ...lvValues].forEach((v, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'fChip' + (i === 0 ? ' on' : '');
+    b.textContent = String(v);
+    lvChips.appendChild(b);
   });
 
   // ---- フィルター開閉(デフォルトたたみ) ----
