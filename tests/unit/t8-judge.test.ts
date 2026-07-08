@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { cellErrorScore, starForError } from '../../src/core';
 import { loadGameParams } from '../../src/data';
-import { EVALUATION_BOUNDARY } from '../fixtures/spec-tables';
+import { EVALUATION_BOUNDARY, EVALUATION_RESTRICTED_BOUNDARY } from '../fixtures/spec-tables';
 import { buildEngine } from '../fixtures/engine-helpers';
 
 const params = loadGameParams();
@@ -41,26 +41,71 @@ describe('T8 評価境界(マス数4種×境界の両側)', () => {
     const mass = Number(massStr);
     describe(`${mass}マス`, () => {
       it(`★3境界: ${b.star3}→star3, ${b.star3 + 1}→star2`, () => {
-        expect(starForError(b.star3, mass, params)).toBe('star3');
-        expect(starForError(b.star3 + 1, mass, params)).toBe('star2');
+        expect(starForError(b.star3, mass, false, params)).toBe('star3');
+        expect(starForError(b.star3 + 1, mass, false, params)).toBe('star2');
       });
       it(`★2境界: ${b.star2}→star2, ${b.star2 + 1}→star1`, () => {
-        expect(starForError(b.star2, mass, params)).toBe('star2');
-        expect(starForError(b.star2 + 1, mass, params)).toBe('star1');
+        expect(starForError(b.star2, mass, false, params)).toBe('star2');
+        expect(starForError(b.star2 + 1, mass, false, params)).toBe('star1');
       });
       it(`★1境界: ${b.star1}→star1, ${b.star1 + 1}→star0`, () => {
-        expect(starForError(b.star1, mass, params)).toBe('star1');
-        expect(starForError(b.star1 + 1, mass, params)).toBe('star0');
+        expect(starForError(b.star1, mass, false, params)).toBe('star1');
+        expect(starForError(b.star1 + 1, mass, false, params)).toBe('star0');
       });
       it(`★0境界: ${b.star0}→star0, ${b.star0 + 1}→fail`, () => {
-        expect(starForError(b.star0, mass, params)).toBe('star0');
-        expect(starForError(b.star0 + 1, mass, params)).toBe('fail');
+        expect(starForError(b.star0, mass, false, params)).toBe('star0');
+        expect(starForError(b.star0 + 1, mass, false, params)).toBe('fail');
       });
       it('誤差0 は star3', () => {
-        expect(starForError(0, mass, params)).toBe('star3');
+        expect(starForError(0, mass, false, params)).toBe('star3');
       });
     });
   }
+});
+
+describe('T8 評価境界(誤差制限あり。9/6/4マス×境界の両側)', () => {
+  for (const [massStr, b] of Object.entries(EVALUATION_RESTRICTED_BOUNDARY)) {
+    const mass = Number(massStr);
+    describe(`${mass}マス(誤差制限あり)`, () => {
+      it(`★3境界: ${b.star3}→star3, ${b.star3 + 1}→star2`, () => {
+        expect(starForError(b.star3, mass, true, params)).toBe('star3');
+        expect(starForError(b.star3 + 1, mass, true, params)).toBe('star2');
+      });
+      it(`★2境界: ${b.star2}→star2, ${b.star2 + 1}→star1`, () => {
+        expect(starForError(b.star2, mass, true, params)).toBe('star2');
+        expect(starForError(b.star2 + 1, mass, true, params)).toBe('star1');
+      });
+      it(`★1境界: ${b.star1}→star1, ${b.star1 + 1}→star0`, () => {
+        expect(starForError(b.star1, mass, true, params)).toBe('star1');
+        expect(starForError(b.star1 + 1, mass, true, params)).toBe('star0');
+      });
+      it(`★0境界: ${b.star0}→star0, ${b.star0 + 1}→fail`, () => {
+        expect(starForError(b.star0, mass, true, params)).toBe('star0');
+        expect(starForError(b.star0 + 1, mass, true, params)).toBe('fail');
+      });
+    });
+  }
+
+  it('9マス具体例: 誤差合計6→star3, 7→star2, 13→star2, 14→star1', () => {
+    expect(starForError(6, 9, true, params)).toBe('star3');
+    expect(starForError(7, 9, true, params)).toBe('star2');
+    expect(starForError(13, 9, true, params)).toBe('star2');
+    expect(starForError(14, 9, true, params)).toBe('star1');
+  });
+
+  it('7マス(ぬいぐるみ)は制限あり表が未定義のため通常7マス表にフォールバックする', () => {
+    const b = EVALUATION_BOUNDARY[7]; // star3=5, star2=17, star1=27, star0=30
+    expect(starForError(b.star3, 7, true, params)).toBe('star3');
+    expect(starForError(b.star3 + 1, 7, true, params)).toBe('star2');
+    expect(starForError(b.star2, 7, true, params)).toBe('star2');
+    expect(starForError(b.star2 + 1, 7, true, params)).toBe('star1');
+    expect(starForError(b.star1, 7, true, params)).toBe('star1');
+    expect(starForError(b.star1 + 1, 7, true, params)).toBe('star0');
+    expect(starForError(b.star0, 7, true, params)).toBe('star0');
+    expect(starForError(b.star0 + 1, 7, true, params)).toBe('fail');
+    // 誤差制限なしと同一結果になることも確認
+    expect(starForError(20, 7, true, params)).toBe(starForError(20, 7, false, params));
+  });
 });
 
 describe('T8 エンジン judge (状態からの判定)', () => {
@@ -85,6 +130,29 @@ describe('T8 エンジン judge (状態からの判定)', () => {
     expect(j.totalError).toBe(2 + 9 + 10 + 0);
     expect(j.rawTotalError).toBe(2 + 6 + 10 + 0);
     expect(j.star).toBe('star0');
+  });
+
+  it('errorLimit=true のスナップショットは制限あり境界で判定される(通常表なら star3 になる誤差でも star2 になる)', () => {
+    const engine = buildEngine();
+    // 4マス: 残り 2,0,0,0 = 合計2。通常表(star3=2)なら star3、制限あり表(star3=1,star2=5)なら star2。
+    const state = engine.createStateFromSnapshot({
+      recipeId: 'j',
+      category: 'head',
+      rows: 2,
+      cols: 2,
+      errorLimit: true,
+      cells: [
+        { r: 1, c: 1, base: 100, cumulative: 98, shitsuke: false }, // 残り2
+        { r: 1, c: 2, base: 100, cumulative: 100, shitsuke: false },
+        { r: 2, c: 1, base: 100, cumulative: 100, shitsuke: false },
+        { r: 2, c: 2, base: 100, cumulative: 100, shitsuke: false },
+      ],
+      powerCycle: ['normal'],
+      concentration: 0,
+    });
+    const j = engine.judge(state);
+    expect(j.totalError).toBe(2);
+    expect(j.star).toBe('star2');
   });
 
   it('全マス残り0 は star3 (誤差0)', () => {

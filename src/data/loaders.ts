@@ -33,6 +33,9 @@ export function loadGameParams(): GameParams {
   for (const mass of ['9', '7', '6', '4']) {
     assert(p.evaluation[mass], `game-params.json: evaluation[${mass}] 欠落`);
   }
+  for (const mass of ['9', '6', '4']) {
+    assert(p.evaluationRestricted[mass], `game-params.json: evaluationRestricted[${mass}] 欠落`);
+  }
   return p;
 }
 

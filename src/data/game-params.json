@@ -38,5 +38,10 @@
     "7": { "star3": 5, "star2": 17, "star1": 27, "star0": 30 },
     "6": { "star3": 4, "star2": 11, "star1": 24, "star0": 39 },
     "4": { "star3": 2, "star2": 7, "star1": 16, "star0": 29 }
+  },
+  "evaluationRestricted": {
+    "9": { "star3": 6, "star2": 13, "star1": 36, "star0": 49 },
+    "6": { "star3": 3, "star2": 8, "star1": 24, "star0": 39 },
+    "4": { "star3": 1, "star2": 5, "star1": 16, "star0": 29 }
   }
 }

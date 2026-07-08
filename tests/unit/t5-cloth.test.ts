@@ -24,7 +24,19 @@ const config: SimulatorConfig = { ...DEFAULT_CONFIG, needle: { type: 'copper', s
 function grid3x3(clothType: ClothType, base = 300): RecipeDef {
   const cells = [];
   for (let r = 1; r <= 3; r++) for (let c = 1; c <= 3; c++) cells.push({ r, c, base });
-  return { id: 'c', name: 'c', category: 'body_upper', clothType, rows: 3, cols: 3, cells, powerCycle: ['normal'] };
+  return {
+    id: 'c',
+    name: 'c',
+    category: 'body_upper',
+    clothType,
+    craftLevel: 80,
+    equipLevel: 130,
+    errorLimit: false,
+    rows: 3,
+    cols: 3,
+    cells,
+    powerCycle: ['normal'],
+  };
 }
 
 describe('T5 発動タイミング', () => {

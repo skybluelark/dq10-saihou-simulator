@@ -32,8 +32,8 @@ export function validateRecipesJson(raw: unknown): RecipeDef[] {
   }
   const obj = raw as { version?: unknown; recipes?: unknown };
 
-  if (obj.version !== '1.0') {
-    violations.push(`recipes.json: version が "1.0" ではありません(実際: ${JSON.stringify(obj.version)})。`);
+  if (obj.version !== '1.1') {
+    violations.push(`recipes.json: version が "1.1" ではありません(実際: ${JSON.stringify(obj.version)})。`);
   }
 
   if (!Array.isArray(obj.recipes)) {
@@ -96,6 +96,35 @@ export function validateRecipesJson(raw: unknown): RecipeDef[] {
         : undefined;
     if (!clothType) {
       err(`clothType "${String(clothRaw)}" は不正です。`);
+    }
+
+    // craftLevel(V9相当): 1〜999 の整数
+    const craftLevelRaw = e.craftLevel;
+    const craftLevelOk =
+      typeof craftLevelRaw === 'number' &&
+      Number.isInteger(craftLevelRaw) &&
+      craftLevelRaw >= 1 &&
+      craftLevelRaw <= 999;
+    if (!craftLevelOk) {
+      err(`craftLevel "${String(craftLevelRaw)}" は 1〜999 の整数ではありません。`);
+    }
+
+    // equipLevel(V10相当): 1〜999 の整数、または null(非装備品)
+    const equipLevelRaw = e.equipLevel;
+    const equipLevelOk =
+      equipLevelRaw === null ||
+      (typeof equipLevelRaw === 'number' &&
+        Number.isInteger(equipLevelRaw) &&
+        equipLevelRaw >= 1 &&
+        equipLevelRaw <= 999);
+    if (!equipLevelOk) {
+      err(`equipLevel "${String(equipLevelRaw)}" は 1〜999 の整数、または null ではありません。`);
+    }
+
+    // errorLimit(V11相当): boolean
+    const errorLimitRaw = e.errorLimit;
+    if (typeof errorLimitRaw !== 'boolean') {
+      err(`errorLimit "${String(errorLimitRaw)}" は真偽値ではありません。`);
     }
 
     // cells: category の固定グリッド範囲・マス数・(頭は)凸形・(r,c)昇順
@@ -187,6 +216,9 @@ export function validateRecipesJson(raw: unknown): RecipeDef[] {
       name,
       category: category!,
       clothType: clothType!,
+      craftLevel: craftLevelOk ? (craftLevelRaw as number) : 0,
+      equipLevel: equipLevelOk ? (equipLevelRaw as number | null) : null,
+      errorLimit: typeof errorLimitRaw === 'boolean' ? errorLimitRaw : false,
       rows: grid.rows,
       cols: grid.cols,
       cells,
@@ -205,13 +237,16 @@ export function validateRecipesJson(raw: unknown): RecipeDef[] {
 /** RecipeDef[] を recipes.json のテキスト表現へ整形する(2スペースインデント・末尾改行あり)。 */
 export function recipesToJsonText(recipes: RecipeDef[]): string {
   const json = {
-    version: '1.0',
+    version: '1.1',
     recipes: recipes.map((r) => {
       const out: Record<string, unknown> = {
         id: r.id,
         name: r.name,
         category: r.category,
         clothType: r.clothType,
+        craftLevel: r.craftLevel,
+        equipLevel: r.equipLevel,
+        errorLimit: r.errorLimit,
         cells: r.cells.map((cell) => ({ r: cell.r, c: cell.c, base: cell.base })),
         powerCycle: r.powerCycle,
       };
@@ -249,6 +284,9 @@ function recipeToCsvRow(r: RecipeDef): string {
     r.name,
     CATEGORY_TOKEN[r.category],
     CLOTH_TOKEN[r.clothType],
+    String(r.craftLevel),
+    r.equipLevel === null ? '-' : String(r.equipLevel),
+    r.errorLimit ? '1' : '0',
     String(r.rows),
     String(r.cols),
     ...cellCols,

@@ -8,6 +8,7 @@ import {
   DEFAULT_CONFIG,
   Engine,
   Mulberry32,
+  boundsFor,
   clampAnchorForPattern,
   makeReplayCheck,
   matchesReplayCheck,
@@ -701,7 +702,7 @@ function App() {
 
   const session = ui.session;
   const star3Line = currentGame
-    ? data.params.evaluation[String(currentGame.massCount)].star3
+    ? boundsFor(currentGame.massCount, currentGame.errorLimit, data.params).star3
     : 0;
 
   return (

@@ -108,3 +108,13 @@ export const EVALUATION_BOUNDARY: Record<number, { star3: number; star2: number;
   6: { star3: 4, star2: 11, star1: 24, star0: 39 },
   4: { star3: 2, star2: 7, star1: 16, star0: 29 },
 };
+
+// SPEC §3.7 評価境界(誤差制限あり。マス数 → 境界値)。7マスは定義なし(通常表にフォールバック)。
+export const EVALUATION_RESTRICTED_BOUNDARY: Record<
+  number,
+  { star3: number; star2: number; star1: number; star0: number }
+> = {
+  9: { star3: 6, star2: 13, star1: 36, star0: 49 },
+  6: { star3: 3, star2: 8, star1: 24, star0: 39 },
+  4: { star3: 1, star2: 5, star1: 16, star0: 29 },
+};

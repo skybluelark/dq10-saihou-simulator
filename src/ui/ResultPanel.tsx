@@ -2,7 +2,7 @@
 // マス別誤差内訳(ゲージ外9換算の明示。検証モード時のみ)・使用ターン数・残集中力。
 
 import { useState } from 'react';
-import { cellErrorScore } from '../core';
+import { boundsFor, cellErrorScore } from '../core';
 import type { GameParams, GameState, JudgeResult } from '../core';
 import { copyReplayText } from './clipboard';
 import { STAR_LABELS } from './format';
@@ -29,7 +29,7 @@ export function ResultPanel({
 }: ResultPanelProps) {
   const yellow = params.gauge.yellowRange;
   const penalty = params.gauge.penaltyError;
-  const star3Line = params.evaluation[String(game.massCount)].star3;
+  const star3Line = boundsFor(game.massCount, game.errorLimit, params).star3;
   const isGreat = result.star === 'star3';
   const isFail = result.star === 'fail';
 

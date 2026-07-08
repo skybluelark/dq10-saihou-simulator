@@ -1,6 +1,6 @@
 // できのよさ判定 (SPEC §3.7)
 
-import type { GameParams, Star } from './data-types';
+import type { EvaluationBoundary, GameParams, Star } from './data-types';
 import type { GameState, JudgeResult } from './types';
 
 /**
@@ -28,14 +28,25 @@ export function judge(state: GameState, params: GameParams): JudgeResult {
     total += cellErrorScore(remaining, yellow, penalty);
   }
 
-  const star = starForError(total, state.massCount, params);
+  const star = starForError(total, state.massCount, state.errorLimit, params);
   return { star, totalError: total, rawTotalError: raw };
 }
 
-/** 誤差合計とマス数から評価(★)を決める。 */
-export function starForError(total: number, massCount: number, params: GameParams): Star {
-  const b = params.evaluation[String(massCount)];
+/**
+ * マス数・誤差制限フラグから評価境界を選ぶ(SPEC §3.7)。
+ * errorLimit=true の場合は evaluationRestricted を優先するが、そのマス数が
+ * 定義されていない場合(7マス=ぬいぐるみ)は evaluation にフォールバックする。
+ */
+export function boundsFor(massCount: number, errorLimit: boolean, params: GameParams): EvaluationBoundary {
+  const restricted = errorLimit ? params.evaluationRestricted[String(massCount)] : undefined;
+  const b = restricted ?? params.evaluation[String(massCount)];
   if (!b) throw new Error(`evaluation 境界が未定義: massCount=${massCount}`);
+  return b;
+}
+
+/** 誤差合計・マス数・誤差制限フラグから評価(★)を決める。 */
+export function starForError(total: number, massCount: number, errorLimit: boolean, params: GameParams): Star {
+  const b = boundsFor(massCount, errorLimit, params);
   if (total <= b.star3) return 'star3';
   if (total <= b.star2) return 'star2';
   if (total <= b.star1) return 'star1';

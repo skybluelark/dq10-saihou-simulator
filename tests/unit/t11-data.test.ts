@@ -17,10 +17,11 @@ import {
   NEEDLE_CONCENTRATION,
   CONCENTRATION_BASE,
   EVALUATION_BOUNDARY,
+  EVALUATION_RESTRICTED_BOUNDARY,
 } from '../fixtures/spec-tables';
 
 const HEADER =
-  'id,name,category,cloth_type,rows,cols,cell_r1c1,cell_r1c2,cell_r1c3,cell_r2c1,cell_r2c2,cell_r2c3,cell_r3c1,cell_r3c2,cell_r3c3,power_order,notes';
+  'id,name,category,cloth_type,craft_level,equip_level,error_limit,rows,cols,cell_r1c1,cell_r1c2,cell_r1c3,cell_r2c1,cell_r2c2,cell_r2c3,cell_r3c1,cell_r3c2,cell_r3c3,power_order,notes';
 
 function csvWith(rows: string[]): string {
   return [HEADER, ...rows].join('\r\n');
@@ -28,7 +29,7 @@ function csvWith(rows: string[]): string {
 
 // 頭(2行×3列のうち凸形4マス)の位置対応:
 // cell_r1c1(空), cell_r1c2, cell_r1c3(空), cell_r2c1, cell_r2c2, cell_r2c3, 残り(r3系)は空
-const VALID_ROW = 'hat_a,ぼうしA,頭,通常,2,3,,32,,32,30,32,,,,弱い/普通/強い/最強,';
+const VALID_ROW = 'hat_a,ぼうしA,頭,通常,80,130,0,2,3,,32,,32,30,32,,,,弱い/普通/強い/最強,';
 
 describe('T11 game-params.json が SPEC と一致', () => {
   const p = loadGameParams();
@@ -63,6 +64,12 @@ describe('T11 game-params.json が SPEC と一致', () => {
     for (const [mass, b] of Object.entries(EVALUATION_BOUNDARY)) {
       expect(p.evaluation[mass]).toEqual(b);
     }
+  });
+  it('評価境界(誤差制限あり)がSPEC §3.7と一致(9/6/4マスのみ)', () => {
+    for (const [mass, b] of Object.entries(EVALUATION_RESTRICTED_BOUNDARY)) {
+      expect(p.evaluationRestricted[mass]).toEqual(b);
+    }
+    expect(p.evaluationRestricted['7']).toBeUndefined();
   });
 });
 
@@ -122,7 +129,7 @@ describe('T11 recipes.json 正常系(実データ)', () => {
     }
   });
 
-  it('ウェディの人形・男: 7マス(r1c1/r1c3欠け)', () => {
+  it('ウェディの人形・男: 7マス(r1c1/r1c3欠け)・非装備品(equipLevel=null)', () => {
     const doll = recipes.find((r) => r.id === 'wedi_doll_m')!;
     expect(doll.category).toBe('doll');
     expect(doll.clothType).toBe('rainbow');
@@ -130,9 +137,12 @@ describe('T11 recipes.json 正常系(実データ)', () => {
     expect(doll.cells.find((c) => c.r === 1 && c.c === 1)).toBeUndefined();
     expect(doll.cells.find((c) => c.r === 1 && c.c === 3)).toBeUndefined();
     expect(doll.powerCycle).toEqual(['normal', 'unknown', 'weak', 'strongest']);
+    expect(doll.equipLevel).toBeNull();
+    expect(doll.craftLevel).toBe(80);
+    expect(doll.errorLimit).toBe(false);
   });
 
-  it('賢哲のターバン: 頭2行3列(凸形)・虹・基準値231×4', () => {
+  it('賢哲のターバン: 頭2行3列(凸形)・虹・基準値231×4・装備可能Lv130', () => {
     const t = recipes.find((r) => r.id === 'kentetsu_turban')!;
     expect(t.category).toBe('head');
     expect(t.clothType).toBe('rainbow');
@@ -145,6 +155,9 @@ describe('T11 recipes.json 正常系(実データ)', () => {
       { r: 2, c: 3, base: 231 },
     ]);
     expect(t.powerCycle).toEqual(['normal', 'unknown', 'weak', 'unknown', 'strongest']);
+    expect(t.craftLevel).toBe(80);
+    expect(t.equipLevel).toBe(130);
+    expect(t.errorLimit).toBe(false);
   });
 
   it('ソポスのころも下: 体下3行2列・6マス', () => {
@@ -169,6 +182,9 @@ function validJsonRecipe(overrides: Record<string, unknown> = {}): Record<string
     name: 'ぼうしA',
     category: 'head',
     clothType: 'normal',
+    craftLevel: 80,
+    equipLevel: 130,
+    errorLimit: false,
     cells: [
       { r: 1, c: 2, base: 32 },
       { r: 2, c: 1, base: 32 },
@@ -181,7 +197,7 @@ function validJsonRecipe(overrides: Record<string, unknown> = {}): Record<string
 }
 
 function wrapRecipes(recipes: unknown[]): unknown {
-  return { version: '1.0', recipes };
+  return { version: '1.1', recipes };
 }
 
 describe('T11 validateRecipesJson 異常系', () => {
@@ -226,6 +242,38 @@ describe('T11 validateRecipesJson 異常系', () => {
     const bad = validJsonRecipe({ category: 'kabuto' });
     expect(() => validateRecipesJson(wrapRecipes([bad]))).toThrow(/category/);
   });
+
+  it('V9相当: craftLevel が範囲外(0・1000)・非数値は例外', () => {
+    for (const bad of [0, 1000, 'x', null]) {
+      expect(() => validateRecipesJson(wrapRecipes([validJsonRecipe({ craftLevel: bad })]))).toThrow(
+        /craftLevel/,
+      );
+    }
+  });
+
+  it('V10相当: equipLevel が範囲外(0・1000)・不正値は例外(null は許容)', () => {
+    for (const bad of [0, 1000, 'x']) {
+      expect(() => validateRecipesJson(wrapRecipes([validJsonRecipe({ equipLevel: bad })]))).toThrow(
+        /equipLevel/,
+      );
+    }
+    // null(非装備品)は通る
+    expect(() => validateRecipesJson(wrapRecipes([validJsonRecipe({ equipLevel: null })]))).not.toThrow();
+  });
+
+  it('V11相当: errorLimit が真偽値でない場合は例外', () => {
+    for (const bad of [0, 1, 'true', null]) {
+      expect(() => validateRecipesJson(wrapRecipes([validJsonRecipe({ errorLimit: bad })]))).toThrow(
+        /errorLimit/,
+      );
+    }
+  });
+
+  it('version が "1.1" でない場合は例外', () => {
+    expect(() => validateRecipesJson({ version: '1.0', recipes: [validJsonRecipe()] })).toThrow(
+      /version/,
+    );
+  });
 });
 
 describe('T11 recipes.json ⇔ recipes.csv 往復一致', () => {
@@ -238,9 +286,9 @@ describe('T11 recipes.json ⇔ recipes.csv 往復一致', () => {
   });
 });
 
-describe('T11 recipes.csv バリデーション異常系 (V1〜V8)', () => {
+describe('T11 recipes.csv バリデーション異常系 (V1〜V11)', () => {
   it('V1: id形式不正(大文字)', () => {
-    const r = parseRecipesCsv(csvWith(['Hat_A,ぼうし,頭,通常,2,3,,32,,32,30,32,,,,弱い/普通,']));
+    const r = parseRecipesCsv(csvWith(['Hat_A,ぼうし,頭,通常,80,130,0,2,3,,32,,32,30,32,,,,弱い/普通,']));
     expect(r.errors.some((e) => e.rule === 'V1' && e.line === 2)).toBe(true);
     expect(r.recipes).toHaveLength(0);
   });
@@ -252,69 +300,86 @@ describe('T11 recipes.csv バリデーション異常系 (V1〜V8)', () => {
   });
 
   it('V2: category不正', () => {
-    const r = parseRecipesCsv(csvWith(['hat_b,ぼうし,かぶと,通常,2,3,,32,,32,30,32,,,,弱い/普通,']));
+    const r = parseRecipesCsv(csvWith(['hat_b,ぼうし,かぶと,通常,80,130,0,2,3,,32,,32,30,32,,,,弱い/普通,']));
     expect(r.errors.some((e) => e.rule === 'V2' && e.line === 2)).toBe(true);
   });
 
   it('V2: cloth_type不正', () => {
-    const r = parseRecipesCsv(csvWith(['hat_b,ぼうし,頭,金,2,3,,32,,32,30,32,,,,弱い/普通,']));
+    const r = parseRecipesCsv(csvWith(['hat_b,ぼうし,頭,金,80,130,0,2,3,,32,,32,30,32,,,,弱い/普通,']));
     expect(r.errors.some((e) => e.rule === 'V2' && e.line === 2)).toBe(true);
   });
 
   it('V3: rows/colsがcategory固定値と不一致(頭で3×3)', () => {
-    const r = parseRecipesCsv(csvWith(['hat_b,ぼうし,頭,通常,3,3,30,32,30,32,50,50,50,50,50,弱い/普通,']));
+    const r = parseRecipesCsv(
+      csvWith(['hat_b,ぼうし,頭,通常,80,130,0,3,3,30,32,30,32,50,50,50,50,50,弱い/普通,']),
+    );
     expect(r.errors.some((e) => e.rule === 'V3' && e.line === 2)).toBe(true);
   });
 
   it('V5: グリッド範囲外にセル値(頭2行3列で r3c1 に値)', () => {
-    const r = parseRecipesCsv(csvWith(['hat_b,ぼうし,頭,通常,2,3,,32,,32,30,32,99,,,弱い/普通,']));
+    const r = parseRecipesCsv(
+      csvWith(['hat_b,ぼうし,頭,通常,80,130,0,2,3,,32,,32,30,32,99,,,弱い/普通,']),
+    );
     expect(r.errors.some((e) => e.rule === 'V5' && e.line === 2)).toBe(true);
   });
 
   it('V5ではなくV3-shape: 頭のグリッド内欠け位置(r1c1)に値', () => {
     // r1c1 は 2×3 グリッドの範囲内(V5対象外)だが、凸形の欠け位置なので V3-shape で検出する
-    const r = parseRecipesCsv(csvWith(['hat_b,ぼうし,頭,通常,2,3,99,32,,32,30,32,,,,弱い/普通,']));
+    const r = parseRecipesCsv(
+      csvWith(['hat_b,ぼうし,頭,通常,80,130,0,2,3,99,32,,32,30,32,,,,弱い/普通,']),
+    );
     expect(r.errors.some((e) => e.rule === 'V5')).toBe(false);
     expect(r.errors.some((e) => e.rule === 'V3-shape' && e.line === 2)).toBe(true);
   });
 
   it('V5: セル値が正整数でない(0・負・小数・文字)', () => {
     for (const bad of ['0', '-5', '3.5', 'abc']) {
-      const r = parseRecipesCsv(csvWith([`hat_b,ぼうし,頭,通常,2,3,,${bad},,32,30,32,,,,弱い/普通,`]));
+      const r = parseRecipesCsv(
+        csvWith([`hat_b,ぼうし,頭,通常,80,130,0,2,3,,${bad},,32,30,32,,,,弱い/普通,`]),
+      );
       expect(r.errors.some((e) => e.rule === 'V5' && e.line === 2)).toBe(true);
     }
   });
 
   it('V6: マス数不一致(頭で3マスのみ)', () => {
-    const r = parseRecipesCsv(csvWith(['hat_b,ぼうし,頭,通常,2,3,,32,,32,30,,,,,弱い/普通,']));
+    const r = parseRecipesCsv(
+      csvWith(['hat_b,ぼうし,頭,通常,80,130,0,2,3,,32,,32,30,,,,,弱い/普通,']),
+    );
     expect(r.errors.some((e) => e.rule === 'V6' && e.line === 2)).toBe(true);
   });
 
   it('V7: power_order空', () => {
-    const r = parseRecipesCsv(csvWith(['hat_b,ぼうし,頭,通常,2,3,,32,,32,30,32,,,,,']));
+    const r = parseRecipesCsv(csvWith(['hat_b,ぼうし,頭,通常,80,130,0,2,3,,32,,32,30,32,,,,,']));
     expect(r.errors.some((e) => e.rule === 'V7' && e.line === 2)).toBe(true);
   });
 
   it('V7: 不正トークン(会心×2 はサイクル不可)', () => {
-    const r = parseRecipesCsv(csvWith(['hat_b,ぼうし,頭,通常,2,3,,32,,32,30,32,,,,弱い/会心×2,']));
+    const r = parseRecipesCsv(
+      csvWith(['hat_b,ぼうし,頭,通常,80,130,0,2,3,,32,,32,30,32,,,,弱い/会心×2,']),
+    );
     expect(r.errors.some((e) => e.rule === 'V7' && e.line === 2)).toBe(true);
   });
 
   it('V3-shape: 頭のマス位置が凸形と不一致(2×2詰め配置)', () => {
     // rows=2,cols=3 だが値が旧2×2詰め位置(r1c1,r1c2,r2c1,r2c2)にある = 凸形と不一致
-    const r = parseRecipesCsv(csvWith(['hat_b,ぼうし,頭,通常,2,3,30,32,,32,30,,,,,弱い/普通,']));
+    const r = parseRecipesCsv(
+      csvWith(['hat_b,ぼうし,頭,通常,80,130,0,2,3,30,32,,32,30,,,,,弱い/普通,']),
+    );
     expect(r.errors.some((e) => e.rule === 'V3-shape' && e.line === 2)).toBe(true);
   });
 
   it('V3-shape: 頭の凸形が正しい配置は通る', () => {
-    const r = parseRecipesCsv(csvWith(['hat_b,ぼうし,頭,通常,2,3,,32,,32,30,32,,,,弱い/普通,']));
+    const r = parseRecipesCsv(
+      csvWith(['hat_b,ぼうし,頭,通常,80,130,0,2,3,,32,,32,30,32,,,,弱い/普通,']),
+    );
     expect(r.errors).toEqual([]);
     expect(r.recipes).toHaveLength(1);
     expect(r.recipes[0].cells.map((c) => `${c.r},${c.c}`).sort()).toEqual(['1,2', '2,1', '2,2', '2,3']);
   });
 
   it('V8: 空行・全列空はスキップ(警告・行番号つき)', () => {
-    const r = parseRecipesCsv(csvWith([VALID_ROW, '', ',,,,,,,,,,,,,,,,', VALID_ROW.replace('hat_a', 'hat_b')]));
+    const allEmpty = HEADER.split(',').map(() => '').join(',');
+    const r = parseRecipesCsv(csvWith([VALID_ROW, '', allEmpty, VALID_ROW.replace('hat_a', 'hat_b')]));
     expect(r.warnings.some((w) => w.rule === 'V8' && w.line === 3)).toBe(true);
     expect(r.warnings.some((w) => w.rule === 'V8' && w.line === 4)).toBe(true);
     expect(r.recipes).toHaveLength(2);
@@ -323,7 +388,11 @@ describe('T11 recipes.csv バリデーション異常系 (V1〜V8)', () => {
 
   it('エラー行は除外され、正常行は読み込まれる', () => {
     const r = parseRecipesCsv(
-      csvWith([VALID_ROW, 'BAD_ID,x,頭,通常,2,3,,32,,32,30,32,,,,弱い,', VALID_ROW.replace('hat_a', 'hat_c')]),
+      csvWith([
+        VALID_ROW,
+        'BAD_ID,x,頭,通常,80,130,0,2,3,,32,,32,30,32,,,,弱い,',
+        VALID_ROW.replace('hat_a', 'hat_c'),
+      ]),
     );
     expect(r.recipes.map((x) => x.id)).toEqual(['hat_a', 'hat_c']);
     expect(r.errors.some((e) => e.line === 3)).toBe(true);
@@ -333,5 +402,46 @@ describe('T11 recipes.csv バリデーション異常系 (V1〜V8)', () => {
     const r = parseRecipesCsv('foo,bar\n' + VALID_ROW);
     expect(r.errors.some((e) => e.rule === 'HEADER' && e.line === 1)).toBe(true);
     expect(r.recipes).toHaveLength(0);
+  });
+
+  it('V9: craft_level が範囲外(0・1000)・非数値はエラー', () => {
+    for (const bad of ['0', '1000', 'abc', '']) {
+      const r = parseRecipesCsv(
+        csvWith([`hat_b,ぼうし,頭,通常,${bad},130,0,2,3,,32,,32,30,32,,,,弱い/普通,`]),
+      );
+      expect(r.errors.some((e) => e.rule === 'V9' && e.line === 2)).toBe(true);
+    }
+  });
+
+  it('V10: equip_level が範囲外(0・1000)・不正値はエラー(「-」は許容)', () => {
+    for (const bad of ['0', '1000', 'abc']) {
+      const r = parseRecipesCsv(
+        csvWith([`hat_b,ぼうし,頭,通常,80,${bad},0,2,3,,32,,32,30,32,,,,弱い/普通,`]),
+      );
+      expect(r.errors.some((e) => e.rule === 'V10' && e.line === 2)).toBe(true);
+    }
+    // 「-」(非装備品)は任意の部位で許容される
+    const ok = parseRecipesCsv(
+      csvWith(['hat_b,ぼうし,頭,通常,80,-,0,2,3,,32,,32,30,32,,,,弱い/普通,']),
+    );
+    expect(ok.errors).toEqual([]);
+    expect(ok.recipes[0].equipLevel).toBeNull();
+  });
+
+  it('V11: error_limit が 0/1 以外はエラー', () => {
+    for (const bad of ['2', 'true', '', '-1']) {
+      const r = parseRecipesCsv(
+        csvWith([`hat_b,ぼうし,頭,通常,80,130,${bad},2,3,,32,,32,30,32,,,,弱い/普通,`]),
+      );
+      expect(r.errors.some((e) => e.rule === 'V11' && e.line === 2)).toBe(true);
+    }
+  });
+
+  it('error_limit=1 は通り、errorLimit=true としてパースされる', () => {
+    const r = parseRecipesCsv(
+      csvWith(['hat_b,ぼうし,頭,通常,80,130,1,2,3,,32,,32,30,32,,,,弱い/普通,']),
+    );
+    expect(r.errors).toEqual([]);
+    expect(r.recipes[0].errorLimit).toBe(true);
   });
 });

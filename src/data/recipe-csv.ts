@@ -19,7 +19,7 @@ import {
   HEADER,
 } from './recipe-schema';
 
-const CELL_START = 6; // cell_r1c1 の列インデックス
+const CELL_START = 9; // cell_r1c1 の列インデックス(id,name,category,cloth_type,craft_level,equip_level,error_limit,rows,cols の次)
 const CELL_COUNT = 9;
 
 /** 1行を素朴に分割(このCSVはクオート/エスケープ非対応の固定フォーマット)。 */
@@ -84,10 +84,13 @@ export function parseRecipesCsv(csv: string): RecipeParseResult {
     const name = cols[1] ?? '';
     const categoryRaw = cols[2] ?? '';
     const clothRaw = cols[3] ?? '';
-    const rowsRaw = cols[4] ?? '';
-    const colsRaw = cols[5] ?? '';
-    const powerRaw = cols[15] ?? '';
-    const notes = cols[16] ?? '';
+    const craftLevelRaw = cols[4] ?? '';
+    const equipLevelRaw = cols[5] ?? '';
+    const errorLimitRaw = cols[6] ?? '';
+    const rowsRaw = cols[7] ?? '';
+    const colsRaw = cols[8] ?? '';
+    const powerRaw = cols[18] ?? '';
+    const notes = cols[19] ?? '';
 
     // V1: id 形式 + 一意
     if (!/^[a-z0-9_]+$/.test(id)) {
@@ -105,6 +108,29 @@ export function parseRecipesCsv(csv: string): RecipeParseResult {
     if (!clothType) {
       err('V2', `cloth_type "${clothRaw}" は不正です。`);
     }
+
+    // V9: craft_level は 1〜999 の整数
+    const craftLevelNum = Number(craftLevelRaw);
+    if (!Number.isInteger(craftLevelNum) || craftLevelNum < 1 || craftLevelNum > 999) {
+      err('V9', `craft_level "${craftLevelRaw}" は 1〜999 の整数ではありません。`);
+    }
+
+    // V10: equip_level は 1〜999 の整数、または「-」(非装備品)
+    let equipLevelNum: number | null = null;
+    if (equipLevelRaw === '-') {
+      equipLevelNum = null;
+    } else {
+      equipLevelNum = Number(equipLevelRaw);
+      if (!Number.isInteger(equipLevelNum) || equipLevelNum < 1 || equipLevelNum > 999) {
+        err('V10', `equip_level "${equipLevelRaw}" は 1〜999 の整数、または「-」ではありません。`);
+      }
+    }
+
+    // V11: error_limit は 0 または 1
+    if (errorLimitRaw !== '0' && errorLimitRaw !== '1') {
+      err('V11', `error_limit "${errorLimitRaw}" は 0 または 1 ではありません。`);
+    }
+    const errorLimit = errorLimitRaw === '1';
 
     const rows = Number(rowsRaw);
     const colsN = Number(colsRaw);
@@ -194,6 +220,9 @@ export function parseRecipesCsv(csv: string): RecipeParseResult {
       name,
       category: category!,
       clothType: clothType!,
+      craftLevel: craftLevelNum,
+      equipLevel: equipLevelNum,
+      errorLimit,
       rows,
       cols: colsN,
       cells,

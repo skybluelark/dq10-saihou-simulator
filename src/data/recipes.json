@@ -1,11 +1,14 @@
 {
-  "version": "1.0",
+  "version": "1.1",
   "recipes": [
     {
       "id": "kentetsu_turban",
       "name": "賢哲のターバン",
       "category": "head",
       "clothType": "rainbow",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -41,6 +44,9 @@
       "name": "巨商のターバン",
       "category": "head",
       "clothType": "light",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -77,6 +83,9 @@
       "name": "賢哲のころも上",
       "category": "body_upper",
       "clothType": "rainbow",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -139,6 +148,9 @@
       "name": "カテドラルローブ",
       "category": "body_upper",
       "clothType": "regen",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -199,6 +211,9 @@
       "name": "ソポスのころも下",
       "category": "body_lower",
       "clothType": "light",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -246,6 +261,9 @@
       "name": "大怪傑のグローブ",
       "category": "arm",
       "clothType": "rainbow",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -293,6 +311,9 @@
       "name": "空賊のブーツ",
       "category": "leg",
       "clothType": "light",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -329,6 +350,9 @@
       "name": "ワンダラーズブーツ",
       "category": "leg",
       "clothType": "regen",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -365,6 +389,9 @@
       "name": "ウェディの人形・男",
       "category": "doll",
       "clothType": "rainbow",
+      "craftLevel": 80,
+      "equipLevel": null,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -414,6 +441,9 @@
       "name": "空賊のバンダナ",
       "category": "head",
       "clothType": "light",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -450,6 +480,9 @@
       "name": "聖翼の髪飾り",
       "category": "head",
       "clothType": "rainbow",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -486,6 +519,9 @@
       "name": "ロードリーコサージ",
       "category": "head",
       "clothType": "regen",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -522,6 +558,9 @@
       "name": "空賊のシャツ",
       "category": "body_upper",
       "clothType": "light",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -583,6 +622,9 @@
       "name": "聖翼のドレス上",
       "category": "body_upper",
       "clothType": "rainbow",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -644,6 +686,9 @@
       "name": "ロードリーローブ上",
       "category": "body_upper",
       "clothType": "regen",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -705,6 +750,9 @@
       "name": "空賊のズボン",
       "category": "body_lower",
       "clothType": "light",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -751,6 +799,9 @@
       "name": "聖翼のドレス下",
       "category": "body_lower",
       "clothType": "rainbow",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -797,6 +848,9 @@
       "name": "ロードリーローブ下",
       "category": "body_lower",
       "clothType": "regen",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -843,6 +897,9 @@
       "name": "空賊のグローブ",
       "category": "arm",
       "clothType": "light",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -889,6 +946,9 @@
       "name": "聖翼のグローブ",
       "category": "arm",
       "clothType": "rainbow",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -935,6 +995,9 @@
       "name": "ロードリーグローブ",
       "category": "arm",
       "clothType": "regen",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -981,6 +1044,9 @@
       "name": "聖翼のブーツ",
       "category": "leg",
       "clothType": "rainbow",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -1017,6 +1083,9 @@
       "name": "ロードリーブーツ",
       "category": "leg",
       "clothType": "regen",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -1053,6 +1122,9 @@
       "name": "しっこくのターバン",
       "category": "head",
       "clothType": "regen",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -1091,6 +1163,9 @@
       "name": "スパングルフェザー",
       "category": "head",
       "clothType": "light",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -1129,6 +1204,9 @@
       "name": "ふしぎなぼうし",
       "category": "head",
       "clothType": "rainbow",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -1167,6 +1245,9 @@
       "name": "しっこくのマント",
       "category": "body_upper",
       "clothType": "regen",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -1230,6 +1311,9 @@
       "name": "スパングルドレス上",
       "category": "body_upper",
       "clothType": "light",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -1293,6 +1377,9 @@
       "name": "ふしぎなボレロ上",
       "category": "body_upper",
       "clothType": "rainbow",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -1356,6 +1443,9 @@
       "name": "スパングルドレス下",
       "category": "body_lower",
       "clothType": "light",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -1404,6 +1494,9 @@
       "name": "ふしぎなボレロ下",
       "category": "body_lower",
       "clothType": "rainbow",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -1452,6 +1545,9 @@
       "name": "しっこくのグローブ",
       "category": "arm",
       "clothType": "regen",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -1500,6 +1596,9 @@
       "name": "スパングルグローブ",
       "category": "arm",
       "clothType": "light",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -1548,6 +1647,9 @@
       "name": "ふしぎなグローブ",
       "category": "arm",
       "clothType": "rainbow",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -1596,6 +1698,9 @@
       "name": "しっこくのブーツ",
       "category": "leg",
       "clothType": "regen",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -1634,6 +1739,9 @@
       "name": "スパングルパンプス",
       "category": "leg",
       "clothType": "light",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -1672,6 +1780,9 @@
       "name": "ふしぎなブーツ",
       "category": "leg",
       "clothType": "rainbow",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -1710,6 +1821,9 @@
       "name": "乱破の額当て",
       "category": "head",
       "clothType": "light",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -1749,6 +1863,9 @@
       "name": "プロディトヘッド",
       "category": "head",
       "clothType": "rainbow",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -1788,6 +1905,9 @@
       "name": "オスクトルクラウン",
       "category": "head",
       "clothType": "regen",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -1827,6 +1947,9 @@
       "name": "乱破の忍び装束上",
       "category": "body_upper",
       "clothType": "light",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -1891,6 +2014,9 @@
       "name": "プロディトスーツ上",
       "category": "body_upper",
       "clothType": "rainbow",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -1955,6 +2081,9 @@
       "name": "オスクトルローブ上",
       "category": "body_upper",
       "clothType": "regen",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -2019,6 +2148,9 @@
       "name": "乱破の忍び装束下",
       "category": "body_lower",
       "clothType": "light",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -2068,6 +2200,9 @@
       "name": "プロディトスーツ下",
       "category": "body_lower",
       "clothType": "rainbow",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -2117,6 +2252,9 @@
       "name": "オスクトルローブ下",
       "category": "body_lower",
       "clothType": "regen",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -2166,6 +2304,9 @@
       "name": "乱破の手甲",
       "category": "arm",
       "clothType": "light",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -2215,6 +2356,9 @@
       "name": "プロディトグローブ",
       "category": "arm",
       "clothType": "rainbow",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -2264,6 +2408,9 @@
       "name": "オスクトルグローブ",
       "category": "arm",
       "clothType": "regen",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -2313,6 +2460,9 @@
       "name": "乱破の脚半",
       "category": "leg",
       "clothType": "light",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -2352,6 +2502,9 @@
       "name": "プロディトシューズ",
       "category": "leg",
       "clothType": "rainbow",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -2391,6 +2544,9 @@
       "name": "オスクトルブーツ",
       "category": "leg",
       "clothType": "regen",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -2430,6 +2586,9 @@
       "name": "隠密のはちまき",
       "category": "head",
       "clothType": "light",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -2470,6 +2629,9 @@
       "name": "瑞雲の髪飾り",
       "category": "head",
       "clothType": "rainbow",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -2510,6 +2672,9 @@
       "name": "陰陽博士のぼうし",
       "category": "head",
       "clothType": "regen",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -2550,6 +2715,9 @@
       "name": "隠密の装束上",
       "category": "body_upper",
       "clothType": "light",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -2615,6 +2783,9 @@
       "name": "瑞雲の道服上",
       "category": "body_upper",
       "clothType": "rainbow",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -2680,6 +2851,9 @@
       "name": "陰陽博士のころも上",
       "category": "body_upper",
       "clothType": "rainbow",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -2745,6 +2919,9 @@
       "name": "隠密の装束下",
       "category": "body_lower",
       "clothType": "light",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -2795,6 +2972,9 @@
       "name": "瑞雲の道服下",
       "category": "body_lower",
       "clothType": "rainbow",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -2845,6 +3025,9 @@
       "name": "陰陽博士のころも下",
       "category": "body_lower",
       "clothType": "regen",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -2895,6 +3078,9 @@
       "name": "隠密の手甲",
       "category": "arm",
       "clothType": "regen",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -2945,6 +3131,9 @@
       "name": "瑞雲のこて",
       "category": "arm",
       "clothType": "light",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -2995,6 +3184,9 @@
       "name": "陰陽博士のてぶくろ",
       "category": "arm",
       "clothType": "regen",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -3045,6 +3237,9 @@
       "name": "隠密の脚半",
       "category": "leg",
       "clothType": "light",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -3085,6 +3280,9 @@
       "name": "瑞雲の深沓",
       "category": "leg",
       "clothType": "rainbow",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -3125,6 +3323,9 @@
       "name": "陰陽博士のくつ",
       "category": "leg",
       "clothType": "rainbow",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -3165,6 +3366,9 @@
       "name": "烈風のキャップ",
       "category": "head",
       "clothType": "regen",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -3205,6 +3409,9 @@
       "name": "妖精郷の花髪",
       "category": "head",
       "clothType": "rainbow",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -3245,6 +3452,9 @@
       "name": "アンテイクトーク",
       "category": "head",
       "clothType": "light",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -3285,6 +3495,9 @@
       "name": "烈風のころも上",
       "category": "body_upper",
       "clothType": "regen",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -3350,6 +3563,9 @@
       "name": "妖精郷の舞踏服上",
       "category": "body_upper",
       "clothType": "light",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -3415,6 +3631,9 @@
       "name": "アンテイクドレス上",
       "category": "body_upper",
       "clothType": "regen",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -3480,6 +3699,9 @@
       "name": "烈風のころも下",
       "category": "body_lower",
       "clothType": "regen",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -3530,6 +3752,9 @@
       "name": "妖精郷の舞踏服下",
       "category": "body_lower",
       "clothType": "rainbow",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -3580,6 +3805,9 @@
       "name": "アンテイクドレス下",
       "category": "body_lower",
       "clothType": "light",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -3630,6 +3858,9 @@
       "name": "烈風のグローブ",
       "category": "arm",
       "clothType": "regen",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -3680,6 +3911,9 @@
       "name": "妖精郷のうでわ",
       "category": "arm",
       "clothType": "light",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -3730,6 +3964,9 @@
       "name": "アンテイクグローブ",
       "category": "arm",
       "clothType": "rainbow",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -3780,6 +4017,9 @@
       "name": "烈風のブーツ",
       "category": "leg",
       "clothType": "regen",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -3820,6 +4060,9 @@
       "name": "妖精郷のブーツ",
       "category": "leg",
       "clothType": "light",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -3860,6 +4103,9 @@
       "name": "アンテイクシューズ",
       "category": "leg",
       "clothType": "rainbow",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -3900,6 +4146,9 @@
       "name": "月影の額当て",
       "category": "head",
       "clothType": "light",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -3939,6 +4188,9 @@
       "name": "ノクトルクラウン",
       "category": "head",
       "clothType": "regen",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -3978,6 +4230,9 @@
       "name": "叡聖のサークレット",
       "category": "head",
       "clothType": "rainbow",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -4017,6 +4272,9 @@
       "name": "月影の装束上",
       "category": "body_upper",
       "clothType": "light",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -4081,6 +4339,9 @@
       "name": "ノクトルケープ上",
       "category": "body_upper",
       "clothType": "rainbow",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -4145,6 +4406,9 @@
       "name": "叡聖の博士服",
       "category": "body_upper",
       "clothType": "rainbow",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -4209,6 +4473,9 @@
       "name": "月影の装束下",
       "category": "body_lower",
       "clothType": "light",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -4258,6 +4525,9 @@
       "name": "ノクトルケープ下",
       "category": "body_lower",
       "clothType": "regen",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -4307,6 +4577,9 @@
       "name": "月影のこて",
       "category": "arm",
       "clothType": "light",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -4356,6 +4629,9 @@
       "name": "ノクトルグローブ",
       "category": "arm",
       "clothType": "light",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -4405,6 +4681,9 @@
       "name": "叡聖のグローブ",
       "category": "arm",
       "clothType": "rainbow",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -4454,6 +4733,9 @@
       "name": "月影の深沓",
       "category": "leg",
       "clothType": "light",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -4493,6 +4775,9 @@
       "name": "ノクトルブーツ",
       "category": "leg",
       "clothType": "regen",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,
@@ -4532,6 +4817,9 @@
       "name": "叡聖のブーツ",
       "category": "leg",
       "clothType": "rainbow",
+      "craftLevel": 80,
+      "equipLevel": 130,
+      "errorLimit": false,
       "cells": [
         {
           "r": 1,

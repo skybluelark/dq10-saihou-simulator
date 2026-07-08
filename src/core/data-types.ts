@@ -72,6 +72,8 @@ export interface GameParams {
     penaltyError: number;
   };
   evaluation: Record<string, EvaluationBoundary>;
+  // 誤差制限(レシピの errorLimit=1)時の評価境界。キーは "9"/"6"/"4" のみ("7" は evaluation にフォールバック)。
+  evaluationRestricted: Record<string, EvaluationBoundary>;
 }
 
 export interface EvaluationBoundary {
@@ -158,6 +160,9 @@ export interface RecipeDef {
   name: string;
   category: Category;
   clothType: ClothType;
+  craftLevel: number; // 必要職人レベル(1〜999)。将来の職人レベル入力機能用のデータ保持のみ。
+  equipLevel: number | null; // 装備可能レベル(1〜999)。null = 非装備品(CSVの「-」)。
+  errorLimit: boolean; // 誤差制限(true=1)。できのよさ判定の評価境界を制限あり表に切り替える(SPEC §3.7)。
   rows: number;
   cols: number;
   cells: RecipeCell[];

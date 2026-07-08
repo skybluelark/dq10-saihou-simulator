@@ -1,4 +1,4 @@
-# ドラクエ10 さいほうシミュレータ データ設計書 (v0.3)
+# ドラクエ10 さいほうシミュレータ データ設計書 (v0.4)
 
 作成日: 2026-07-03 / 状態: **承認済み (2026-07-03。修正2点を反映済み)**
 関連文書: [SPEC.md](SPEC.md)(数値の正) / [ARCHITECTURE.md](ARCHITECTURE.md)(A5 データ読み込み方式)
@@ -63,11 +63,17 @@
     "7": { "star3": 5, "star2": 17, "star1": 27, "star0": 30 },
     "6": { "star3": 4, "star2": 11, "star1": 24, "star0": 39 },
     "4": { "star3": 2, "star2": 7,  "star1": 16, "star0": 29 }
+  },
+  "evaluationRestricted": {          // §3.7 評価境界(誤差制限あり。SPEC v1.23)
+    "9": { "star3": 6, "star2": 13, "star1": 36, "star0": 49 },
+    "6": { "star3": 3, "star2": 8,  "star1": 24, "star0": 39 },
+    "4": { "star3": 1, "star2": 5,  "star1": 16, "star0": 29 }
   }
 }
 ```
 
 - 丸め規則(正方向丸め、虹布の端数切り上げ)はパラメータではなく**コアの固定ロジック**とする。
+- `evaluationRestricted` は誤差制限=1 のレシピにのみ使用する。**キーがないマス数(7)は誤差制限=1 でも `evaluation` にフォールバック**する(SPEC §3.7。エラーにしない)。
 
 ## 2. ダメージ値の算出(データファイルなし)
 
@@ -171,6 +177,7 @@
 
 - `npm run recipes:import` — data/recipes.csv → src/data/recipes.json。V1〜V8 検証を行い、**エラーが1件でもあれば取り込み失敗**(行番号つきで理由を表示)。
 - `npm run recipes:export` — src/data/recipes.json → data/recipes.csv(BOM付きUTF-8)。
+- CSV 列順(2026-07-08 改定。craft_level 以下3列を追加): `id, name, category, cloth_type, craft_level, equip_level, error_limit, rows, cols, cell_r1c1〜cell_r3c3, power_order, notes`。equip_level の「-」は JSON では null、error_limit の 0/1 は JSON では boolean。
 
 ### recipes.json スキーマ
 
@@ -183,6 +190,9 @@
       "name": "カテドラルローブ",
       "category": "body_upper",        // enum(§0)。rows/cols は category から導出(保持しない)
       "clothType": "regen",            // enum(§0)
+      "craftLevel": 80,                // 必要職人レベル(1〜999。SPEC §3.1)
+      "equipLevel": 130,               // 装備可能レベル(1〜999)。「-」は null(ラグ・ぬいぐるみ等。任意の部位で許容)
+      "errorLimit": false,             // 誤差制限(SPEC §3.7。CSV では 0/1)
       "cells": [                        // 存在するマスのみ。(r,c) 昇順であること
         { "r": 1, "c": 1, "base": 100 }
       ],
@@ -194,7 +204,7 @@
 ```
 
 - rows/cols は保持せず、ローダが category の固定グリッド(V3 と同じ対応表)から導出して内部モデル `RecipeDef` を組み立てる(冗長データの乖離防止)。
-- **JSONロード時にも同等の検証**(id形式・一意、enum、セル範囲・正整数・マス数・頭の凸形・powerCycleトークン、cells の (r,c) 昇順)を行い、違反があれば起動失敗とする(部分スキップはしない)。cells の並び順はコアのマス生成順(=乱数消費・表示順)に影響するため昇順を必須とする。
+- **JSONロード時にも同等の検証**(id形式・一意、enum、セル範囲・正整数・マス数・頭の凸形・powerCycleトークン、cells の (r,c) 昇順、craftLevel/equipLevel/errorLimit の型と範囲)を行い、違反があれば起動失敗とする(部分スキップはしない)。recipes.json の version は 3属性追加に伴い **"1.1"** に上げる。cells の並び順はコアのマス生成順(=乱数消費・表示順)に影響するため昇順を必須とする。
 
 ### 内部モデル(変換後)
 
@@ -204,6 +214,9 @@ interface RecipeDef {
   name: string;
   category: Category;
   clothType: ClothType;
+  craftLevel: number;                               // 必要職人レベル(1〜999)
+  equipLevel: number | null;                        // 装備可能レベル。null = 「-」
+  errorLimit: boolean;                              // 誤差制限(§3.7 の制限あり境界を使用)
   rows: number; cols: number;                       // category から導出
   cells: { r: number; c: number; base: number }[];  // 存在するマスのみ
   powerCycle: Power[];                              // unknown 含む。critx2 は不可
@@ -222,6 +235,9 @@ interface RecipeDef {
 | V6 | マス数が category と一致(head/leg=4、body_upper=9、body_lower/arm/rug=6、doll=7) | エラー |
 | V7 | power_order: 1トークン以上、トークンは 弱い/普通/強い/最強/？ のみ(会心×2不可) | エラー |
 | V8 | 空行・全列空はスキップ | 警告 |
+| V9 | craft_level: 1〜999 の整数 | エラー |
+| V10 | equip_level: 1〜999 の整数、または「-」(任意の部位で許容) | エラー |
+| V11 | error_limit: 0 または 1 | エラー |
 
 - CSVの日本語トークン(部位・布・パワー)→enumへの対訳表は変換層が持つ(export は逆引き)。
 - 取り込み・エクスポートの変換ロジックは純関数として src/data に置き(テスト対象)、scripts/ のコマンドは薄いラッパとする。往復変換(JSON→CSV→JSON)の一致をテストで保証する。
@@ -252,6 +268,7 @@ interface RecipeDef {
 
 ## 9. 更新履歴
 
+- v0.4 (2026-07-08): レシピ3属性を追加(SPEC v1.23): craftLevel(必要職人レベル)・equipLevel(装備可能レベル。「-」=null)・errorLimit(誤差制限)。CSV 列 craft_level/equip_level/error_limit と検証 V9〜V11 を追加、recipes.json version を 1.1 に。game-params.json に evaluationRestricted(誤差制限あり境界。7マスは evaluation にフォールバック)を追加。
 - v0.3 (2026-07-07): レシピデータの再設計(SPEC v1.18)。正を src/data/recipes.json に変更し、recipes.csv は入出力IFへ(§6 改稿: JSONスキーマ・変換コマンド・ロード時検証・往復一致テスト)。W1 での正の移行方針を §8 に明記。パラメータエディタ廃止を §0-5 に反映。
 - v0.2 (2026-07-03): 承認反映。ダメージテーブルのデータファイル化を廃止(コア計算式方式へ)、ラグ=2行×3列確定。レシピデータの将来の持ち方(§8)を追記。
 - v0.1 (2026-07-03): 初版ドラフト。全データファイルのスキーマ、recipes.csv検証規則、設計判断6点を提示。

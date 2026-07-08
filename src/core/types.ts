@@ -40,6 +40,8 @@ export interface GameState {
   cells: CellState[];
   massCount: number; // 4/6/7/9
 
+  errorLimit: boolean; // レシピの誤差制限(SPEC §3.7)。true=できのよさ判定の評価境界を制限あり表に切り替える。
+
   powerCycle: Power[]; // レシピ固定のパワーサイクル
   cycleIndex: number; // 次に参照するサイクル位置
 
