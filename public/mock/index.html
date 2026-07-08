@@ -107,14 +107,23 @@
     border-image: url('./assets/panel_grid_regen.svg') 20 / 10px stretch;
     box-shadow: 0 3px 8px rgba(40,20,0,.35);
   }
+  /* マス: SVGタイルの下に布地(緑+斜線)のレイヤーを敷き、
+     角丸との差分領域を背景と同じデザインで埋める(布タイプ別に下地を切替) */
   .cell { position: relative; width: 88px; height: 58px; display: flex; align-items: center;
     justify-content: center; font-size: 28px; font-weight: bold; border: none;
-    background-size: 100% 100%; background-repeat: no-repeat;
-    filter: drop-shadow(0 2px 2px rgba(20,30,10,.3)); }
-  .c-normal { background-image: url('./assets/cell_normal.svg'); color: #3a3220; }
-  .c-yellow { background-image: url('./assets/cell_yellow.svg'); color: #6b5900; }
-  .c-done   { background-image: url('./assets/cell_done.svg'); color: #fff; }
-  .c-over   { background-image: url('./assets/cell_over.svg'); color: #fff; }
+    background-size: 100% 100%; background-repeat: no-repeat; }
+  .c-normal { color: #3a3220; background-image: url('./assets/cell_normal.svg'),
+    repeating-linear-gradient(45deg, rgba(255,255,255,.06) 0 6px, transparent 6px 12px),
+    linear-gradient(180deg, #3f7a46, #2f5f36); }
+  .c-yellow { color: #6b5900; background-image: url('./assets/cell_yellow.svg'),
+    repeating-linear-gradient(45deg, rgba(255,255,255,.06) 0 6px, transparent 6px 12px),
+    linear-gradient(180deg, #3f7a46, #2f5f36); }
+  .c-done   { color: #fff; background-image: url('./assets/cell_done.svg'),
+    repeating-linear-gradient(45deg, rgba(255,255,255,.06) 0 6px, transparent 6px 12px),
+    linear-gradient(180deg, #3f7a46, #2f5f36); }
+  .c-over   { color: #fff; background-image: url('./assets/cell_over.svg'),
+    repeating-linear-gradient(45deg, rgba(255,255,255,.06) 0 6px, transparent 6px 12px),
+    linear-gradient(180deg, #3f7a46, #2f5f36); }
   /* しつけがけ枠(オーバーレイ素材のデモ) */
   .cellShitsuke::after { content: ''; position: absolute; inset: 0;
     background: url('./assets/cell_ol_shitsuke.svg') center / 100% 100% no-repeat; }
