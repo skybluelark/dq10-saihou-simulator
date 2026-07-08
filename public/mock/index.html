@@ -156,6 +156,35 @@
   .skill.finish { background: linear-gradient(180deg, #7c2f2f, #571c1c); }
 
   .caption { text-align: center; font-size: 10px; color: rgba(60,40,10,.55); padding: 2px 0 6px; flex: 0 0 auto; }
+
+  /* ---- 結果オーバーレイ(D40/D42〜D44。プレイ画面の上に重ねる) ---- */
+  .resultScrim { position: fixed; inset: 0; z-index: 20;
+    background: rgba(10, 8, 2, .55);
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px; }
+  .resultScrim[hidden] { display: none; }
+  .resultWin { width: 100%; max-width: 320px; padding: 18px 16px 16px;
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+    background: linear-gradient(180deg, #23255c, #14163e); color: #fff;
+    border: 2px solid #fff; border-radius: 10px;
+    box-shadow: 0 0 0 1px #14163e, 0 0 0 4px #caa74f, 0 8px 24px rgba(0,0,0,.5); }
+  .resultLabel { font-size: 14px; font-weight: bold; color: #ffe9b8; letter-spacing: .2em; text-indent: .2em; }
+  .resultStars { font-size: 40px; line-height: 1; letter-spacing: .1em;
+    color: #ffd34d; text-shadow: 0 0 8px rgba(255, 211, 77, .6); }
+  .resultStars .starOff { color: rgba(255,255,255,.25); text-shadow: none; }
+  .resultRows { width: 100%; display: flex; flex-direction: column; gap: 6px;
+    padding: 8px 12px; border-top: 1px solid rgba(255,255,255,.25);
+    border-bottom: 1px solid rgba(255,255,255,.25); }
+  .resultRow { display: flex; align-items: baseline; font-size: 13px; font-weight: bold; }
+  .resultRow b { margin-left: auto; font-size: 20px; line-height: 1; }
+  .resultBtns { width: 100%; display: flex; gap: 8px; }
+  .resultBtn { flex: 1 1 0; height: 46px; border-radius: 8px; font-size: 14px; font-weight: bold;
+    background: linear-gradient(180deg, #2c2f6b, #1a1c4a); color: #fff;
+    border: 2px solid #fff; box-shadow: 0 0 0 2px #caa74f; }
+  .resultBtn.primary { background: linear-gradient(180deg, #b6903a, #8d6a1f); }
+  .resultUndo { align-self: center; height: 34px; padding: 0 12px; border-radius: 8px;
+    font-size: 12px; font-weight: bold; background: transparent; color: #cdd3ff;
+    border: 1px solid rgba(255,255,255,.5); }
 </style>
 </head>
 <body>
@@ -246,9 +275,26 @@
       <button class="skill" type="button"><span class="skName">たすきぬい</span><span class="skCost">7</span></button>
       <button class="skill" type="button"><span class="skName">半かげんぬい</span><span class="skCost">12</span></button>
       <button class="skill" type="button"><span class="skName">糸ほぐし</span><span class="skCost">16</span></button>
-      <button class="skill finish" type="button"><span class="skName">しあげる</span><span class="skCost">終了</span></button>
+      <button class="skill finish" id="finishBtn" type="button"><span class="skName">しあげる</span><span class="skCost">終了</span></button>
     </section>
   </main>
+
+  <!-- 結果オーバーレイ(しあげるタップで表示されるデモ) -->
+  <div class="resultScrim" id="resultScrim" hidden>
+    <div class="resultWin">
+      <div class="resultLabel">できのよさ</div>
+      <div class="resultStars">★★★<span class="starOff"></span></div>
+      <div class="resultRows">
+        <div class="resultRow"><span>使用ターン数</span><b>14</b></div>
+        <div class="resultRow"><span>残り集中力</span><b>23</b></div>
+      </div>
+      <div class="resultBtns">
+        <button class="resultBtn" id="copyBtn" type="button">リプレイをコピー</button>
+        <button class="resultBtn primary" id="againBtn" type="button">もう一度</button>
+      </div>
+      <button class="resultUndo" id="resultUndo" type="button">↩ 1手戻す(盤面を確認する)</button>
+    </div>
+  </div>
 
   <div class="caption">UIモック v2.2(トーンB)— パワー行タップ=サイクル開閉(横スクロール可)/ メッセージ欄タップ=文言切替 / きらめき2個=精神統一残り2の表示例</div>
 </div>
@@ -275,13 +321,37 @@
     msgWin.textContent = messages[msgIdx];
   });
 
-  // 特技選択(単一選択のトグル)
+  // 特技選択(単一選択のトグル。しあげるは結果オーバーレイのデモへ)
   document.querySelectorAll('#skills .skill:not(:disabled)').forEach((b) => {
+    if (b.id === 'finishBtn') return;
     b.addEventListener('click', () => {
       const was = b.classList.contains('selected');
       document.querySelectorAll('#skills .selected').forEach((x) => x.classList.remove('selected'));
       if (!was) b.classList.add('selected');
     });
+  });
+
+  // ---- 結果オーバーレイ(D40/D42〜D44) ----
+  const resultScrim = document.getElementById('resultScrim');
+  document.getElementById('finishBtn').addEventListener('click', () => {
+    resultScrim.hidden = false;
+  });
+  // もう一度: レシピ・針はそのままで新規ゲーム(モックでは閉じるのみ)
+  document.getElementById('againBtn').addEventListener('click', () => {
+    resultScrim.hidden = true;
+  });
+  // 1手戻す: しあげる直前の状態へ戻る=オーバーレイを閉じる(モックでは閉じるのみ)
+  document.getElementById('resultUndo').addEventListener('click', () => {
+    resultScrim.hidden = true;
+  });
+  // リプレイをコピー(圧縮フォーマットは別途設計。ここではダミー文字列)
+  const copyBtn = document.getElementById('copyBtn');
+  copyBtn.addEventListener('click', () => {
+    const dummy = 'DQ10S-r1.AbC9xYz'; // 圧縮リプレイのダミー
+    try { navigator.clipboard.writeText(dummy); } catch (e) { /* モックでは失敗しても続行 */ }
+    const orig = copyBtn.textContent;
+    copyBtn.textContent = 'コピーしました';
+    setTimeout(() => { copyBtn.textContent = orig; }, 1500);
   });
 </script>
 </body>
