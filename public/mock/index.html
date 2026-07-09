@@ -22,7 +22,7 @@
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     /* トーンB(決定): 羊皮紙の背景(画像AI生成の実素材) */
     background-color: #cbb98f;
-    background-image: url('./assets/art_bg_main.png');
+    background-image: url('./assets/bg_main.png');
     background-size: cover; background-position: center;
     color: #fff;
   }
@@ -43,9 +43,10 @@
     width: 76px; height: 40px; flex: 0 0 auto;
     display: flex; align-items: center; justify-content: center; gap: 2px;
     border: none; font-size: 14px; font-weight: bold;
-    background: url('./assets/btn_header.svg') center / 100% 100% no-repeat; color: #ffe9b8;
+    background: url('./assets/btn_header_normal.png') center / 100% 100% no-repeat; color: #ffe9b8;
     filter: drop-shadow(0 2px 3px rgba(40,20,0,.4));
   }
+  .hdrBtn:active { background-image: url('./assets/btn_header_pressed.png'); }
   /* レシピ名: 最大9文字が下限幅(360dp)で収まるサイズ */
   .hdrTitle { flex: 1 1 auto; text-align: center; font-size: 20px; font-weight: bold;
     color: #3a2a10; text-shadow: 0 1px 0 rgba(255,255,255,.5);
@@ -59,7 +60,7 @@
   .win {
     color: #fff;
     border: 8px solid transparent;
-    border-image: url('./assets/panel_window.svg') 16 fill / 8px stretch;
+    border-image: url('./assets/panel_window.png') 96 fill / 10px stretch;
     box-shadow: 0 3px 6px rgba(40,20,0,.35);
   }
 
@@ -79,7 +80,7 @@
   .powerRow { padding: 2px 6px; cursor: pointer; user-select: none; }
   .powerInner { display: flex; align-items: center; gap: 8px; min-height: 34px; }
   .powerLabel { font-size: 12px; font-weight: bold; padding: 4px 8px; flex: 0 0 auto;
-    background: url('./assets/label_power.svg') center / 100% 100% no-repeat; }
+    background: url('./assets/label_power.png') center / 100% 100% no-repeat; }
   .powerLabel .t2s { -webkit-text-stroke-width: 1.1px; }
   .powerLabel .t2 { filter: drop-shadow(0 1px 1px rgba(0,0,0,.35)); }
   .viewCompact, .viewCycle { display: flex; align-items: center; gap: 6px; flex: 1 1 auto; min-width: 0; }
@@ -92,8 +93,8 @@
     border-radius: 8px; font-weight: bold; flex: 0 0 auto; }
   .chipL { min-width: 58px; height: 32px; font-size: 15px; }
   .chipS { min-width: 46px; height: 27px; font-size: 12px; }
-  /* ぬいパワー: 共通ベージュプレート(icon_power.svg 1種)+パワー別は文字グラデで表現 */
-  .chip { background-image: url('./assets/icon_power.svg');
+  /* ぬいパワー: 共通ベージュプレート(icon_power 1種)+パワー別は文字グラデで表現 */
+  .chip { background-image: url('./assets/icon_power.png');
     background-size: 100% 100%; background-repeat: no-repeat; }
   .chipL .t2s { -webkit-text-stroke-width: 1.4px; }
   .chipS .t2s { -webkit-text-stroke-width: 1.2px; }
@@ -109,13 +110,13 @@
   .sparkles { position: absolute; top: -8px; left: 4px; display: flex; gap: 2px; }
   /* きらめきは布特性バッジと同サイズ15×15(D5。素材は正方形キャンバス中央に縦長楕円) */
   .spark { width: 15px; height: 15px;
-    background: url('./assets/badge_sparkle.svg') center / contain no-repeat;
+    background: url('./assets/badge_sparkle.png') center / contain no-repeat;
     filter: drop-shadow(0 0 3px rgba(255, 240, 150, .9)); }
   /* 布特性バッジ(案1・T番号なし): 発動ターンのエントリに特性色バッジ。次周回到達分は半透明 */
   .traitBadge { position: absolute; right: -5px; top: -5px; width: 15px; height: 15px;
     font-size: 10px; line-height: 15px; text-align: center; color: #fff;
     background-size: 100% 100%; background-repeat: no-repeat; }
-  .tb-regen { background-image: url('./assets/badge_trait_regen.svg'); }
+  .tb-regen { background-image: url('./assets/badge_trait_regen.png'); }
   .tb-faded { opacity: .45; }
   .chevron { flex: 0 0 auto; font-size: 11px; opacity: .6; transition: transform .15s; }
   .cycleOpen .chevron { transform: rotate(180deg); }
@@ -129,15 +130,15 @@
       linear-gradient(180deg, #3f7a46, #2f5f36);
     background-clip: padding-box;
     border: 10px solid transparent;
-    border-image: url('./assets/panel_grid_regen.svg') 20 / 10px stretch;
+    border-image: url('./assets/panel_grid_regen.png') 24 / 12px stretch;
     box-shadow: 0 3px 8px rgba(40,20,0,.35);
   }
   /* マス: SVGタイルの下に布地(緑+斜線)のレイヤーを敷き、
      角丸との差分領域を背景と同じデザインで埋める。
-     マス下地は全状態共通(cell.svg)。しつけがけ/発光マスのみ下地画像そのものを差し替える。 */
+     マス下地は全状態共通(cell)。しつけがけ/発光マスのみ下地画像そのものを差し替える。 */
   .cell { position: relative; width: 88px; height: 58px; display: flex; align-items: center;
     justify-content: center; border: none;
-    background-image: url('./assets/cell.svg'),
+    background-image: url('./assets/cell.png'),
       repeating-linear-gradient(45deg, rgba(255,255,255,.06) 0 6px, transparent 6px 12px),
       linear-gradient(180deg, #3f7a46, #2f5f36);
     background-size: 100% 100%; background-repeat: no-repeat; }
@@ -153,13 +154,13 @@
   .cellNum .t2s { -webkit-text-stroke-width: 2.2px; }
   .cellNum { filter: drop-shadow(0 2px 2px rgba(0,0,0,.5)); }
   /* しつけがけ・発光マス: 下地画像そのものをマスごと差し替え(重ね枠ではない) */
-  .cellShitsuke { background-image: url('./assets/cell_shitsuke.svg'),
+  .cellShitsuke { background-image: url('./assets/cell_shitsuke.png'),
     repeating-linear-gradient(45deg, rgba(255,255,255,.06) 0 6px, transparent 6px 12px),
     linear-gradient(180deg, #3f7a46, #2f5f36); }
-  .cellGlow { background-image: url('./assets/cell_glow.svg'),
+  .cellGlow { background-image: url('./assets/cell_glow.png'),
     repeating-linear-gradient(45deg, rgba(255,255,255,.06) 0 6px, transparent 6px 12px),
     linear-gradient(180deg, #3f7a46, #2f5f36); }
-  .cellShitsuke.cellGlow { background-image: url('./assets/cell_shitsuke_glow.svg'),
+  .cellShitsuke.cellGlow { background-image: url('./assets/cell_shitsuke_glow.png'),
     repeating-linear-gradient(45deg, rgba(255,255,255,.06) 0 6px, transparent 6px 12px),
     linear-gradient(180deg, #3f7a46, #2f5f36); }
   /* しつけがけの「×２」バッジ: 右下に黄グラデ・数値の6割サイズで絶対配置。縁取りなし(§4.9) */
@@ -193,7 +194,8 @@
     width: 100%; height: 44px; padding: 0 4px; font-size: 12px; font-weight: bold;
     color: #fff; background: none;
     border: 8px solid transparent;
-    border-image: url('./assets/art_btn_navy_gold.png') 16 fill / 8px stretch; }
+    border-image: url('./assets/btn_undo_normal.png') 26 fill / 8px stretch; }
+  .undoBtn:active { border-image-source: url('./assets/btn_undo_pressed.png'); }
   /* メッセージ欄: ウィンドウ調にしない(ボタンと混同するため)。
      上辺の罫線(1〜3列目の幅)で数値行と区別する */
   .msgCell { grid-column: 1 / 4; grid-row: 2;
@@ -208,18 +210,19 @@
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
     color: #fff; background: none;
     border: 8px solid transparent;
-    border-image: url('./assets/art_btn_normal.png') 16 fill / 8px stretch;
+    border-image: url('./assets/btn_skill_normal.png') 26 fill / 8px stretch;
     box-shadow: 0 2px 4px rgba(40,20,0,.3); }
+  .skill:not(:disabled):not(.selected):active { border-image-source: url('./assets/btn_skill_pressed.png'); }
   .skName { font-size: 12px; font-weight: bold; white-space: nowrap; }
   /* ぬいパワーシフトのみ特技名2行(+コスト)の3行レイアウト(ボタン幅の均等化) */
   .skName2 { display: flex; flex-direction: column; align-items: center; line-height: 1.05; }
   .skCost { font-size: 10px; opacity: .75; }
   .skill:disabled { opacity: 1; color: rgba(255,255,255,.8);
-    border-image-source: url('./assets/art_btn_disabled.png'); }
-  .skill.selected { border-image-source: url('./assets/art_btn_selected.png'); color: #241a05; text-shadow: none; }
+    border-image-source: url('./assets/btn_skill_disabled.png'); }
+  .skill.selected { border-image-source: url('./assets/btn_skill_selected.png'); color: #241a05; text-shadow: none; }
   .skill.selected .skCost { color: #4a3a10; opacity: 1; }
-  .skill.finish { border-image-source: url('./assets/btn_finish.svg'); border-width: 6px;
-    border-image-slice: 12; border-image-width: 6px; }
+  .skill.finish { border-image-source: url('./assets/btn_finish_normal.png'); }
+  .skill.finish:active { border-image-source: url('./assets/btn_finish_pressed.png'); }
 
   .caption { text-align: center; font-size: 10px; color: rgba(60,40,10,.55); padding: 2px 0 6px; flex: 0 0 auto; }
 
@@ -233,22 +236,28 @@
     display: flex; flex-direction: column; align-items: center; gap: 12px;
     color: #fff; background: none;
     border: 28px solid transparent;
-    border-image: url('./assets/art_panel_window.png') 90 fill / 28px stretch;
+    border-image: url('./assets/panel_window.png') 96 fill / 28px stretch;
     box-shadow: 0 8px 24px rgba(0,0,0,.5); }
   .resultLabel { font-size: 14px; font-weight: bold; color: #ffe9b8; letter-spacing: .2em; text-indent: .2em; }
-  .resultStars { font-size: 40px; line-height: 1; letter-spacing: .1em;
-    color: #ffd34d; text-shadow: 0 0 8px rgba(255, 211, 77, .6); }
-  .resultStars .starOff { color: rgba(255,255,255,.25); text-shadow: none; }
+  .resultStars { display: flex; gap: 4px; }
+  .rstar { width: 40px; height: 40px; display: inline-block;
+    background: url('./assets/star_result_on.png') center / contain no-repeat; }
+  .rstar.off { background-image: url('./assets/star_result_off.png'); }
   .resultRows { width: 100%; display: flex; flex-direction: column; gap: 6px;
     padding: 8px 12px; border-top: 1px solid rgba(255,255,255,.25);
     border-bottom: 1px solid rgba(255,255,255,.25); }
   .resultRow { display: flex; align-items: baseline; font-size: 13px; font-weight: bold; }
   .resultRow b { margin-left: auto; font-size: 20px; line-height: 1; }
   .resultBtns { width: 100%; display: flex; gap: 8px; }
-  .resultBtn { flex: 1 1 0; height: 46px; border-radius: 8px; font-size: 14px; font-weight: bold;
-    background: linear-gradient(180deg, #2c2f6b, #1a1c4a); color: #fff;
-    border: 2px solid #fff; box-shadow: 0 0 0 2px #caa74f; }
-  .resultBtn.primary { background: linear-gradient(180deg, #b6903a, #8d6a1f); }
+  .resultBtn { flex: 1 1 0; height: 46px; font-size: 13px; font-weight: bold;
+    color: #fff; background: none;
+    border: 20px solid transparent; border-left-width: 14px; border-right-width: 14px;
+    border-image: url('./assets/btn_secondary_normal.png') 45 fill / 20px 14px stretch;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,.35)); }
+  .resultBtn:active { border-image-source: url('./assets/btn_secondary_pressed.png'); }
+  .resultBtn.primary { color: #3a2604;
+    border-image: url('./assets/btn_primary_normal.png') 50 fill / 20px 14px stretch; }
+  .resultBtn.primary:active { border-image-source: url('./assets/btn_primary_pressed.png'); }
   .resultUndo { align-self: center; height: 34px; padding: 0 12px; border-radius: 8px;
     font-size: 12px; font-weight: bold; background: transparent; color: #cdd3ff;
     border: 1px solid rgba(255,255,255,.5); }
@@ -350,7 +359,7 @@
   <div class="resultScrim" id="resultScrim" hidden>
     <div class="resultWin">
       <div class="resultLabel">できのよさ</div>
-      <div class="resultStars">★★★<span class="starOff"></span></div>
+      <div class="resultStars"><i class="rstar"></i><i class="rstar"></i><i class="rstar"></i><i class="rstar off"></i></div>
       <div class="resultRows">
         <div class="resultRow"><span>使用ターン数</span><b>14</b></div>
         <div class="resultRow"><span>残り集中力</span><b>23</b></div>
@@ -363,7 +372,7 @@
     </div>
   </div>
 
-  <div class="caption">UIモック v2.3(トーンB)— パワー行タップ=サイクル開閉(横スクロール可)/ メッセージ欄タップ=文言切替 / きらめき2個=精神統一残り2の表示例 / 「27」=発光マス・「88」=しつけ×発光マスの表示例</div>
+  <div class="caption">UIモック v2.4(トーンB・画像AI実素材)— パワー行タップ=サイクル開閉(横スクロール可)/ メッセージ欄タップ=文言切替 / きらめき2個=精神統一残り2の表示例 / 「27」=発光マス・「88」=しつけ×発光マスの表示例</div>
 </div>
 
 <script>
