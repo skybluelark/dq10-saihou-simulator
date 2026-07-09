@@ -179,6 +179,9 @@
   /* D50: 1行目(数値行)は高さを広めに取り、ラベルと数値の下端を揃える */
   .stat { display: flex; align-items: flex-end; justify-content: flex-start; gap: 4px;
     font-size: 13px; line-height: 1; min-height: 40px; padding-bottom: 4px; }
+  /* D50: 文字表示領域一式(数値3項目+メッセージ欄)は「ターン」ラベル基準で
+     0.5文字(13px×0.5≒7px)右に寄せる。1手戻すボタン(4列目)は動かさない */
+  .stat, .msgCell { transform: translateX(7px); }
   /* 数値サイズは「誤差が4桁」でも下限幅(360dp)ではみ出さない上限
      (列を内容幅に詰めることで 22px を確保) */
   .stat b { font-size: 22px; line-height: 1; }
