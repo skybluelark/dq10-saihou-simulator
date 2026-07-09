@@ -1,5 +1,6 @@
 # assets-src の生成PNGを 透過化(緑背景アンミックス) + トリム + リサイズ して
 # public/mock/assets/ へ出力する
+import sys
 import numpy as np
 from PIL import Image
 from pathlib import Path
@@ -61,6 +62,8 @@ T = 90.0  # 背景色からのRGB距離がこの値でアルファ1になる
 
 # 広い発光減衰を持つパーツ: 全域クロマαで抜く(fg に緑成分を含まないことが前提)
 GLOW_PARTS = {"star_result_on", "star_result_off", "badge_sparkle"}
+# 白リム外周の落ち影が緑背景と混色し半透明の緑被りが残るパーツ: アンミックス後にGをクランプして中和
+SHADOW_CLAMP_PARTS = {"btn_skill_selected"}
 
 def process(name, tw, th):
     img = np.asarray(Image.open(SRC / f"{name}.png").convert("RGB")).astype(np.float32)
@@ -88,16 +91,60 @@ def process(name, tw, th):
     with np.errstate(divide="ignore", invalid="ignore"):
         fg = np.where(a3 > 0.003, (img - bg * (1.0 - a3)) / np.maximum(a3, 0.003), 0.0)
     fg = np.clip(fg, 0, 255)
-    # トリム: 右下のウォーターマーク(✦)を無視するため、行/列の被覆率が5%以上の範囲を外接矩形とする
+    if name in SHADOW_CLAMP_PARTS:
+        # 白リム外周の落ち影は、緑背景を暗くしただけの色(なお緑相が強い)が dist>25 の
+        # solid 判定+3px侵食で「確実な不透明前景」に分類されてしまい、alpha=1 のまま生の
+        # 画素値(緑被りを含む)がそのまま fg に通ってしまう。そのため低α画素限定ではなく
+        # 全画素で G <= max(R,B) にクランプする(金プレート本体は実測で R,B >= G のため無害)。
+        g_clamped = np.minimum(fg[..., 1], np.maximum(fg[..., 0], fg[..., 2]))
+        fg[..., 1] = g_clamped
+    # トリム: 行/列の被覆率がしきい値以上の範囲を外接矩形とする
     mask = alpha > 0.03
-    rowfrac = mask.mean(axis=1)
-    colfrac = mask.mean(axis=0)
-    rows = np.where(rowfrac > 0.15)[0]
-    cols = np.where(colfrac > 0.15)[0]
+    if name in GLOW_PARTS:
+        # 右下のウォーターマーク(✦)を除外してから被覆率を計算し、星の細い先端等を切り落とさないよう低しきい値にする
+        wm = np.zeros_like(mask)
+        wm[int(0.80 * h):, int(0.80 * w):] = True
+        # 被覆率計算だけでなく実データからも消しておく(正方形化で拡張したクロップに
+        # ✦の断片が低α画素として入り込まないようにする)
+        alpha[wm] = 0.0
+        mask &= ~wm
+        mask_for_trim = mask
+        cov_thresh = 0.005
+    else:
+        mask_for_trim = mask
+        cov_thresh = 0.15
+    rowfrac = mask_for_trim.mean(axis=1)
+    colfrac = mask_for_trim.mean(axis=0)
+    rows = np.where(rowfrac > cov_thresh)[0]
+    cols = np.where(colfrac > cov_thresh)[0]
     y0, y1, x0, x1 = rows.min(), rows.max() + 1, cols.min(), cols.max() + 1
     # パネル類は正方形前提: 下側に落ち影が混入するため、幅を基準に上端から正方形で切る
     if name.startswith(("panel_window", "panel_grid")):
         y1 = min(y0 + (x1 - x0), h)
+    # 発光パーツは正円/正方形が前提: トリム後の外接矩形を中心維持で正方形に拡張する(画像端でクリップ)
+    if name in GLOW_PARTS:
+        cy = (y0 + y1) / 2.0
+        cx = (x0 + x1) / 2.0
+        side = max(y1 - y0, x1 - x0)
+        ny0 = int(round(cy - side / 2.0))
+        nx0 = int(round(cx - side / 2.0))
+        ny1 = ny0 + side
+        nx1 = nx0 + side
+        if ny0 < 0:
+            ny1 -= ny0
+            ny0 = 0
+        if ny1 > h:
+            ny0 -= (ny1 - h)
+            ny1 = h
+            ny0 = max(ny0, 0)
+        if nx0 < 0:
+            nx1 -= nx0
+            nx0 = 0
+        if nx1 > w:
+            nx0 -= (nx1 - w)
+            nx1 = w
+            nx0 = max(nx0, 0)
+        y0, y1, x0, x1 = ny0, ny1, nx0, nx1
     # 事前乗算アルファでリサイズ(縁のフリンジ防止)
     premul = np.dstack([fg * a3[..., 0][..., None] / 1.0, alpha * 255.0]).astype(np.uint8)[y0:y1, x0:x1]
     ar_src = (x1 - x0) / (y1 - y0)
@@ -112,6 +159,13 @@ def process(name, tw, th):
     warn = " <-- AR diff!" if abs(ar_src / ar_tgt - 1) > 0.12 else ""
     print(f"{name}: crop {x1-x0}x{y1-y0} -> {tw}x{th} (AR {ar_src:.2f} -> {ar_tgt:.2f}){warn}")
 
-for name, (tw, th) in PARTS.items():
-    process(name, tw, th)
-print("done:", len(PARTS), "files")
+if len(sys.argv) > 1:
+    targets = sys.argv[1:]
+    for name in targets:
+        tw, th = PARTS[name]
+        process(name, tw, th)
+    print("done:", len(targets), "files")
+else:
+    for name, (tw, th) in PARTS.items():
+        process(name, tw, th)
+    print("done:", len(PARTS), "files")
