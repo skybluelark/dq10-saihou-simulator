@@ -64,6 +64,17 @@ T = 90.0  # 背景色からのRGB距離がこの値でアルファ1になる
 GLOW_PARTS = {"star_result_on", "star_result_off", "badge_sparkle"}
 # 白リム外周の落ち影が緑背景と混色し半透明の緑被りが残るパーツ: アンミックス後にGをクランプして中和
 SHADOW_CLAMP_PARTS = {"btn_skill_selected"}
+# ビネット/焼き込み影で緑背景の明度が不均一なパーツ: 背景色とのRGB距離(絶対値)ではなく
+# 色味比率(greenness = 緑超過量 / 最大チャンネル値)で背景判定する。greenness は明度が
+# 落ちても(R,B が0のまま暗くなるだけなら)ほぼ不変なので、コーナーのモヤや残存する
+# 生の緑画素を確実に検出できる。この12点は素材上に正当な緑色が存在しない前提。
+GREEN_WIPE_PARTS = {
+    "cell", "cell_shitsuke", "cell_glow", "cell_shitsuke_glow", "cell_ol_target",
+    "btn_skill_normal", "btn_skill_pressed", "btn_skill_selected", "btn_skill_disabled",
+    "btn_finish_normal", "btn_finish_pressed", "icon_power",
+}
+GREEN_HI = 0.35  # これを超えたら確実に背景 → α=0(solid判定・侵食保護より優先)
+GREEN_LO = 0.12  # これ以下は前景 → 既存のdist/erosionロジックに委ねる(中間はAA帯として半透明処理)
 
 def process(name, tw, th):
     img = np.asarray(Image.open(SRC / f"{name}.png").convert("RGB")).astype(np.float32)
@@ -84,6 +95,20 @@ def process(name, tw, th):
     alpha_chroma = np.clip(1.0 - g_ex / bg_ex, 0.0, 1.0)
     if name in GLOW_PARTS:
         alpha = np.where(dist > 15.0, alpha_chroma, 0.0)
+    elif name in GREEN_WIPE_PARTS:
+        maxc = np.maximum(np.maximum(img[..., 0], img[..., 1]), img[..., 2])
+        greenness = g_ex / np.maximum(maxc, 1.0)
+        bg_maxc = max(bg[0], bg[1], bg[2])
+        bg_greenness = max((bg[1] - max(bg[0], bg[2])) / max(bg_maxc, 1.0), 0.05)
+        # 中間帯(AA境界)用: 明度非依存の比率でクロマαを再計算(影で暗くなっても破綻しない)
+        alpha_chroma_g = np.clip(1.0 - greenness / bg_greenness, 0.0, 1.0)
+        alpha = np.where(
+            greenness > GREEN_HI, 0.0,
+            np.where(
+                greenness > GREEN_LO, alpha_chroma_g,
+                np.where(er, 1.0, np.where(dist > 20.0, alpha_chroma, 0.0)),
+            ),
+        )
     else:
         alpha = np.where(er, 1.0, np.where(dist > 20.0, alpha_chroma, 0.0))
     # アンミックス: pixel = fg*a + bg*(1-a) → fg = (pixel - bg*(1-a)) / a

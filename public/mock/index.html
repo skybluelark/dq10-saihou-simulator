@@ -107,8 +107,9 @@
   .pw-max    { --t2fill: linear-gradient(180deg, #e96a6a 0%, #c93b3b 100%); }
   .pw-q      { --t2fill: linear-gradient(180deg, #a8a8b4 0%, #83838f 100%); }
   .chipCurrent { outline: 2px solid #fff; outline-offset: 2px; }
-  /* D5: 精神統一固定中は残りターン数と同数の「きらめき」バッジ(白発光の円形オーブ画像)を付ける */
-  .sparkles { position: absolute; top: -8px; left: 4px; display: flex; gap: 2px; }
+  /* D5: 精神統一固定中は残りターン数と同数の「きらめき」バッジ(白発光の円形オーブ画像)を付ける。
+     複数並ぶ場合は左端を基準に、ほぼ接する間隔(1px)で並べる */
+  .sparkles { position: absolute; top: -8px; left: 4px; display: flex; gap: 1px; }
   /* D5: サイクル全体表示では布特性バッジと3個表示時に重なるため非表示(コンパクト表示のみで見せる) */
   .viewCycle .sparkles { display: none; }
   /* きらめきは布特性バッジと同サイズ15×15(D5) */
