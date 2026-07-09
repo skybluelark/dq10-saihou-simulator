@@ -107,8 +107,9 @@
   /* D5: 精神統一固定中は残りターン数と同数の「きらめき」バッジ(縦長楕円)を付ける。
      実装時は画像素材に置き換える(ここではCSSによる仮表現) */
   .sparkles { position: absolute; top: -8px; left: 4px; display: flex; gap: 2px; }
-  .spark { width: 7px; height: 13px;
-    background: url('./assets/badge_sparkle.svg') center / 100% 100% no-repeat;
+  /* きらめきは布特性バッジと同サイズ15×15(D5。素材は正方形キャンバス中央に縦長楕円) */
+  .spark { width: 15px; height: 15px;
+    background: url('./assets/badge_sparkle.svg') center / contain no-repeat;
     filter: drop-shadow(0 0 3px rgba(255, 240, 150, .9)); }
   /* 布特性バッジ(案1・T番号なし): 発動ターンのエントリに特性色バッジ。次周回到達分は半透明 */
   .traitBadge { position: absolute; right: -5px; top: -5px; width: 15px; height: 15px;
@@ -140,11 +141,14 @@
       repeating-linear-gradient(45deg, rgba(255,255,255,.06) 0 6px, transparent 6px 12px),
       linear-gradient(180deg, #3f7a46, #2f5f36);
     background-size: 100% 100%; background-repeat: no-repeat; }
-  /* マス状態は残り数値の文字色(グラデ)で表現 */
+  /* マス状態は残り数値の文字色(グラデ)で表現。縁も状態色の濃色(白のみ黒縁。§4.9) */
   .c-normal { --t2fill: linear-gradient(180deg, #ffffff 0%, #e7e7e7 100%); }
   .c-yellow { --t2fill: linear-gradient(180deg, #fff3b0 0%, #e8b93f 100%); }
   .c-done   { --t2fill: linear-gradient(180deg, #bdeeb0 0%, #3f9e55 100%); }
   .c-over   { --t2fill: linear-gradient(180deg, #f4b3a3 0%, #c94438 100%); }
+  .c-yellow .cellNum .t2s { -webkit-text-stroke-color: #8a6d00; }
+  .c-done   .cellNum .t2s { -webkit-text-stroke-color: #1e5c2a; }
+  .c-over   .cellNum .t2s { -webkit-text-stroke-color: #7a1f16; }
   .cellNum.t2 { font-size: 28px; font-weight: bold; }
   .cellNum .t2s { -webkit-text-stroke-width: 2.2px; }
   .cellNum { filter: drop-shadow(0 2px 2px rgba(0,0,0,.5)); }
@@ -158,11 +162,11 @@
   .cellShitsuke.cellGlow { background-image: url('./assets/cell_shitsuke_glow.svg'),
     repeating-linear-gradient(45deg, rgba(255,255,255,.06) 0 6px, transparent 6px 12px),
     linear-gradient(180deg, #3f7a46, #2f5f36); }
-  /* しつけがけの「×２」バッジ: 右下に黄グラデ・数値の6割サイズで絶対配置 */
+  /* しつけがけの「×２」バッジ: 右下に黄グラデ・数値の6割サイズで絶対配置。縁取りなし(§4.9) */
   .shitsukeMark.t2 { position: absolute; right: 4px; bottom: 2px; font-size: 17px; font-weight: bold;
     --t2fill: linear-gradient(180deg, #fff3b0 0%, #e8b93f 100%);
     filter: drop-shadow(0 1.5px 1.5px rgba(0,0,0,.45)); }
-  .shitsukeMark .t2s { -webkit-text-stroke-width: 1.3px; }
+  .shitsukeMark .t2s { -webkit-text-stroke-width: 0; }
 
   /* ---- 数値・メッセージ領域(D45: 2行×4列グリッド)
      1行目: ターン/集中力/誤差、2行目1〜3列: メッセージ欄、4列目1〜2行: 1手戻す ---- */
@@ -277,12 +281,12 @@
           <span class="chip chipS pw-normal"><span class="t2"><span class="t2s">普通</span><span class="t2f">普通</span></span></span>
           <span class="chip chipS pw-strong chipCurrent"><span class="t2"><span class="t2s">強い</span><span class="t2f">強い</span></span><span class="sparkles"><i class="spark"></i><i class="spark"></i></span></span>
           <span class="chip chipS pw-q"><span class="t2"><span class="t2s">？</span><span class="t2f">？</span></span></span>
-          <span class="chip chipS pw-weak"><span class="t2"><span class="t2s">弱い</span><span class="t2f">弱い</span></span></span>
-          <span class="chip chipS pw-max"><span class="t2"><span class="t2s">最強</span><span class="t2f">最強</span></span><span class="traitBadge tb-regen">再</span></span>
+          <span class="chip chipS pw-weak"><span class="t2"><span class="t2s">弱い</span><span class="t2f">弱い</span></span><span class="traitBadge tb-regen">再</span></span>
+          <span class="chip chipS pw-max"><span class="t2"><span class="t2s">最強</span><span class="t2f">最強</span></span></span>
           <span class="chip chipS pw-normal"><span class="t2"><span class="t2s">普通</span><span class="t2f">普通</span></span></span>
           <span class="chip chipS pw-strong"><span class="t2"><span class="t2s">強い</span><span class="t2f">強い</span></span></span>
-          <span class="chip chipS pw-weak"><span class="t2"><span class="t2s">弱い</span><span class="t2f">弱い</span></span></span>
-          <span class="chip chipS pw-q"><span class="t2"><span class="t2s">？</span><span class="t2f">？</span></span><span class="traitBadge tb-regen">再</span></span>
+          <span class="chip chipS pw-weak"><span class="t2"><span class="t2s">弱い</span><span class="t2f">弱い</span></span><span class="traitBadge tb-regen">再</span></span>
+          <span class="chip chipS pw-q"><span class="t2"><span class="t2s">？</span><span class="t2f">？</span></span></span>
           <span class="chip chipS pw-max"><span class="t2"><span class="t2s">最強</span><span class="t2f">最強</span></span></span>
         </div>
         <span class="chevron">▼</span>
