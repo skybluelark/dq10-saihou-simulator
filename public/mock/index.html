@@ -146,7 +146,10 @@
   .cell { position: relative; width: 88px; height: 58px; display: flex; align-items: center;
     justify-content: center; border: none;
     background-image: url('./assets/cell.png');
-    background-size: 100% 100%; background-repeat: no-repeat; }
+    background-size: 100% 100%; background-repeat: no-repeat;
+    /* 素材の角はほぼ直角+外側に白いAAが残るため、仕様の角丸(rx8@2x=4px)でクリップして
+       角の白残りを消し、四隅にグリッド布地を見せる(§4.4 cell) */
+    border-radius: 4px; overflow: hidden; }
   /* マス状態は残り数値の文字色(グラデ)で表現。縁も状態色の濃色(白のみ黒縁。§4.9) */
   .c-normal { --t2fill: linear-gradient(180deg, #ffffff 0%, #e7e7e7 100%); }
   .c-yellow { --t2fill: linear-gradient(180deg, #fff3b0 0%, #e8b93f 100%); }
