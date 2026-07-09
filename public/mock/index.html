@@ -5,11 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>スマホ版UIモック</title>
 <style>
+  /* ============ フォント ============ */
+  @font-face {
+    font-family: 'GenEiLateMin';
+    src: url('./assets/fonts/GenEiLateMinP_v2_subset.woff2') format('woff2');
+    font-weight: normal; font-style: normal; font-display: swap;
+  }
   /* ============ レイアウト ============ */
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; }
+  button, input, select { font-family: inherit; } /* フォーム部品はフォントを継承しないため明示 */
   body {
-    font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+    font-family: 'GenEiLateMin', "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
     display: flex; flex-direction: column; align-items: center;
     min-height: 100dvh;
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
@@ -56,11 +63,25 @@
     box-shadow: 0 3px 6px rgba(40,20,0,.35);
   }
 
+  /* ---- 標準文字スタイル(黒縁白抜き+ドロップシャドウ。2レイヤー方式・§4.9) ----
+     .t2 = ラッパー(相対配置。drop-shadowはラッパーに掛ける)
+     .t2s = 縁取りレイヤー(-webkit-text-stroke、通常フローでサイズ確定)
+     .t2f = 塗りレイヤー(background-clip:textで縦グラデを文字面に) */
+  .t2 { position: relative; display: inline-block; line-height: 1; }
+  .t2s { color: transparent; -webkit-text-stroke-color: #111111; -webkit-text-stroke-width: 2px; }
+  .t2f { position: absolute; inset: 0;
+    background: var(--t2fill, linear-gradient(180deg, #ffffff 0%, #e7e7e7 100%));
+    -webkit-background-clip: text; background-clip: text; color: transparent; }
+  /* 汎用の白グラデ(黄・緑・赤・青・橙・灰は各箇所の --t2fill で指定) */
+  .t2-white { --t2fill: linear-gradient(180deg, #ffffff 0%, #e7e7e7 100%); }
+
   /* ---- ぬいパワー行(タップでサイクル開閉。横スクロール対応) ---- */
   .powerRow { padding: 2px 6px; cursor: pointer; user-select: none; }
   .powerInner { display: flex; align-items: center; gap: 8px; min-height: 34px; }
   .powerLabel { font-size: 12px; font-weight: bold; padding: 4px 8px; flex: 0 0 auto;
-    background: url('./assets/label_power.svg') center / 100% 100% no-repeat; color: #241a05; }
+    background: url('./assets/label_power.svg') center / 100% 100% no-repeat; }
+  .powerLabel .t2s { -webkit-text-stroke-width: 1.1px; }
+  .powerLabel .t2 { filter: drop-shadow(0 1px 1px rgba(0,0,0,.35)); }
   .viewCompact, .viewCycle { display: flex; align-items: center; gap: 6px; flex: 1 1 auto; min-width: 0; }
   .viewCycle { display: none; overflow-x: auto; padding: 4px 2px;
     scrollbar-width: none; -webkit-overflow-scrolling: touch; }
@@ -71,14 +92,17 @@
     border-radius: 8px; font-weight: bold; flex: 0 0 auto; }
   .chipL { min-width: 58px; height: 32px; font-size: 15px; }
   .chipS { min-width: 46px; height: 27px; font-size: 12px; }
-  /* ぬいパワー: SVGプレート+フォント文字の合成(§4.6 決定) */
-  .chip { color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.5);
+  /* ぬいパワー: 共通ベージュプレート(icon_power.svg 1種)+パワー別は文字グラデで表現 */
+  .chip { background-image: url('./assets/icon_power.svg');
     background-size: 100% 100%; background-repeat: no-repeat; }
-  .pw-weak   { background-image: url('./assets/icon_power_weak.svg'); }
-  .pw-normal { background-image: url('./assets/icon_power_normal.svg'); }
-  .pw-strong { background-image: url('./assets/icon_power_strong.svg'); }
-  .pw-max    { background-image: url('./assets/icon_power_max.svg'); }
-  .pw-q      { background-image: url('./assets/icon_power_q.svg'); }
+  .chipL .t2s { -webkit-text-stroke-width: 1.4px; }
+  .chipS .t2s { -webkit-text-stroke-width: 1.2px; }
+  .chip .t2 { filter: drop-shadow(0 1.5px 1.5px rgba(0,0,0,.4)); }
+  .pw-weak   { --t2fill: linear-gradient(180deg, #8fb6e4 0%, #6591c8 100%); }
+  .pw-normal { --t2fill: linear-gradient(180deg, #79c479 0%, #4c9e4e 100%); }
+  .pw-strong { --t2fill: linear-gradient(180deg, #f5b160 0%, #e08a28 100%); }
+  .pw-max    { --t2fill: linear-gradient(180deg, #e96a6a 0%, #c93b3b 100%); }
+  .pw-q      { --t2fill: linear-gradient(180deg, #a8a8b4 0%, #83838f 100%); }
   .chipCurrent { outline: 2px solid #fff; outline-offset: 2px; }
   /* D5: 精神統一固定中は残りターン数と同数の「きらめき」バッジ(縦長楕円)を付ける。
      実装時は画像素材に置き換える(ここではCSSによる仮表現) */
@@ -108,25 +132,37 @@
     box-shadow: 0 3px 8px rgba(40,20,0,.35);
   }
   /* マス: SVGタイルの下に布地(緑+斜線)のレイヤーを敷き、
-     角丸との差分領域を背景と同じデザインで埋める(布タイプ別に下地を切替) */
+     角丸との差分領域を背景と同じデザインで埋める。
+     マス下地は全状態共通(cell.svg)。しつけがけ/発光マスのみ下地画像そのものを差し替える。 */
   .cell { position: relative; width: 88px; height: 58px; display: flex; align-items: center;
-    justify-content: center; font-size: 28px; font-weight: bold; border: none;
+    justify-content: center; border: none;
+    background-image: url('./assets/cell.svg'),
+      repeating-linear-gradient(45deg, rgba(255,255,255,.06) 0 6px, transparent 6px 12px),
+      linear-gradient(180deg, #3f7a46, #2f5f36);
     background-size: 100% 100%; background-repeat: no-repeat; }
-  .c-normal { color: #3a3220; background-image: url('./assets/cell_normal.svg'),
+  /* マス状態は残り数値の文字色(グラデ)で表現 */
+  .c-normal { --t2fill: linear-gradient(180deg, #ffffff 0%, #e7e7e7 100%); }
+  .c-yellow { --t2fill: linear-gradient(180deg, #fff3b0 0%, #e8b93f 100%); }
+  .c-done   { --t2fill: linear-gradient(180deg, #bdeeb0 0%, #3f9e55 100%); }
+  .c-over   { --t2fill: linear-gradient(180deg, #f4b3a3 0%, #c94438 100%); }
+  .cellNum.t2 { font-size: 28px; font-weight: bold; }
+  .cellNum .t2s { -webkit-text-stroke-width: 2.2px; }
+  .cellNum { filter: drop-shadow(0 2px 2px rgba(0,0,0,.5)); }
+  /* しつけがけ・発光マス: 下地画像そのものをマスごと差し替え(重ね枠ではない) */
+  .cellShitsuke { background-image: url('./assets/cell_shitsuke.svg'),
     repeating-linear-gradient(45deg, rgba(255,255,255,.06) 0 6px, transparent 6px 12px),
     linear-gradient(180deg, #3f7a46, #2f5f36); }
-  .c-yellow { color: #8a6d00; background-image: url('./assets/cell_yellow.svg'),
+  .cellGlow { background-image: url('./assets/cell_glow.svg'),
     repeating-linear-gradient(45deg, rgba(255,255,255,.06) 0 6px, transparent 6px 12px),
     linear-gradient(180deg, #3f7a46, #2f5f36); }
-  .c-done   { color: #2b7a3a; background-image: url('./assets/cell_done.svg'),
+  .cellShitsuke.cellGlow { background-image: url('./assets/cell_shitsuke_glow.svg'),
     repeating-linear-gradient(45deg, rgba(255,255,255,.06) 0 6px, transparent 6px 12px),
     linear-gradient(180deg, #3f7a46, #2f5f36); }
-  .c-over   { color: #a32c22; background-image: url('./assets/cell_over.svg'),
-    repeating-linear-gradient(45deg, rgba(255,255,255,.06) 0 6px, transparent 6px 12px),
-    linear-gradient(180deg, #3f7a46, #2f5f36); }
-  /* しつけがけ枠(オーバーレイ素材のデモ) */
-  .cellShitsuke::after { content: ''; position: absolute; inset: 0;
-    background: url('./assets/cell_ol_shitsuke.svg') center / 100% 100% no-repeat; }
+  /* しつけがけの「×２」バッジ: 右下に黄グラデ・数値の6割サイズで絶対配置 */
+  .shitsukeMark.t2 { position: absolute; right: 4px; bottom: 2px; font-size: 17px; font-weight: bold;
+    --t2fill: linear-gradient(180deg, #fff3b0 0%, #e8b93f 100%);
+    filter: drop-shadow(0 1.5px 1.5px rgba(0,0,0,.45)); }
+  .shitsukeMark .t2s { -webkit-text-stroke-width: 1.3px; }
 
   /* ---- 数値・メッセージ領域(D45: 2行×4列グリッド)
      1行目: ターン/集中力/誤差、2行目1〜3列: メッセージ欄、4列目1〜2行: 1手戻す ---- */
@@ -230,24 +266,24 @@
     <!-- ぬいパワー行: 現在+3つ先。タップでサイクル全体(横スクロール)に切替 -->
     <section class="powerRow win" id="powerRow">
       <div class="powerInner">
-        <span class="powerLabel">ぬいパワー</span>
+        <span class="powerLabel"><span class="t2 t2-white"><span class="t2s">ぬいパワー</span><span class="t2f">ぬいパワー</span></span></span>
         <div class="viewCompact">
-          <span class="chip chipL pw-strong">強い<span class="sparkles"><i class="spark"></i><i class="spark"></i></span></span>
-          <span class="chip chipL pw-q">?</span>
-          <span class="chip chipL pw-weak">弱い</span>
-          <span class="chip chipL pw-max">最強</span>
+          <span class="chip chipL pw-strong"><span class="t2"><span class="t2s">強い</span><span class="t2f">強い</span></span><span class="sparkles"><i class="spark"></i><i class="spark"></i></span></span>
+          <span class="chip chipL pw-q"><span class="t2"><span class="t2s">？</span><span class="t2f">？</span></span></span>
+          <span class="chip chipL pw-weak"><span class="t2"><span class="t2s">弱い</span><span class="t2f">弱い</span></span></span>
+          <span class="chip chipL pw-max"><span class="t2"><span class="t2s">最強</span><span class="t2f">最強</span></span></span>
         </div>
         <div class="viewCycle">
-          <span class="chip chipS pw-normal">普通</span>
-          <span class="chip chipS pw-strong chipCurrent">強い<span class="sparkles"><i class="spark"></i><i class="spark"></i></span></span>
-          <span class="chip chipS pw-q">?</span>
-          <span class="chip chipS pw-weak">弱い</span>
-          <span class="chip chipS pw-max">最強<span class="traitBadge tb-regen">再</span></span>
-          <span class="chip chipS pw-normal">普通</span>
-          <span class="chip chipS pw-strong">強い</span>
-          <span class="chip chipS pw-weak">弱い</span>
-          <span class="chip chipS pw-q">?<span class="traitBadge tb-regen">再</span></span>
-          <span class="chip chipS pw-max">最強</span>
+          <span class="chip chipS pw-normal"><span class="t2"><span class="t2s">普通</span><span class="t2f">普通</span></span></span>
+          <span class="chip chipS pw-strong chipCurrent"><span class="t2"><span class="t2s">強い</span><span class="t2f">強い</span></span><span class="sparkles"><i class="spark"></i><i class="spark"></i></span></span>
+          <span class="chip chipS pw-q"><span class="t2"><span class="t2s">？</span><span class="t2f">？</span></span></span>
+          <span class="chip chipS pw-weak"><span class="t2"><span class="t2s">弱い</span><span class="t2f">弱い</span></span></span>
+          <span class="chip chipS pw-max"><span class="t2"><span class="t2s">最強</span><span class="t2f">最強</span></span><span class="traitBadge tb-regen">再</span></span>
+          <span class="chip chipS pw-normal"><span class="t2"><span class="t2s">普通</span><span class="t2f">普通</span></span></span>
+          <span class="chip chipS pw-strong"><span class="t2"><span class="t2s">強い</span><span class="t2f">強い</span></span></span>
+          <span class="chip chipS pw-weak"><span class="t2"><span class="t2s">弱い</span><span class="t2f">弱い</span></span></span>
+          <span class="chip chipS pw-q"><span class="t2"><span class="t2s">？</span><span class="t2f">？</span></span><span class="traitBadge tb-regen">再</span></span>
+          <span class="chip chipS pw-max"><span class="t2"><span class="t2s">最強</span><span class="t2f">最強</span></span></span>
         </div>
         <span class="chevron">▼</span>
       </div>
@@ -256,15 +292,15 @@
     <!-- 布グリッド(再生布) -->
     <section class="gridArea">
       <div class="grid">
-        <button class="cell c-normal" type="button">46</button>
-        <button class="cell c-yellow" type="button">3</button>
-        <button class="cell c-done" type="button">0</button>
-        <button class="cell c-normal" type="button">27</button>
-        <button class="cell c-normal" type="button">88</button>
-        <button class="cell c-normal cellShitsuke" type="button">12</button>
-        <button class="cell c-done" type="button">0</button>
-        <button class="cell c-over" type="button">-6</button>
-        <button class="cell c-normal" type="button">62</button>
+        <button class="cell c-normal" type="button"><span class="cellNum t2"><span class="t2s">46</span><span class="t2f">46</span></span></button>
+        <button class="cell c-yellow" type="button"><span class="cellNum t2"><span class="t2s">3</span><span class="t2f">3</span></span></button>
+        <button class="cell c-done" type="button"><span class="cellNum t2"><span class="t2s">0</span><span class="t2f">0</span></span></button>
+        <button class="cell c-normal cellGlow" type="button"><span class="cellNum t2"><span class="t2s">27</span><span class="t2f">27</span></span></button>
+        <button class="cell c-normal cellShitsuke cellGlow" type="button"><span class="cellNum t2"><span class="t2s">88</span><span class="t2f">88</span></span><span class="shitsukeMark t2"><span class="t2s">×２</span><span class="t2f">×２</span></span></button>
+        <button class="cell c-normal cellShitsuke" type="button"><span class="cellNum t2"><span class="t2s">12</span><span class="t2f">12</span></span><span class="shitsukeMark t2"><span class="t2s">×２</span><span class="t2f">×２</span></span></button>
+        <button class="cell c-done" type="button"><span class="cellNum t2"><span class="t2s">0</span><span class="t2f">0</span></span></button>
+        <button class="cell c-over" type="button"><span class="cellNum t2"><span class="t2s">-6</span><span class="t2f">-6</span></span></button>
+        <button class="cell c-normal" type="button"><span class="cellNum t2"><span class="t2s">62</span><span class="t2f">62</span></span></button>
       </div>
     </section>
 
@@ -323,7 +359,7 @@
     </div>
   </div>
 
-  <div class="caption">UIモック v2.2(トーンB)— パワー行タップ=サイクル開閉(横スクロール可)/ メッセージ欄タップ=文言切替 / きらめき2個=精神統一残り2の表示例</div>
+  <div class="caption">UIモック v2.3(トーンB)— パワー行タップ=サイクル開閉(横スクロール可)/ メッセージ欄タップ=文言切替 / きらめき2個=精神統一残り2の表示例 / 「27」=発光マス・「88」=しつけ×発光マスの表示例</div>
 </div>
 
 <script>

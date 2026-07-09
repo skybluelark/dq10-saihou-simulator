@@ -5,10 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>レシピ選択画面モック</title>
 <style>
+  @font-face {
+    font-family: 'GenEiLateMin';
+    src: url('./assets/fonts/GenEiLateMinP_v2_subset.woff2') format('woff2');
+    font-weight: normal; font-style: normal; font-display: swap;
+  }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; }
+  button, input, select { font-family: inherit; } /* フォーム部品はフォントを継承しないため明示 */
   body {
-    font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+    font-family: 'GenEiLateMin', "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
     display: flex; flex-direction: column; align-items: center;
     min-height: 100dvh;
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
