@@ -81,8 +81,13 @@
   /* ---- ぬいパワー行(タップでサイクル開閉。横スクロール対応) ---- */
   .powerRow { padding: 2px 6px; cursor: pointer; user-select: none; }
   .powerInner { display: flex; align-items: center; gap: 8px; min-height: 34px; }
+  /* タイトルプレートは「ぬいパワー」サイズ準拠で常時2行分の高さ(12px×lh1.25×2行+上下pad8)。
+     必殺使用時は「ぬいパワー/会心×２」の2行表示(×２は全角)。文言は上下左右センタリング */
   .powerLabel { font-size: 12px; font-weight: bold; padding: 4px 8px; flex: 0 0 auto;
+    height: 38px; display: flex; align-items: center; justify-content: center;
     background: url('./assets/label_power.png') center / 100% 100% no-repeat; }
+  .powerLabel .t2 { text-align: center; }
+  .powerLabel .t2s, .powerLabel .t2f { line-height: 1.25; }
   .powerLabel .t2s { -webkit-text-stroke-width: 1.1px; }
   .powerLabel .t2 { filter: drop-shadow(0 1px 1px rgba(0,0,0,.35)); }
   .viewCompact, .viewCycle { display: flex; align-items: center; gap: 6px; flex: 1 1 auto; min-width: 0; }
@@ -289,7 +294,7 @@
     <!-- ぬいパワー行: 現在+3つ先。タップでサイクル全体(横スクロール)に切替 -->
     <section class="powerRow win" id="powerRow">
       <div class="powerInner">
-        <span class="powerLabel"><span class="t2 t2-white"><span class="t2s">ぬいパワー</span><span class="t2f">ぬいパワー</span></span></span>
+        <span class="powerLabel" id="powerLabel"><span class="t2 t2-white"><span class="t2s">ぬいパワー</span><span class="t2f">ぬいパワー</span></span></span>
         <div class="viewCompact">
           <span class="chip chipL pw-strong"><span class="t2"><span class="t2s">強い</span><span class="t2f">強い</span></span><span class="sparkles"><i class="spark"></i><i class="spark"></i></span></span>
           <span class="chip chipL pw-q"><span class="t2"><span class="t2s">？</span><span class="t2f">？</span></span></span>
@@ -382,13 +387,24 @@
     </div>
   </div>
 
-  <div class="caption">UIモック v2.5(トーンB・画像AI実素材)— パワー行タップ=サイクル開閉(横スクロール可)/ メッセージ欄タップ=文言切替 / きらめき2個=精神統一残り2の表示例 / 「27」=発光マス・「88」=しつけ×発光マスの表示例</div>
+  <div class="caption">UIモック v2.6(トーンB・画像AI実素材)— パワー行タップ=サイクル開閉(横スクロール可)/ ぬいパワープレートタップ=必殺使用時表示(会心×２)切替 / メッセージ欄タップ=文言切替 / きらめき2個=精神統一残り2の表示例 / 「27」=発光マス・「88」=しつけ×発光マスの表示例</div>
 </div>
 
 <script>
   // ぬいパワー行: サイクル開閉(案A: その場トグル)
   document.getElementById('powerRow').addEventListener('click', (e) => {
     e.currentTarget.classList.toggle('cycleOpen');
+  });
+
+  // タイトルプレート: タップで必殺使用時の2行表示「ぬいパワー/会心×２」を切替(表示例)
+  const powerLabel = document.getElementById('powerLabel');
+  powerLabel.addEventListener('click', (e) => {
+    e.stopPropagation(); // サイクル開閉(powerRow)を発火させない
+    const on = powerLabel.dataset.hissatsu !== '1';
+    powerLabel.dataset.hissatsu = on ? '1' : '';
+    const txt = on ? 'ぬいパワー<br>会心×２' : 'ぬいパワー';
+    powerLabel.querySelector('.t2s').innerHTML = txt;
+    powerLabel.querySelector('.t2f').innerHTML = txt;
   });
 
   // メッセージ欄: タップで文言サンプルを順送り(D45 の全パターン確認用)
