@@ -75,6 +75,14 @@ GREEN_WIPE_PARTS = {
 }
 GREEN_HI = 0.35  # これを超えたら確実に背景 → α=0(solid判定・侵食保護より優先)
 GREEN_LO = 0.12  # これ以下は前景 → 既存のdist/erosionロジックに委ねる(中間はAA帯として半透明処理)
+# 生成時に全周へ焼き込まれた純白アウトライン(最外周1px・四隅では弧沿いに2px幅)を持つパーツ:
+# 透明領域に接する「ほぼ無彩色の白」(unmix後RGBで min>=180 かつ max-min<=50)を外周から
+# 連鎖的に剥離して α=0 にする。内側の装飾ハイライト(金色系=彩度あり)で連鎖が止まるため
+# 本体には及ばない。btn_undo/btn_header は最外周が金色/暗色のため対象外。
+WHITE_RIM_PARTS = {
+    "btn_skill_normal", "btn_skill_pressed", "btn_skill_selected", "btn_skill_disabled",
+    "btn_finish_normal", "btn_finish_pressed",
+}
 
 def process(name, tw, th):
     img = np.asarray(Image.open(SRC / f"{name}.png").convert("RGB")).astype(np.float32)
@@ -123,6 +131,29 @@ def process(name, tw, th):
         # 全画素で G <= max(R,B) にクランプする(金プレート本体は実測で R,B >= G のため無害)。
         g_clamped = np.minimum(fg[..., 1], np.maximum(fg[..., 0], fg[..., 2]))
         fg[..., 1] = g_clamped
+    if name in WHITE_RIM_PARTS:
+        minc = np.minimum(np.minimum(fg[..., 0], fg[..., 1]), fg[..., 2])
+        maxc_fg = np.maximum(np.maximum(fg[..., 0], fg[..., 1]), fg[..., 2])
+        whiteish = (minc >= 180.0) & (maxc_fg - minc <= 50.0) & (alpha > 0.03)
+        if name == "btn_skill_pressed":
+            # 押下状態のみリムが暗いグレー(~145)に落ちて白判定に掛からないため、
+            # 中明度の完全無彩色グレーも対象に加える。本体は紺(B優勢)で連鎖しない。
+            # ※disabled はグレーアウト本体が無彩色のためこの条項を適用してはならない。
+            whiteish |= (minc >= 90.0) & (maxc_fg - minc <= 20.0) & (alpha > 0.03)
+        transparent = alpha <= 0.03
+
+        def neigh(m):
+            return (np.roll(m, 1, 0) | np.roll(m, -1, 0)
+                    | np.roll(m, 1, 1) | np.roll(m, -1, 1))
+
+        rim = whiteish & neigh(transparent)
+        for _ in range(64):
+            grown = whiteish & neigh(rim | transparent)
+            if not (grown & ~rim).any():
+                break
+            rim |= grown
+        alpha[rim] = 0.0
+        print(f"  white rim peeled: {int(rim.sum())} px")
     # トリム: 行/列の被覆率がしきい値以上の範囲を外接矩形とする
     mask = alpha > 0.03
     if name in GLOW_PARTS:
