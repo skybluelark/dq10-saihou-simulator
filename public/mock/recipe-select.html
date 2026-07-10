@@ -62,10 +62,14 @@
   .catTabs { display: flex; gap: 6px; overflow-x: auto; padding: 2px;
     scrollbar-width: none; flex: 0 0 auto; }
   .catTabs::-webkit-scrollbar { display: none; }
-  .catTab { flex: 0 0 auto; height: 36px; padding: 0 14px;
-    font-size: 13px; font-weight: bold;
-    background: url('./assets/chip_off.png') center / 100% 100% no-repeat; color: #cdd3ff; border: none; }
-  .catTab.on { background-image: url('./assets/chip_on.png'); color: #fff; }
+  /* チップ共通: 幅可変でも両端の曲率を保つため横方向のみ3分割(§4.8:
+     border-image slice 0 32 fill = 左右キャップ32px固定+中央のみ横伸縮。
+     キャップ表示幅(border左右幅)は表示高の1/2 = 素材144×64のキャップ縦横比を維持) */
+  .catTab { flex: 0 0 auto; height: 36px; padding: 0 2px;
+    font-size: 13px; font-weight: bold; color: #cdd3ff; background: none;
+    border: solid transparent; border-width: 0 18px;
+    border-image: url('./assets/chip_off.png') 0 32 fill stretch; }
+  .catTab.on { border-image-source: url('./assets/chip_on.png'); color: #fff; }
 
   /* ---- フィルター(たたみ)+ソート ---- */
   .toolRow { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
@@ -83,9 +87,11 @@
   .fChipScroll { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none;
     flex: 1 1 0; min-width: 0; padding: 2px 0; }
   .fChipScroll::-webkit-scrollbar { display: none; }
-  .fChip { flex: 0 0 auto; height: 28px; padding: 0 10px; font-size: 11px; font-weight: bold;
-    background: url('./assets/chip_off.png') center / 100% 100% no-repeat; color: #cdd3ff; border: none; }
-  .fChip.on { background-image: url('./assets/chip_on.png'); color: #fff; }
+  .fChip { flex: 0 0 auto; height: 28px; padding: 0 2px; font-size: 11px; font-weight: bold;
+    color: #cdd3ff; background: none;
+    border: solid transparent; border-width: 0 14px;
+    border-image: url('./assets/chip_off.png') 0 32 fill stretch; }
+  .fChip.on { border-image-source: url('./assets/chip_on.png'); color: #fff; }
   /* ソート記号は小型三角(▾/▴)。本体文字より一回り小さく表示 */
   .sortMark { font-size: 10px; }
 
@@ -100,28 +106,33 @@
   .recipeLv { flex: 0 0 auto; font-size: 11px; color: #cdd3ff; }
   .recipeRow.sel .recipeLv { color: #ffe9b8; }
   /* 布特性バッジは文字数によらず固定幅+中央揃え */
+  /* 実装側描画(CSS)に戻す(2026-07-10: 画像化のメリットが薄い。§4.4)。白の細縁つきカプセル */
   .clothBadge { flex: 0 0 auto; width: 50px; height: 20px; padding: 0;
     display: inline-flex; align-items: center; justify-content: center;
-    font-size: 11px; font-weight: bold; background: center / 100% 100% no-repeat; border-radius: 0; }
-  .cb-regen   { background-image: url('./assets/badge_cloth_regen.png'); color: #fff; }
-  .cb-rainbow { background-image: url('./assets/badge_cloth_rainbow.png'); color: #4a3a00; }
-  .cb-light   { background-image: url('./assets/badge_cloth_light.png'); color: #fff; }
-  .cb-normal  { background-image: url('./assets/badge_cloth_normal.png'); color: #3a2c10; }
+    font-size: 11px; font-weight: bold; border-radius: 10px;
+    border: 1px solid rgba(255,255,255,.85); }
+  .cb-regen   { background: #2e9e44; color: #fff; }
+  .cb-rainbow { background: #d9c23a; color: #4a3a00; }
+  .cb-light   { background: #e77fb4; color: #fff; }
+  .cb-normal  { background: #b9a77f; color: #3a2c10; }
 
   /* ---- さいほう針・できのよさ ---- */
   .needlePanel { padding: 8px; flex: 0 0 auto; display: flex; flex-direction: column; gap: 8px; }
   .rowLabel { font-size: 12px; font-weight: bold; color: #ffe9b8; }
   .needleRow { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 2px; }
   .needleRow::-webkit-scrollbar { display: none; }
-  .needleChip { flex: 0 0 auto; height: 34px; padding: 0 10px;
-    font-size: 12px; font-weight: bold; background: url('./assets/chip_off.png') center / 100% 100% no-repeat; color: #cdd3ff;
-    border: none; }
-  .needleChip.on { background-image: url('./assets/chip_on.png'); color: #fff; }
+  .needleChip { flex: 0 0 auto; height: 34px; padding: 0 2px;
+    font-size: 12px; font-weight: bold; color: #cdd3ff; background: none;
+    border: solid transparent; border-width: 0 17px;
+    border-image: url('./assets/chip_off.png') 0 32 fill stretch; }
+  .needleChip.on { border-image-source: url('./assets/chip_on.png'); color: #fff; }
   .starRow { display: flex; gap: 6px; align-items: center; }
-  .starChip { flex: 0 0 auto; width: 52px; height: 32px;
-    font-size: 13px; font-weight: bold; background: url('./assets/chip_off.png') center / 100% 100% no-repeat; color: #cdd3ff;
-    border: none; }
-  .starChip.on { background-image: url('./assets/chip_on.png'); color: #fff; }
+  /* キャップ16px×2が幅に占めるため 52→58px に拡大(「★0」2文字が中央に収まる幅) */
+  .starChip { flex: 0 0 auto; width: 58px; height: 32px; padding: 0;
+    font-size: 13px; font-weight: bold; color: #cdd3ff; background: none;
+    border: solid transparent; border-width: 0 16px;
+    border-image: url('./assets/chip_off.png') 0 32 fill stretch; }
+  .starChip.on { border-image-source: url('./assets/chip_on.png'); color: #fff; }
   /* 開始集中力: できのよさの右側。ラベル同士の縦位置を揃え、数値はラベル下に中央配置 */
   .bottomRow { display: flex; align-items: flex-start; gap: 12px; }
   .starCol { flex: 0 0 auto; display: flex; flex-direction: column; gap: 4px; }
@@ -215,7 +226,7 @@
     <button class="startBtn" type="button" onclick="location.href='./index.html'">はじめる</button>
   </main>
 
-  <div class="caption">レシピ選択画面モック v3(トーンB・画像AI実素材)— 装備Lv・フィルター値はダミー / 針・できのよさの選択は保存されます</div>
+  <div class="caption">レシピ選択画面モック v3.1(トーンB・画像AI実素材)— チップ=横3分割(両端曲率固定)/ 布特性バッジ=実装側描画 / 装備Lv・フィルター値はダミー / 針・できのよさの選択は保存されます</div>
 </div>
 
 <script>

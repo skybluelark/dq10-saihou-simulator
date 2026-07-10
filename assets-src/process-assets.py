@@ -46,10 +46,7 @@ PARTS = {
     "btn_secondary_pressed": (None, 92),
     "chip_on": (None, 64),
     "chip_off": (None, 64),
-    "badge_cloth_regen": (100, 40),
-    "badge_cloth_rainbow": (100, 40),
-    "badge_cloth_light": (100, 40),
-    "badge_cloth_normal": (100, 40),
+    # badge_cloth_* は実装側描画(SVG/CSS)に戻したため廃止(2026-07-10)
     "star_result_on": (80, 80),
     "star_result_off": (80, 80),
     "plate_crit": (120, 48),

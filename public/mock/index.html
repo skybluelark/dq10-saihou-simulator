@@ -276,6 +276,17 @@
   .resultUndo { align-self: center; height: 34px; padding: 0 12px; border-radius: 8px;
     font-size: 12px; font-weight: bold; background: transparent; color: #cdd3ff;
     border: 1px solid rgba(255,255,255,.5); }
+
+  /* ---- ◀もどる確認ダイアログ(D39/§7-7: 2ターン目以降のみ表示。1ターン目は確認なしで即もどる) ---- */
+  .dlgWin { width: 100%; max-width: 300px; padding: 10px 6px 6px;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    color: #fff; background: none;
+    border: 28px solid transparent;
+    border-image: url('./assets/panel_window.png') 96 fill / 28px stretch;
+    box-shadow: 0 8px 24px rgba(0,0,0,.5); }
+  .dlgText { font-size: 14px; font-weight: bold; text-align: center; line-height: 1.8; }
+  .dlgNote { font-size: 11px; color: #cdd3ff; text-align: center; }
+  .dlgBtns { width: 100%; display: flex; gap: 8px; }
 </style>
 </head>
 <body>
@@ -285,7 +296,7 @@
 
   <!-- D47: 左右ボタンは同サイズ、レシピ名は中央 -->
   <header>
-    <button class="hdrBtn" type="button" onclick="location.href='./recipe-select.html'"><span class="hdrArrow">◀</span>もどる</button>
+    <button class="hdrBtn" type="button" id="backBtn"><span class="hdrArrow">◀</span>もどる</button>
     <div class="hdrTitle">カテドラルローブ</div>
     <button class="hdrBtn" type="button">ログ</button>
   </header>
@@ -387,7 +398,19 @@
     </div>
   </div>
 
-  <div class="caption">UIモック v2.6(トーンB・画像AI実素材)— パワー行タップ=サイクル開閉(横スクロール可)/ ぬいパワープレートタップ=必殺使用時表示(会心×２)切替 / メッセージ欄タップ=文言切替 / きらめき2個=精神統一残り2の表示例 / 「27」=発光マス・「88」=しつけ×発光マスの表示例</div>
+  <!-- ◀もどる確認ダイアログ(D39/§7-7)。モックは進行中盤面のため常に表示。実装では1ターン目は確認なしで即もどる -->
+  <div class="resultScrim" id="backDlg" hidden>
+    <div class="dlgWin">
+      <div class="dlgText">さいほうを やめて<br>レシピ選択に もどりますか？</div>
+      <div class="dlgNote">※とちゅうの ぬいものは 保存されません</div>
+      <div class="dlgBtns">
+        <button class="resultBtn" id="backNo" type="button">いいえ</button>
+        <button class="resultBtn" id="backYes" type="button">はい</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="caption">UIモック v2.7(トーンB・画像AI実素材)— ◀もどるタップ=確認ダイアログ(実装では2ターン目以降のみ)/ パワー行タップ=サイクル開閉(横スクロール可)/ ぬいパワープレートタップ=必殺使用時表示(会心×２)切替 / メッセージ欄タップ=文言切替 / きらめき2個=精神統一残り2の表示例 / 「27」=発光マス・「88」=しつけ×発光マスの表示例</div>
 </div>
 
 <script>
@@ -422,6 +445,13 @@
     msgIdx = (msgIdx + 1) % messages.length;
     msgWin.textContent = messages[msgIdx];
   });
+
+  // ◀もどる: 確認ダイアログ(D39/§7-7)。実装では1ターン目(未行動)は確認なしで即もどる。
+  // モックの盤面は進行中(2ターン目以降)の表示例のため常にダイアログを出す
+  const backDlg = document.getElementById('backDlg');
+  document.getElementById('backBtn').addEventListener('click', () => { backDlg.hidden = false; });
+  document.getElementById('backNo').addEventListener('click', () => { backDlg.hidden = true; });
+  document.getElementById('backYes').addEventListener('click', () => { location.href = './recipe-select.html'; });
 
   // 特技選択(単一選択のトグル。しあげるは結果オーバーレイのデモへ)
   document.querySelectorAll('#skills .skill:not(:disabled)').forEach((b) => {
