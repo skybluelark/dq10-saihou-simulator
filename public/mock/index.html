@@ -218,12 +218,15 @@
 
   /* ---- 特技 5行4列 ---- */
   .skills { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  /* 影は box-shadow ではなく drop-shadow(filter)を使う: box-shadow は要素の「矩形」に
+     沿って描かれるため、素材の角丸の外側(透明領域)が「紺の弧/明るい下地のくさび/矩形影の角」に
+     挟まれて白残りのように浮く(実機レビューで判明。btn_undo が問題なかったのは影指定なしのため) */
   .skill { position: relative; height: 44px;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
     color: #fff; background: none;
     border: 8px solid transparent;
     border-image: url('./assets/btn_skill_normal.png') 26 fill / 8px stretch;
-    box-shadow: 0 2px 4px rgba(40,20,0,.3); }
+    filter: drop-shadow(0 2px 3px rgba(40,20,0,.3)); }
   .skill:not(:disabled):not(.selected):active { border-image-source: url('./assets/btn_skill_pressed.png'); }
   .skName { font-size: 12px; font-weight: bold; white-space: nowrap; }
   /* ぬいパワーシフトのみ特技名2行(+コスト)の3行レイアウト(ボタン幅の均等化) */
