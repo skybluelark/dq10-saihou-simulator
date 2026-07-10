@@ -220,8 +220,11 @@ def process(name, tw, th):
         ominc = o[..., :3].min(axis=2)
         omaxc = o[..., :3].max(axis=2)
         if name == "btn_skill_selected":
-            # 選択(金)ボタンは縁自体が明るいクリーム〜金のため、純白寄りだけを対象にする
-            bright = (ominc >= 200.0) & (omaxc - ominc <= 45.0)
+            # 選択(金)ボタンは縁自体が明るいクリーム〜金(max-minが50以上の暖色)のため、
+            # 純白寄りに加え「明るい完全無彩色」(下辺に残る影混じりの白リム: 実測(199,198,188))
+            # だけを対象にし、暖色の縁は残す
+            bright = (((ominc >= 200.0) & (omaxc - ominc <= 45.0))
+                      | ((ominc >= 150.0) & (omaxc - ominc <= 25.0)))
         else:
             bright = (ominc >= 150.0) & (omaxc - ominc <= 80.0)
         bright &= oa > 0.0
