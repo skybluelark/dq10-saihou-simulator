@@ -18,9 +18,9 @@
     display: flex; flex-direction: column; align-items: center;
     min-height: 100dvh;
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-    background:
-      radial-gradient(circle at 30% 15%, rgba(255,244,205,.55), transparent 55%),
-      linear-gradient(180deg, #cbb98f, #b7a276);
+    background-color: #cbb98f;
+    background-image: url('./assets/bg_main.png');
+    background-size: cover; background-position: center;
     color: #fff;
   }
   .frame { width: 100%; max-width: 430px; min-height: 100dvh; display: flex; flex-direction: column; }
@@ -37,10 +37,11 @@
   .hdrBtn {
     width: 76px; height: 40px; flex: 0 0 auto;
     display: flex; align-items: center; justify-content: center; gap: 2px;
-    border-radius: 8px; font-size: 14px; font-weight: bold;
-    background: linear-gradient(180deg, #6b4a26, #4c3116); color: #ffe9b8;
-    border: 1px solid #2e1d0a; box-shadow: inset 0 1px 0 rgba(255,230,160,.5), 0 2px 3px rgba(40,20,0,.4);
+    border: none; font-size: 14px; font-weight: bold;
+    background: url('./assets/btn_header_normal.png') center / 100% 100% no-repeat; color: #ffe9b8;
+    filter: drop-shadow(0 2px 3px rgba(40,20,0,.4));
   }
+  .hdrBtn:active { background-image: url('./assets/btn_header_pressed.png'); }
   .hdrSpacer { width: 76px; flex: 0 0 auto; }
   /* D39: 「◀」は本文(もどる)より小さいフォントサイズにし、index.html のヘッダーと統一 */
   .hdrArrow { font-size: 10px; }
@@ -51,26 +52,27 @@
   main { flex: 1 1 auto; display: flex; flex-direction: column; gap: 8px; padding: 6px 12px 10px; min-height: 0; }
 
   .win {
-    background: linear-gradient(180deg, #23255c, #14163e); color: #fff;
-    border: 2px solid #fff; border-radius: 8px;
-    box-shadow: 0 0 0 1px #14163e, 0 0 0 3px #caa74f, 0 3px 6px rgba(40,20,0,.35);
+    color: #fff;
+    border: 8px solid transparent;
+    border-image: url('./assets/panel_window.png') 96 fill / 10px stretch;
+    box-shadow: 0 3px 6px rgba(40,20,0,.35);
   }
 
   /* ---- 部位タブ(頭/体上/体下/腕/足/ラグ/ぬいぐるみ。横スクロール) ---- */
   .catTabs { display: flex; gap: 6px; overflow-x: auto; padding: 2px;
     scrollbar-width: none; flex: 0 0 auto; }
   .catTabs::-webkit-scrollbar { display: none; }
-  .catTab { flex: 0 0 auto; height: 36px; padding: 0 14px; border-radius: 18px;
+  .catTab { flex: 0 0 auto; height: 36px; padding: 0 14px;
     font-size: 13px; font-weight: bold;
-    background: rgba(60,40,10,.18); color: #4a3616; border: 1px solid rgba(60,40,10,.35); }
-  .catTab.on { background: linear-gradient(180deg, #23255c, #14163e); color: #fff;
-    border: 1px solid #fff; box-shadow: 0 0 0 2px #caa74f; }
+    background: url('./assets/chip_off.png') center / 100% 100% no-repeat; color: #cdd3ff; border: none; }
+  .catTab.on { background-image: url('./assets/chip_on.png'); color: #fff; }
 
   /* ---- フィルター(たたみ)+ソート ---- */
   .toolRow { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
-  .toolBtn { height: 32px; padding: 0 12px; border-radius: 8px; font-size: 12px; font-weight: bold;
-    background: linear-gradient(180deg, #6b4a26, #4c3116); color: #ffe9b8;
-    border: 1px solid #2e1d0a; box-shadow: inset 0 1px 0 rgba(255,230,160,.5); }
+  .toolBtn { height: 32px; padding: 0 12px; font-size: 12px; font-weight: bold;
+    background: url('./assets/btn_header_normal.png') center / 100% 100% no-repeat; border: none; color: #ffe9b8;
+    filter: drop-shadow(0 1px 2px rgba(40,20,0,.35)); }
+  .toolBtn:active { background-image: url('./assets/btn_header_pressed.png'); }
   .sortBtn { margin-left: auto; }
   .filterPanel { display: none; padding: 8px; flex: 0 0 auto; flex-direction: column; gap: 8px; }
   .filterPanel.open { display: flex; }
@@ -81,9 +83,9 @@
   .fChipScroll { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none;
     flex: 1 1 0; min-width: 0; padding: 2px 0; }
   .fChipScroll::-webkit-scrollbar { display: none; }
-  .fChip { flex: 0 0 auto; height: 28px; padding: 0 10px; border-radius: 14px; font-size: 11px; font-weight: bold;
-    background: #2c2f6b; color: #cdd3ff; border: 1px solid rgba(255,255,255,.5); }
-  .fChip.on { background: linear-gradient(180deg, #b6903a, #8d6a1f); color: #fff; border-color: #fff; }
+  .fChip { flex: 0 0 auto; height: 28px; padding: 0 10px; font-size: 11px; font-weight: bold;
+    background: url('./assets/chip_off.png') center / 100% 100% no-repeat; color: #cdd3ff; border: none; }
+  .fChip.on { background-image: url('./assets/chip_on.png'); color: #fff; }
   /* ソート記号は小型三角(▾/▴)。本体文字より一回り小さく表示 */
   .sortMark { font-size: 10px; }
 
@@ -98,27 +100,28 @@
   .recipeLv { flex: 0 0 auto; font-size: 11px; color: #cdd3ff; }
   .recipeRow.sel .recipeLv { color: #ffe9b8; }
   /* 布特性バッジは文字数によらず固定幅+中央揃え */
-  .clothBadge { flex: 0 0 auto; width: 50px; text-align: center;
-    font-size: 11px; font-weight: bold; padding: 3px 0; border-radius: 10px; }
-  .cb-regen   { background: #2e9e44; color: #fff; }
-  .cb-rainbow { background: #d9c23a; color: #4a3a00; }
-  .cb-light   { background: #e77fb4; color: #fff; }
-  .cb-normal  { background: #b9a77f; color: #3a2c10; }
+  .clothBadge { flex: 0 0 auto; width: 50px; height: 20px; padding: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: bold; background: center / 100% 100% no-repeat; border-radius: 0; }
+  .cb-regen   { background-image: url('./assets/badge_cloth_regen.png'); color: #fff; }
+  .cb-rainbow { background-image: url('./assets/badge_cloth_rainbow.png'); color: #4a3a00; }
+  .cb-light   { background-image: url('./assets/badge_cloth_light.png'); color: #fff; }
+  .cb-normal  { background-image: url('./assets/badge_cloth_normal.png'); color: #3a2c10; }
 
   /* ---- さいほう針・できのよさ ---- */
   .needlePanel { padding: 8px; flex: 0 0 auto; display: flex; flex-direction: column; gap: 8px; }
   .rowLabel { font-size: 12px; font-weight: bold; color: #ffe9b8; }
   .needleRow { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 2px; }
   .needleRow::-webkit-scrollbar { display: none; }
-  .needleChip { flex: 0 0 auto; height: 34px; padding: 0 10px; border-radius: 8px;
-    font-size: 12px; font-weight: bold; background: #2c2f6b; color: #cdd3ff;
-    border: 1px solid rgba(255,255,255,.5); }
-  .needleChip.on { background: linear-gradient(180deg, #b6903a, #8d6a1f); color: #fff; border-color: #fff; }
+  .needleChip { flex: 0 0 auto; height: 34px; padding: 0 10px;
+    font-size: 12px; font-weight: bold; background: url('./assets/chip_off.png') center / 100% 100% no-repeat; color: #cdd3ff;
+    border: none; }
+  .needleChip.on { background-image: url('./assets/chip_on.png'); color: #fff; }
   .starRow { display: flex; gap: 6px; align-items: center; }
-  .starChip { flex: 0 0 auto; width: 52px; height: 32px; border-radius: 8px;
-    font-size: 13px; font-weight: bold; background: #2c2f6b; color: #cdd3ff;
-    border: 1px solid rgba(255,255,255,.5); }
-  .starChip.on { background: linear-gradient(180deg, #b6903a, #8d6a1f); color: #fff; border-color: #fff; }
+  .starChip { flex: 0 0 auto; width: 52px; height: 32px;
+    font-size: 13px; font-weight: bold; background: url('./assets/chip_off.png') center / 100% 100% no-repeat; color: #cdd3ff;
+    border: none; }
+  .starChip.on { background-image: url('./assets/chip_on.png'); color: #fff; }
   /* 開始集中力: できのよさの右側。ラベル同士の縦位置を揃え、数値はラベル下に中央配置 */
   .bottomRow { display: flex; align-items: flex-start; gap: 12px; }
   .starCol { flex: 0 0 auto; display: flex; flex-direction: column; gap: 4px; }
@@ -127,10 +130,14 @@
   .concNum { font-size: 20px; font-weight: bold; color: #fff; line-height: 32px; }
 
   /* ---- はじめる ---- */
-  .startBtn { flex: 0 0 auto; height: 52px; margin: 0 24px; border-radius: 10px;
+  .startBtn { flex: 0 0 auto; height: 52px; margin: 0 24px;
     font-size: 18px; font-weight: bold; letter-spacing: .3em; text-indent: .3em;
-    background: linear-gradient(180deg, #b6903a, #8d6a1f); color: #fff;
-    border: 2px solid #fff; box-shadow: 0 0 0 1px #14163e, 0 0 0 3px #caa74f, 0 3px 6px rgba(40,20,0,.35); }
+    display: flex; align-items: center; justify-content: center;
+    color: #3a2604; background: none;
+    border: 20px solid transparent; border-left-width: 14px; border-right-width: 14px;
+    border-image: url('./assets/btn_primary_normal.png') 50 fill / 20px 14px stretch;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,.35)); }
+  .startBtn:active { border-image-source: url('./assets/btn_primary_pressed.png'); }
 
   .caption { text-align: center; font-size: 10px; color: rgba(60,40,10,.55); padding: 2px 0 6px; flex: 0 0 auto; }
 </style>
@@ -208,7 +215,7 @@
     <button class="startBtn" type="button" onclick="location.href='./index.html'">はじめる</button>
   </main>
 
-  <div class="caption">レシピ選択画面モック v2 — 装備Lv・フィルター値はダミー / 針・できのよさの選択は保存されます</div>
+  <div class="caption">レシピ選択画面モック v3(トーンB・画像AI実素材)— 装備Lv・フィルター値はダミー / 針・できのよさの選択は保存されます</div>
 </div>
 
 <script>
