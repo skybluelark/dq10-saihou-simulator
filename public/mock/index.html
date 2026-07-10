@@ -151,14 +151,17 @@
   .fxMsg { display: none; white-space: nowrap; font-size: 87px; font-weight: bold;
     --t2fill: linear-gradient(180deg, #ffe14d 0%, #f07f1a 100%);
     filter: drop-shadow(0 3px 4px rgba(0,0,0,.35)); }
-  /* 縁は文字サイズ比例(87px時に5px相当)。自動縮小しても縁の太さバランスを保つ */
-  .fxMsg .t2s { -webkit-text-stroke-width: .058em; -webkit-text-stroke-color: #e8a000; }
-  .fxLane.play .fxMsg { display: inline-block; animation: fxCharge 1.45s both; }
+  /* 縁は文字サイズ比例。インパクト重視で太めの山吹縁(.11em)。
+     塗り層にも中間色の細ストローク(.028em)を足して字画自体を太らせる(擬似ボールド。
+     源暎ラテミンのサブセットは単一ウェイトのため font-weight では太らない) */
+  .fxMsg .t2s { -webkit-text-stroke-width: .11em; -webkit-text-stroke-color: #e8a000; }
+  .fxMsg .t2f { -webkit-text-stroke-width: .028em; -webkit-text-stroke-color: #f8b53a; }
+  .fxLane.play .fxMsg { display: inline-block; animation: fxCharge 1.25s both; }
   @keyframes fxCharge {
-    /* 0.4s(28%)で中央: 減速イン → 0.7s静止 → 0.35sで加速アウト */
+    /* 0.4s(32%)で中央: 減速イン → 0.5s静止 → 0.35sで加速アウト */
     0%   { transform: translateX(calc(50vw + 50%)); animation-timing-function: cubic-bezier(.16,.84,.44,1); }
-    28%  { transform: translateX(0); animation-timing-function: linear; }
-    76%  { transform: translateX(0); animation-timing-function: cubic-bezier(.55,.06,.85,.4); }
+    32%  { transform: translateX(0); animation-timing-function: linear; }
+    72%  { transform: translateX(0); animation-timing-function: cubic-bezier(.55,.06,.85,.4); }
     100% { transform: translateX(calc(-50vw - 50%)); }
   }
   .grid { display: grid; grid-template-columns: repeat(3, 88px); gap: 8px;
@@ -471,7 +474,7 @@
   });
 
   // 必殺チャージ演出デモ(D20): 布グリッドタップで再生。連続タップは先頭から再再生。
-  // 文字高はマス縦幅1.5倍(87px)を上限に、全文が画面幅の96%に収まるサイズへ自動縮小
+  // 文字高はマス縦幅1.5倍(87px)を上限に、全文が画面幅の約77%(96%の8割)に収まるサイズへ自動縮小
   const fxLane = document.getElementById('fxLane');
   const fxMsg = fxLane.querySelector('.fxMsg');
   document.querySelector('.gridArea').addEventListener('click', () => {
@@ -480,7 +483,7 @@
     fxMsg.style.display = 'inline-block'; // 一時表示して全幅を実測
     const w = fxMsg.getBoundingClientRect().width;
     const frameW = document.querySelector('.frame').clientWidth;
-    fxMsg.style.fontSize = (87 * Math.min(1, (frameW * 0.96) / w)).toFixed(1) + 'px';
+    fxMsg.style.fontSize = (87 * Math.min(1, (frameW * 0.77) / w)).toFixed(1) + 'px';
     fxMsg.style.display = '';
     void fxLane.offsetWidth; // リフローを挟んでアニメーションを最初から再生
     fxLane.classList.add('play');
