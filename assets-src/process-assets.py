@@ -210,6 +210,35 @@ def process(name, tw, th):
     ra = resized[..., 3:4] / 255.0
     rgb = np.clip(resized[..., :3] / np.maximum(ra, 1e-3), 0, 255)
     out_arr = np.dstack([rgb, resized[..., 3]]).astype(np.uint8)
+    if name in WHITE_RIM_PARTS:
+        # 出力解像度での仕上げハロー除去: ソース段階の剥離は列ごとに停止位置が揺れ、
+        # LANCZOS縮小がその取り残しを外周へ半透明の白/明灰として滲ませる。@2x表示では
+        # 9-sliceコーナーがほぼ等倍で描画されるため、紺縁の外側の明るい画素は1個でも視認される。
+        # 透明領域(画像外含む)に接する明るい無彩色画素を最終画素で連鎖除去する。
+        o = out_arr.astype(np.float32)
+        oa = o[..., 3] / 255.0
+        ominc = o[..., :3].min(axis=2)
+        omaxc = o[..., :3].max(axis=2)
+        if name == "btn_skill_selected":
+            # 選択(金)ボタンは縁自体が明るいクリーム〜金のため、純白寄りだけを対象にする
+            bright = (ominc >= 200.0) & (omaxc - ominc <= 45.0)
+        else:
+            bright = (ominc >= 150.0) & (omaxc - ominc <= 80.0)
+        bright &= oa > 0.0
+
+        def neigh_pad(m, fill):
+            p = np.pad(m, 1, constant_values=fill)
+            return p[:-2, 1:-1] | p[2:, 1:-1] | p[1:-1, :-2] | p[1:-1, 2:]
+
+        transparent_o = oa <= 0.03
+        halo = bright & neigh_pad(transparent_o, True)  # 画像外は透明扱い
+        for _ in range(32):
+            grown = bright & neigh_pad(halo | transparent_o, True)
+            if not (grown & ~halo).any():
+                break
+            halo |= grown
+        out_arr[halo, 3] = 0
+        print(f"  output halo removed: {int(halo.sum())} px")
     Image.fromarray(out_arr, "RGBA").save(OUT / f"{name}.png")
     ar_tgt = tw / th
     warn = " <-- AR diff!" if abs(ar_src / ar_tgt - 1) > 0.12 else ""
