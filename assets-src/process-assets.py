@@ -239,6 +239,34 @@ def process(name, tw, th):
             halo |= grown
         out_arr[halo, 3] = 0
         print(f"  output halo removed: {int(halo.sum())} px")
+    # アルファブリード: 透明画素(α=0)のRGBを最近傍の不透明色で埋める。
+    # 事前乗算リサイズの逆算(premul/α)は α≈0 でノイズが増幅されて透明画素に白系の
+    # ゴミRGBが残り、ブラウザが border-image を端末解像度へ再補間する際に
+    # straight-alpha 補間だと「透明白×不透明紺」の中間=白フリンジが縁に出る。
+    # 透明画素のRGBを縁の色で埋めておけば補間結果は縁色に収束する。
+    # 「色が信頼できる画素」= α≥10/255。それ未満(除算増幅でRGBがノイズ化した極低α画素を含む)は
+    # すべてRGBを塗り替える側に回す
+    rgbf = out_arr[..., :3].astype(np.float32)
+    filled = out_arr[..., 3] >= 10
+    rgbf[~filled] = 0.0
+    for _ in range(64):
+        if filled.all():
+            break
+        fp = np.pad(filled, 1)
+        cp = np.pad(rgbf, ((1, 1), (1, 1), (0, 0)))
+        cnt = np.zeros(filled.shape, np.float32)
+        acc = np.zeros(rgbf.shape, np.float32)
+        for dy, dx in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+            nf = fp[1 + dy:fp.shape[0] - 1 + dy, 1 + dx:fp.shape[1] - 1 + dx]
+            nc = cp[1 + dy:cp.shape[0] - 1 + dy, 1 + dx:cp.shape[1] - 1 + dx]
+            cnt += nf
+            acc += nc * nf[..., None]
+        grow = (~filled) & (cnt > 0)
+        if not grow.any():
+            break
+        rgbf[grow] = acc[grow] / cnt[grow][..., None]
+        filled |= grow
+    out_arr[..., :3] = np.clip(rgbf, 0, 255).astype(np.uint8)
     Image.fromarray(out_arr, "RGBA").save(OUT / f"{name}.png")
     ar_tgt = tw / th
     warn = " <-- AR diff!" if abs(ar_src / ar_tgt - 1) > 0.12 else ""
