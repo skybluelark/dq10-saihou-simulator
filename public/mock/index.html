@@ -141,7 +141,26 @@
   .cycleOpen .chevron { transform: rotate(180deg); }
 
   /* ---- 布グリッド(D48: 縦のみ縮小可) ---- */
-  .gridArea { display: flex; justify-content: center; }
+  .gridArea { display: flex; justify-content: center; position: relative; }
+
+  /* ---- 必殺チャージ演出(D20: 文言スクロール。右から0.4sで中央へ→静止0.7s→0.35sで左へ)
+     文字高=マス縦幅58pxの1.5倍≒87px。縁=山吹、塗り=黄→橙の縦グラデ(§4.9 の2レイヤー方式) ---- */
+  .fxLane { position: absolute; left: 0; right: 0; top: 50%; height: 104px;
+    transform: translateY(-50%); overflow: hidden; pointer-events: none; z-index: 5;
+    display: flex; align-items: center; justify-content: center; }
+  .fxMsg { display: none; white-space: nowrap; font-size: 87px; font-weight: bold;
+    --t2fill: linear-gradient(180deg, #ffe14d 0%, #f07f1a 100%);
+    filter: drop-shadow(0 3px 4px rgba(0,0,0,.35)); }
+  /* 縁は文字サイズ比例(87px時に5px相当)。自動縮小しても縁の太さバランスを保つ */
+  .fxMsg .t2s { -webkit-text-stroke-width: .058em; -webkit-text-stroke-color: #e8a000; }
+  .fxLane.play .fxMsg { display: inline-block; animation: fxCharge 1.45s both; }
+  @keyframes fxCharge {
+    /* 0.4s(28%)で中央: 減速イン → 0.7s静止 → 0.35sで加速アウト */
+    0%   { transform: translateX(calc(50vw + 50%)); animation-timing-function: cubic-bezier(.16,.84,.44,1); }
+    28%  { transform: translateX(0); animation-timing-function: linear; }
+    76%  { transform: translateX(0); animation-timing-function: cubic-bezier(.55,.06,.85,.4); }
+    100% { transform: translateX(calc(-50vw - 50%)); }
+  }
   .grid { display: grid; grid-template-columns: repeat(3, 88px); gap: 8px;
     padding: 4px; border-radius: 12px;
     border: 10px solid transparent;
@@ -344,6 +363,8 @@
         <button class="cell c-over" type="button"><span class="cellNum t2"><span class="t2s">-6</span><span class="t2f">-6</span></span></button>
         <button class="cell c-normal" type="button"><span class="cellNum t2"><span class="t2s">62</span><span class="t2f">62</span></span></button>
       </div>
+      <!-- 必殺チャージ演出(D20)。モックでは布グリッドタップで再生 -->
+      <div class="fxLane" id="fxLane"><span class="fxMsg t2"><span class="t2s">ひっさつチャージ！！</span><span class="t2f">ひっさつチャージ！！</span></span></div>
     </section>
 
     <!-- D45: 数値・メッセージ領域(2行×4列。メッセージ欄タップでサンプル切替) -->
@@ -413,7 +434,7 @@
     </div>
   </div>
 
-  <div class="caption">UIモック v2.7(トーンB・画像AI実素材)— ◀もどるタップ=確認ダイアログ(実装では2ターン目以降のみ)/ パワー行タップ=サイクル開閉(横スクロール可)/ ぬいパワープレートタップ=必殺使用時表示(会心×２)切替 / メッセージ欄タップ=文言切替 / きらめき2個=精神統一残り2の表示例 / 「27」=発光マス・「88」=しつけ×発光マスの表示例</div>
+  <div class="caption">UIモック v2.8(トーンB・画像AI実素材)— 布グリッドタップ=必殺チャージ演出 / ◀もどるタップ=確認ダイアログ(実装では2ターン目以降のみ)/ パワー行タップ=サイクル開閉(横スクロール可)/ ぬいパワープレートタップ=必殺使用時表示(会心×２)切替 / メッセージ欄タップ=文言切替 / きらめき2個=精神統一残り2の表示例 / 「27」=発光マス・「88」=しつけ×発光マスの表示例</div>
 </div>
 
 <script>
@@ -447,6 +468,22 @@
   msgWin.addEventListener('click', () => {
     msgIdx = (msgIdx + 1) % messages.length;
     msgWin.textContent = messages[msgIdx];
+  });
+
+  // 必殺チャージ演出デモ(D20): 布グリッドタップで再生。連続タップは先頭から再再生。
+  // 文字高はマス縦幅1.5倍(87px)を上限に、全文が画面幅の96%に収まるサイズへ自動縮小
+  const fxLane = document.getElementById('fxLane');
+  const fxMsg = fxLane.querySelector('.fxMsg');
+  document.querySelector('.gridArea').addEventListener('click', () => {
+    fxLane.classList.remove('play');
+    fxMsg.style.fontSize = '87px';
+    fxMsg.style.display = 'inline-block'; // 一時表示して全幅を実測
+    const w = fxMsg.getBoundingClientRect().width;
+    const frameW = document.querySelector('.frame').clientWidth;
+    fxMsg.style.fontSize = (87 * Math.min(1, (frameW * 0.96) / w)).toFixed(1) + 'px';
+    fxMsg.style.display = '';
+    void fxLane.offsetWidth; // リフローを挟んでアニメーションを最初から再生
+    fxLane.classList.add('play');
   });
 
   // ◀もどる: 確認ダイアログ(D39/§7-7)。実装では1ターン目(未行動)は確認なしで即もどる。
