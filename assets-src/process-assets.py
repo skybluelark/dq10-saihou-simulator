@@ -86,9 +86,19 @@ WHITE_RIM_PARTS = {
     "btn_skill_normal", "btn_skill_pressed", "btn_skill_selected", "btn_skill_disabled",
     "btn_finish_normal", "btn_finish_pressed",
 }
+# 左右反転で生成するパーツ: 値のIDの原本を水平反転して処理する。
+# (redo を生成AIで左右反転させると意図しない差異が入るため、プログラムで鏡像を作る)
+MIRROR_SRC = {
+    "btn_step_redo_normal": "btn_step_undo_normal",
+    "btn_step_redo_pressed": "btn_step_undo_pressed",
+    "btn_step_redo_disabled": "btn_step_undo_disabled",
+}
 
 def process(name, tw, th):
-    img = np.asarray(Image.open(SRC / f"{name}.png").convert("RGB")).astype(np.float32)
+    src_img = Image.open(SRC / f"{MIRROR_SRC.get(name, name)}.png").convert("RGB")
+    if name in MIRROR_SRC:
+        src_img = src_img.transpose(Image.FLIP_LEFT_RIGHT)
+    img = np.asarray(src_img).astype(np.float32)
     h, w, _ = img.shape
     # 背景色 = 外周1pxの中央値
     border = np.concatenate([img[0], img[-1], img[:, 0], img[:, -1]])
