@@ -267,16 +267,18 @@
   .skill.finish { border-image-source: url('./assets/btn_finish_normal.png'); }
   .skill.finish:active { border-image-source: url('./assets/btn_finish_pressed.png'); }
 
-  /* ---- §5.10 右上ボタン3状態ループ: プレイ→数値表(プレースホルダ)→ログ→プレイ ---- */
+  /* ---- §5.10 右上ボタン3状態ループ: プレイ→数値表→ログ→プレイ ---- */
   /* 非表示は [hidden] だが、対象要素はいずれも display:grid/flex を別途指定しているため
      (author内では通常のカスケードで上書きされず)、ID/属性セレクタで確実に上書きする */
   #skills[hidden], #statsPanel[hidden], #logPanel[hidden] { display: none; }
-  .statusGrid[hidden] { display: none; }
 
-  /* 数値表状態(§5.8/§5.10): 縦=倍率7行・横=乱数、下部にぬいパワー選択+しつけ/光トグル */
-  .statsPanel { min-height: 222px; display: flex; flex-direction: column;
-    gap: 6px; padding: 6px 6px 8px; }
-  .statTable { display: flex; flex-direction: column; gap: 1px; }
+  /* 数値表状態(§5.8/§5.10): 縦=倍率7行・横=乱数、下部にぬいパワー選択+しつけ/光トグル。
+     外枠サイズはログ画面(.logPanel)と同一(height 244px / padding 6px 4px) */
+  .statsPanel { height: 244px; display: flex; flex-direction: column;
+    gap: 4px; padding: 6px 4px; }
+  /* 表は残り高さ(244px−パワー行)を7行で均等配分 */
+  .statTable { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column;
+    justify-content: space-around; }
   /* 左3割=名称+倍率列、右7割=乱数値(§5.8) */
   .statRow2 { display: grid; grid-template-columns: 30% 1fr; align-items: center;
     min-height: 21px; padding: 1px 2px; border-radius: 4px; cursor: pointer; }
@@ -290,8 +292,10 @@
     color: #fff; text-shadow: 0 1px 1px rgba(0,0,0,.45); }
   .statMulTxt { font-size: 9px; font-weight: bold; text-align: center; white-space: nowrap;
     color: #ffe9b8; text-shadow: 0 1px 1px rgba(0,0,0,.45); }
-  /* 数値領域: 行内の乱数値を等間隔に表示(マス表示と同系の白系太字+影) */
-  .statValCol { display: flex; justify-content: space-between; align-items: center; padding: 0 2px; }
+  /* 数値領域: 乱数の個数(糸ほぐし=4/それ以外=7)で等分割し、各分割領域内でセンタリング */
+  .statValCol { display: grid; grid-template-columns: repeat(7, 1fr);
+    justify-items: center; align-items: center; padding: 0 2px; }
+  .statRow2[data-row="0"] .statValCol { grid-template-columns: repeat(4, 1fr); }
   .statVal.t2 { font-size: 13px; font-weight: bold; }
   .statVal .t2s { -webkit-text-stroke-width: 1.6px; }
   .statVal { filter: drop-shadow(0 1px 1.5px rgba(0,0,0,.5)); }
@@ -322,14 +326,20 @@
   .logPanel { height: 244px; padding: 6px 4px; overflow: hidden; }
   .logList { height: 100%; overflow-y: auto; display: flex; flex-direction: column; gap: 2px;
     -webkit-overflow-scrolling: touch; }
-  .logRow { display: grid; grid-template-columns: 26px 1fr 46px 68px; gap: 4px;
-    align-items: center; padding: 3px 6px; border-radius: 4px;
-    font-size: 12px; color: #fff; text-shadow: 0 1px 1px rgba(0,0,0,.4); }
+  /* 5列: ターン / 特技 / ぬいパワー / 位置(A〜I) / ダメージ(§5.13 v0.73)。
+     列幅は11pxフォントでの最長値(位置=E/B/D/F/H・ダメージ=56/34/30/16)実測から確保 */
+  .logRow { display: grid; grid-template-columns: 24px 1fr 42px 60px 64px; gap: 3px;
+    align-items: center; padding: 3px 4px; border-radius: 4px;
+    font-size: 11px; color: #fff; text-shadow: 0 1px 1px rgba(0,0,0,.4); }
   .logTurn { opacity: .8; }
-  .logTarget { opacity: .85; }
-  .logDmg { text-align: right; }
+  .logSkill { white-space: nowrap; }
+  .logPower { opacity: .85; white-space: nowrap; }
+  .logTarget { opacity: .85; white-space: nowrap; }
+  .logDmg { text-align: right; white-space: nowrap; }
   /* 会心行はオレンジ系で強調(§5.13: 会心率は管理者モードのみのため出目・会心率自体は表示しない) */
   .logCrit .logDmg { color: #ffce6b; font-weight: bold; text-shadow: 0 1px 2px rgba(0,0,0,.5); }
+  /* 糸ほぐし(回復)は緑系 */
+  .logHeal .logDmg { color: #9fe89b; font-weight: bold; text-shadow: 0 1px 2px rgba(0,0,0,.5); }
   /* 現在の履歴位置ハイライト(D30と同様に位置連動。パーチメント/暗色パネルどちらでも視認できる青系半透明) */
   .logCurrent { background: rgba(90, 150, 255, .38);
     box-shadow: inset 0 0 0 1px rgba(170, 205, 255, .7); }
@@ -588,19 +598,20 @@
 
     <!-- ログ画面(§5.13): 特技ボタン部分をログ表示領域に差し替え。statusGrid(1手戻す/進む)は表示のまま -->
     <section class="logPanel win" id="logPanel" hidden>
+      <!-- 5列: ターン/特技/ぬいパワー(？変化は「？→X」)/位置(3×3を左上から横方向にA〜I)/ダメージ(複数ヒットは位置と順序対応の「/」区切り) -->
       <div class="logList" id="logList">
-        <div class="logRow"><span class="logTurn">T1</span><span class="logSkill">ぬう</span><span class="logTarget">中央</span><span class="logDmg">24</span></div>
-        <div class="logRow"><span class="logTurn">T2</span><span class="logSkill">たすきぬい</span><span class="logTarget">左上</span><span class="logDmg">18</span></div>
-        <div class="logRow"><span class="logTurn">T3</span><span class="logSkill">かげんぬい</span><span class="logTarget">右上</span><span class="logDmg">15</span></div>
-        <div class="logRow"><span class="logTurn">T4</span><span class="logSkill">水平ぬい</span><span class="logTarget">左下</span><span class="logDmg">20</span></div>
-        <div class="logRow"><span class="logTurn">T5</span><span class="logSkill">巻きこみぬい</span><span class="logTarget">左上</span><span class="logDmg">36/14/15</span></div>
-        <div class="logRow"><span class="logTurn">T6</span><span class="logSkill">半かげんぬい</span><span class="logTarget">中央</span><span class="logDmg">12</span></div>
-        <div class="logRow"><span class="logTurn">T7</span><span class="logSkill">精神統一</span><span class="logTarget">-</span><span class="logDmg">-</span></div>
-        <div class="logRow"><span class="logTurn">T8</span><span class="logSkill">みだれぬい</span><span class="logTarget">右下</span><span class="logDmg">22/19</span></div>
-        <div class="logRow logCrit"><span class="logTurn">T9</span><span class="logSkill">2倍ぬい</span><span class="logTarget">右下</span><span class="logDmg">60(会心)</span></div>
-        <div class="logRow"><span class="logTurn">T10</span><span class="logSkill">かげんぬい</span><span class="logTarget">左上</span><span class="logDmg">14</span></div>
-        <div class="logRow"><span class="logTurn">T11</span><span class="logSkill">たすきぬい</span><span class="logTarget">中央</span><span class="logDmg">17</span></div>
-        <div class="logRow"><span class="logTurn">T12</span><span class="logSkill">ぬう</span><span class="logTarget">右上</span><span class="logDmg">25</span></div>
+        <div class="logRow"><span class="logTurn">T1</span><span class="logSkill">ぬう</span><span class="logPower">普通</span><span class="logTarget">E</span><span class="logDmg">15</span></div>
+        <div class="logRow"><span class="logTurn">T2</span><span class="logSkill">たすきぬい</span><span class="logPower">強い</span><span class="logTarget">E/C</span><span class="logDmg">18/20</span></div>
+        <div class="logRow"><span class="logTurn">T3</span><span class="logSkill">かげんぬい</span><span class="logPower">最強</span><span class="logTarget">C</span><span class="logDmg">14</span></div>
+        <div class="logRow"><span class="logTurn">T4</span><span class="logSkill">精神統一</span><span class="logPower">？→弱い</span><span class="logTarget">-</span><span class="logDmg">-</span></div>
+        <div class="logRow"><span class="logTurn">T5</span><span class="logSkill">巻きこみぬい</span><span class="logPower">弱い</span><span class="logTarget">E/B/D/F/H</span><span class="logDmg">9/6/6/7/6</span></div>
+        <div class="logRow"><span class="logTurn">T6</span><span class="logSkill">半かげんぬい</span><span class="logPower">弱い</span><span class="logTarget">G</span><span class="logDmg">6</span></div>
+        <div class="logRow"><span class="logTurn">T7</span><span class="logSkill">ヨコぬい</span><span class="logPower">強い</span><span class="logTarget">D/E</span><span class="logDmg">21/26</span></div>
+        <div class="logRow"><span class="logTurn">T8</span><span class="logSkill">みだれぬい</span><span class="logPower">最強</span><span class="logTarget">C/F/A/H</span><span class="logDmg">56/34/30/16</span></div>
+        <div class="logRow logCrit"><span class="logTurn">T9</span><span class="logSkill">2倍ぬい</span><span class="logPower">？→最強</span><span class="logTarget">I</span><span class="logDmg">96(会心)</span></div>
+        <div class="logRow"><span class="logTurn">T10</span><span class="logSkill">かげんぬい</span><span class="logPower">弱い</span><span class="logTarget">D</span><span class="logDmg">4</span></div>
+        <div class="logRow"><span class="logTurn">T11</span><span class="logSkill">しつけがけ</span><span class="logPower">普通</span><span class="logTarget">B</span><span class="logDmg">-</span></div>
+        <div class="logRow logHeal"><span class="logTurn">T12</span><span class="logSkill">糸ほぐし</span><span class="logPower">強い</span><span class="logTarget">H</span><span class="logDmg">+12</span></div>
       </div>
     </section>
   </main>
@@ -634,8 +645,8 @@
     </div>
   </div>
 
-  <div class="caption">UIモック v2.13(トーンB・画像AI実素材)— 1手戻す/進む=円形曲がり矢印(btn_step実素材)/ 布グリッドタップ=必殺チャージ演出(プレイ中のみ)/ ◀もどるタップ=確認ダイアログ(実装では2ターン目以降のみ)/ パワー行タップ=サイクル開閉(横スクロール可)/ ぬいパワープレートタップ=必殺使用時表示(会心×２)切替 / メッセージ欄タップ=文言切替 / きらめき2個=精神統一残り2の表示例 / 「27」=発光マス・「88」=しつけ×発光マスの表示例<br>
-  右上ボタン=プレイ→数値表→ログの3状態ループ(§5.10)。数値表(§5.8)はマスタップで選択+倍率を1行送り(3倍の次は糸ほぐしへループ)、選択マス周囲に残数値を扇状に一時表示 / 下フリック=倍率を1行戻す / 表の行タップ=倍率を直接選択 / 表下部でぬいパワー・しつけ・光を切替すると表と扇状表示に反映 / ログ画面(§5.13)は特技ボタン部を差し替え、statusGridは表示のまま。1手戻す/進むでハイライト行が連動し、ログ表示中は布グリッドタップとぬいパワー行のサイクル開閉を無効化</div>
+  <div class="caption">UIモック v2.14(トーンB・画像AI実素材)— 1手戻す/進む=円形曲がり矢印(btn_step実素材)/ 布グリッドタップ=必殺チャージ演出(プレイ中のみ)/ ◀もどるタップ=確認ダイアログ(実装では2ターン目以降のみ)/ パワー行タップ=サイクル開閉(横スクロール可)/ ぬいパワープレートタップ=必殺使用時表示(会心×２)切替 / メッセージ欄タップ=文言切替 / きらめき2個=精神統一残り2の表示例 / 「27」=発光マス・「88」=しつけ×発光マスの表示例<br>
+  右上ボタン=プレイ→数値表→ログの3状態ループ(§5.10)。数値表(§5.8)はステータス行を表示のまま1手戻す/進むを無効化。マスタップで選択+倍率を1行送り(3倍の次は糸ほぐしへループ)、選択マス周囲に残数値を扇状に一時表示 / 下フリック=倍率を1行戻す / 表の行タップ=倍率を直接選択 / 表下部でぬいパワー・しつけ・光を切替すると表と扇状表示に反映 / ログ画面(§5.13)は5列(ターン・特技・ぬいパワー・位置・ダメージ)。位置=A〜I(左上から横方向)、？から変化したターンは「？→X」表記、+値(糸ほぐし回復)=緑・会心=橙。1手戻す/進むでハイライト行が連動し、ログ表示中は布グリッドタップとぬいパワー行のサイクル開閉を無効化</div>
 </div>
 
 <script>
@@ -962,7 +973,6 @@
   let screenState = 'play';
   const viewBtn = document.getElementById('viewBtn');
   const skillsEl = document.getElementById('skills');
-  const statusGridEl = document.querySelector('.statusGrid');
   const statsPanel = document.getElementById('statsPanel');
   const logPanel = document.getElementById('logPanel');
   const stepBackBtn = document.querySelector('.stepBack');
@@ -983,6 +993,10 @@
       // ログ画面では1手戻す/進むが履歴位置(ハイライト)の移動に連動し、端でdisabled(§5.13)
       stepBackBtn.disabled = logPos <= 0;
       stepFwdBtn.disabled = logPos >= logRows.length - 1;
+    } else if (screenState === 'stats') {
+      // 数値表画面ではステータス領域は表示のまま、1手戻す/進むは両方disabled(§5.8 v0.73)
+      stepBackBtn.disabled = true;
+      stepFwdBtn.disabled = true;
     } else {
       // プレイ画面ではモック固定表示のため常時有効(D45相当の表示例)
       stepBackBtn.disabled = false;
@@ -993,7 +1007,6 @@
     skillsEl.hidden = screenState !== 'play';
     statsPanel.hidden = screenState !== 'stats';
     logPanel.hidden = screenState !== 'log';
-    statusGridEl.hidden = screenState === 'stats';
     viewBtn.textContent = screenState === 'play' ? '数値表' : (screenState === 'stats' ? 'ログ' : 'プレイ');
     updateStepButtons();
     if (screenState === 'log') { renderLogHighlight(); scrollCurrentLogIntoView(); }
