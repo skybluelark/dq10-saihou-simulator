@@ -75,6 +75,10 @@ GREEN_WIPE_PARTS = {
     "cell", "cell_shitsuke", "cell_glow", "cell_shitsuke_glow", "cell_ol_target",
     "btn_skill_normal", "btn_skill_pressed", "btn_skill_selected", "btn_skill_disabled",
     "btn_finish_normal", "btn_finish_pressed", "icon_power",
+    # 2026-07-11 追加: いずれも正当な緑を含まない(生成り/金/紺)
+    "btn_step_undo_normal", "btn_step_undo_pressed", "btn_step_undo_disabled",
+    "btn_step_redo_normal", "btn_step_redo_pressed", "btn_step_redo_disabled",
+    "chip_on", "chip_off",
 }
 GREEN_HI = 0.35  # これを超えたら確実に背景 → α=0(solid判定・侵食保護より優先)
 GREEN_LO = 0.12  # これ以下は前景 → 既存のdist/erosionロジックに委ねる(中間はAA帯として半透明処理)
