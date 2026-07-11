@@ -315,20 +315,20 @@
   .fanLayer { position: absolute; inset: 0; pointer-events: none; z-index: 6; }
   .fanVal { position: absolute; transform: translate(-50%, -50%);
     display: flex; align-items: center; justify-content: center; }
-  /* 涙型(ティアドロップ)座布団(v2.15): 丸い本体(直径〜22px)+マス中央側へ伸びる先端。
-     SVG素体は先端=上向き(viewBox 40×52・本体中心(20,34))。本体中心=配置点(数値中心と一致)に
-     マージンで合わせ、--fan-rot(=270°−配置角θ)で本体中心まわりに回転して先端をマス中央へ向ける */
-  .fanBg { position: absolute; left: 50%; top: 50%; width: 27px; height: 35.1px;
-    margin: -22.95px 0 0 -13.5px; transform: rotate(var(--fan-rot, 0deg));
-    transform-origin: 50% 65.385%; overflow: visible; }
-  .fanBg path { fill: rgba(20, 12, 4, .55); stroke: rgba(255, 236, 190, .55); stroke-width: 1.5; }
-  .fanNum.t2 { font-size: 14px; font-weight: bold; }
-  .fanNum .t2s { -webkit-text-stroke-width: 1.8px; }
-  .fanNum { --t2fill: linear-gradient(180deg, #ffffff 0%, #e7e7e7 100%);
-    filter: drop-shadow(0 1px 1.5px rgba(0,0,0,.5)); }
-  /* マイナス値(縫いすぎ)は赤系(c-over 相当) */
-  .fanNum.fanNeg { --t2fill: linear-gradient(180deg, #f4b3a3 0%, #c94438 100%); }
-  .fanNum.fanNeg .t2s { -webkit-text-stroke-color: #7a1f16; }
+  /* 涙型(ティアドロップ)座布団(v2.16: 計算機モックの出目チップと同配色・本体径28px):
+     丸い本体+マス中央側へ伸びる先端。SVG素体は先端=上向き(viewBox 40×52・本体中心(20,34))。
+     本体中心=配置点(数値中心と一致)にマージンで合わせ、--fan-rot(=270°−配置角θ)で
+     本体中心まわりに回転して先端をマス中央へ向ける(35×45.5px=viewBox×0.875、本体中心y=29.75px) */
+  .fanBg { position: absolute; left: 50%; top: 50%; width: 35px; height: 45.5px;
+    margin: -29.75px 0 0 -17.5px; transform: rotate(var(--fan-rot, 0deg));
+    transform-origin: 50% 65.385%; overflow: visible;
+    filter: drop-shadow(0 3px 8px rgba(0, 0, 0, .35)); }
+  /* 枠2px相当(viewBox単位 2/0.875≒2.3) */
+  .fanBg path { fill: #fdf7e8; stroke: #d9b054; stroke-width: 2.3; }
+  /* 数値は単層の濃茶(ベージュ地のため縁取り・影なし) */
+  .fanNum { position: relative; font-size: 18px; font-weight: bold; line-height: 1; color: #33290f; }
+  /* マイナス値(縫いすぎ)はベージュ地で読める濃さの赤系 */
+  .fanNum.fanNeg { color: #b3362a; }
 
   /* ログ画面(§5.13): .skills の占有域をログ表示領域に差し替え。内側のみ縦スクロール */
   .logPanel { height: 244px; padding: 6px 4px; overflow: hidden; }
@@ -336,8 +336,9 @@
     -webkit-overflow-scrolling: touch; }
   /* 5列: ターン / 特技 / ぬいパワー / 位置(A〜I) / ダメージ(§5.13 v0.73)。
      列幅は11pxフォントでの最長値(特技=半かげんぬい・位置=E/B/D/F/H)実測から固定し、
-     余りはダメージ列(1fr・左寄せ)へ。「/」区切りが位置欄と頭から対応して読める(v2.15) */
-  .logRow { display: grid; grid-template-columns: 24px 70px 42px 60px 1fr; gap: 3px;
+     余りはダメージ列(1fr・左寄せ)へ。「/」区切りが位置欄と頭から対応して読める(v2.15)。
+     v2.16: 特技以降の列間隔を各+10px(固定列の幅に加算して確保) */
+  .logRow { display: grid; grid-template-columns: 24px 80px 52px 70px 1fr; gap: 3px;
     align-items: center; padding: 3px 4px; border-radius: 4px;
     font-size: 11px; color: #fff; text-shadow: 0 1px 1px rgba(0,0,0,.4); }
   .logTurn { opacity: .8; }
@@ -654,8 +655,8 @@
     </div>
   </div>
 
-  <div class="caption">UIモック v2.15(トーンB・画像AI実素材)— 1手戻す/進む=円形曲がり矢印(btn_step実素材)/ 布グリッドタップ=必殺チャージ演出(プレイ中のみ)/ ◀もどるタップ=確認ダイアログ(実装では2ターン目以降のみ)/ パワー行タップ=サイクル開閉(横スクロール可)/ ぬいパワープレートタップ=必殺使用時表示(会心×２)切替 / メッセージ欄タップ=文言切替 / きらめき2個=精神統一残り2の表示例 / 「27」=発光マス・「88」=しつけ×発光マスの表示例<br>
-  右上ボタン=プレイ→数値表→ログの3状態ループ(§5.10)。数値表(§5.8)はステータス行を表示のまま1手戻す/進むを無効化。糸ほぐしは負数表記。マスタップで選択+倍率を1行送り(3倍の次は糸ほぐしへループ)、選択マス周囲に残数値の出目7種(糸ほぐし4種)をすべて涙型チップ(先端=マス中央向き)で扇状に一時表示(重複は畳まない)/ 下フリック=倍率を1行戻す / 表の行タップ=倍率を直接選択 / 表下部でぬいパワー・しつけ・光を切替すると表と扇状表示に反映 / ログ画面(§5.13)は5列(ターン・特技・ぬいパワー・位置・ダメージ左寄せ)。位置=A〜I(左上から横方向)、？から変化したターンは「？→X」表記、−値(糸ほぐし回復)=緑・会心=橙。1手戻す/進むでハイライト行が連動し、ログ表示中は布グリッドタップとぬいパワー行のサイクル開閉を無効化</div>
+  <div class="caption">UIモック v2.16(トーンB・画像AI実素材)— 1手戻す/進む=円形曲がり矢印(btn_step実素材)/ 布グリッドタップ=必殺チャージ演出(プレイ中のみ)/ ◀もどるタップ=確認ダイアログ(実装では2ターン目以降のみ)/ パワー行タップ=サイクル開閉(横スクロール可)/ ぬいパワープレートタップ=必殺使用時表示(会心×２)切替 / メッセージ欄タップ=文言切替 / きらめき2個=精神統一残り2の表示例 / 「27」=発光マス・「88」=しつけ×発光マスの表示例<br>
+  右上ボタン=プレイ→数値表→ログの3状態ループ(§5.10)。数値表(§5.8)はステータス行を表示のまま1手戻す/進むを無効化。糸ほぐしは負数表記。マスタップで選択+倍率を1行送り(3倍の次は糸ほぐしへループ)、選択マス周囲に残数値の出目7種(糸ほぐし4種)をすべて涙型チップ(計算機の出目チップと同じベージュ地×橙金枠・本体径28px・先端=マス中央向き)で扇状に一時表示(重複は畳まない)/ 下フリック=倍率を1行戻す / 表の行タップ=倍率を直接選択 / 表下部でぬいパワー・しつけ・光を切替すると表と扇状表示に反映 / ログ画面(§5.13)は5列(ターン・特技・ぬいパワー・位置・ダメージ左寄せ)。位置=A〜I(左上から横方向)、？から変化したターンは「？→X」表記、−値(糸ほぐし回復)=緑・会心=橙。1手戻す/進むでハイライト行が連動し、ログ表示中は布グリッドタップとぬいパワー行のサイクル開閉を無効化</div>
 </div>
 
 <script>
@@ -849,8 +850,7 @@
       wrap.style.setProperty('--fan-rot', (270 - theta) + 'deg');
       wrap.innerHTML = '<svg class="fanBg" viewBox="0 0 40 52" aria-hidden="true">'
         + '<path d="M20 0 C 8 18 4 26 4 34 a16 16 0 0 0 32 0 C 36 26 32 18 20 0 Z"/></svg>'
-        + '<span class="t2 fanNum' + (neg ? ' fanNeg' : '') + '">'
-        + '<span class="t2s">' + v + '</span><span class="t2f">' + v + '</span></span>';
+        + '<span class="fanNum' + (neg ? ' fanNeg' : '') + '">' + v + '</span>';
       fanLayer.appendChild(wrap);
     });
   }
