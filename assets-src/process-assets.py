@@ -297,20 +297,26 @@ def process(name, tw, th):
             halo |= grown
         out_arr[halo, 3] = 0
         print(f"  output halo removed: {int(halo.sum())} px")
-    if (name in GREEN_EDGE_PARTS or name in GREEN_EDGE_STRICT_PARTS) and bg_is_green:
-        # 外周の緑ヘイズ除去(帯域方式。2026-07-12 連結方式から変更): コンタミはシルエット境界の
-        # 現象なので「透明領域(画像外含む)から6px以内の帯域」×「色条件」で除去する。
-        # 連結方式は緑帯が透明リングで画像端/透明から浮くと取り逃す(512px出力で実測)。
-        # 実測根拠: 4種とも該当色の画素は帯域外に0(regenの正当な緑は「明るい純緑」条件で除外)。
-        # 通常: greenness>0.25 / regen(緑枠): G>=140 かつ greenness>0.40 の明るい純緑のみ
+    if name in GREEN_EDGE_PARTS or name in GREEN_EDGE_STRICT_PARTS:
+        # 外周のキー色ヘイズ除去(帯域方式。2026-07-12 連結方式から変更): アンミックス失敗の
+        # コンタミはシルエット境界の現象なので「透明領域(画像外含む)から6px以内の帯域」×
+        # 「キー色条件」で除去する(連結方式は帯が透明リングで浮くと取り逃す。512px出力で実測)。
+        # 緑キー: greenness>0.25 / regen(緑枠)のみ明るい純緑(G>=140かつ>0.40)に限定。
+        # マゼンタキー: magentaness>0.25(枠色と衝突しないため限定条件は不要。正しく
+        # アンミックスされた縁のAAはRGBが枠色に復元されており対象にならない)
         o = out_arr.astype(np.float32)
         oa = o[..., 3] / 255.0
-        gx = o[..., 1] - np.maximum(o[..., 0], o[..., 2])
-        gness = gx / np.maximum(o[..., :3].max(axis=2), 1)
-        if name in GREEN_EDGE_STRICT_PARTS:
-            greenish = (o[..., 1] >= 140.0) & (gness > 0.40) & (oa > 0.0)
+        omaxc = o[..., :3].max(axis=2)
+        if bg_is_green:
+            gx = o[..., 1] - np.maximum(o[..., 0], o[..., 2])
+            gness = gx / np.maximum(omaxc, 1)
+            if name in GREEN_EDGE_STRICT_PARTS:
+                greenish = (o[..., 1] >= 140.0) & (gness > 0.40) & (oa > 0.0)
+            else:
+                greenish = (gness > 0.25) & (oa > 0.0)
         else:
-            greenish = (gness > 0.25) & (oa > 0.0)
+            mness = (np.minimum(o[..., 0], o[..., 2]) - o[..., 1]) / np.maximum(omaxc, 1)
+            greenish = (mness > 0.25) & (oa > 0.0)
 
         def neigh_pad_g(m, fill):
             p = np.pad(m, 1, constant_values=fill)
