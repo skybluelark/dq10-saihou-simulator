@@ -313,7 +313,15 @@
 
   /* 残数値の扇状表示(タップ時に一時表示。マス表示と同じ色・デザイン) */
   .fanLayer { position: absolute; inset: 0; pointer-events: none; z-index: 6; }
-  .fanVal { position: absolute; transform: translate(-50%, -50%); }
+  .fanVal { position: absolute; transform: translate(-50%, -50%);
+    display: flex; align-items: center; justify-content: center; }
+  /* 涙型(ティアドロップ)座布団(v2.15): 丸い本体(直径〜22px)+マス中央側へ伸びる先端。
+     SVG素体は先端=上向き(viewBox 40×52・本体中心(20,34))。本体中心=配置点(数値中心と一致)に
+     マージンで合わせ、--fan-rot(=270°−配置角θ)で本体中心まわりに回転して先端をマス中央へ向ける */
+  .fanBg { position: absolute; left: 50%; top: 50%; width: 27px; height: 35.1px;
+    margin: -22.95px 0 0 -13.5px; transform: rotate(var(--fan-rot, 0deg));
+    transform-origin: 50% 65.385%; overflow: visible; }
+  .fanBg path { fill: rgba(20, 12, 4, .55); stroke: rgba(255, 236, 190, .55); stroke-width: 1.5; }
   .fanNum.t2 { font-size: 14px; font-weight: bold; }
   .fanNum .t2s { -webkit-text-stroke-width: 1.8px; }
   .fanNum { --t2fill: linear-gradient(180deg, #ffffff 0%, #e7e7e7 100%);
@@ -327,15 +335,16 @@
   .logList { height: 100%; overflow-y: auto; display: flex; flex-direction: column; gap: 2px;
     -webkit-overflow-scrolling: touch; }
   /* 5列: ターン / 特技 / ぬいパワー / 位置(A〜I) / ダメージ(§5.13 v0.73)。
-     列幅は11pxフォントでの最長値(位置=E/B/D/F/H・ダメージ=56/34/30/16)実測から確保 */
-  .logRow { display: grid; grid-template-columns: 24px 1fr 42px 60px 64px; gap: 3px;
+     列幅は11pxフォントでの最長値(特技=半かげんぬい・位置=E/B/D/F/H)実測から固定し、
+     余りはダメージ列(1fr・左寄せ)へ。「/」区切りが位置欄と頭から対応して読める(v2.15) */
+  .logRow { display: grid; grid-template-columns: 24px 70px 42px 60px 1fr; gap: 3px;
     align-items: center; padding: 3px 4px; border-radius: 4px;
     font-size: 11px; color: #fff; text-shadow: 0 1px 1px rgba(0,0,0,.4); }
   .logTurn { opacity: .8; }
   .logSkill { white-space: nowrap; }
   .logPower { opacity: .85; white-space: nowrap; }
   .logTarget { opacity: .85; white-space: nowrap; }
-  .logDmg { text-align: right; white-space: nowrap; }
+  .logDmg { text-align: left; white-space: nowrap; }
   /* 会心行はオレンジ系で強調(§5.13: 会心率は管理者モードのみのため出目・会心率自体は表示しない) */
   .logCrit .logDmg { color: #ffce6b; font-weight: bold; text-shadow: 0 1px 2px rgba(0,0,0,.5); }
   /* 糸ほぐし(回復)は緑系 */
@@ -611,7 +620,7 @@
         <div class="logRow logCrit"><span class="logTurn">T9</span><span class="logSkill">2倍ぬい</span><span class="logPower">？→最強</span><span class="logTarget">I</span><span class="logDmg">96(会心)</span></div>
         <div class="logRow"><span class="logTurn">T10</span><span class="logSkill">かげんぬい</span><span class="logPower">弱い</span><span class="logTarget">D</span><span class="logDmg">4</span></div>
         <div class="logRow"><span class="logTurn">T11</span><span class="logSkill">しつけがけ</span><span class="logPower">普通</span><span class="logTarget">B</span><span class="logDmg">-</span></div>
-        <div class="logRow logHeal"><span class="logTurn">T12</span><span class="logSkill">糸ほぐし</span><span class="logPower">強い</span><span class="logTarget">H</span><span class="logDmg">+12</span></div>
+        <div class="logRow logHeal"><span class="logTurn">T12</span><span class="logSkill">糸ほぐし</span><span class="logPower">強い</span><span class="logTarget">H</span><span class="logDmg">-12</span></div>
       </div>
     </section>
   </main>
@@ -645,8 +654,8 @@
     </div>
   </div>
 
-  <div class="caption">UIモック v2.14(トーンB・画像AI実素材)— 1手戻す/進む=円形曲がり矢印(btn_step実素材)/ 布グリッドタップ=必殺チャージ演出(プレイ中のみ)/ ◀もどるタップ=確認ダイアログ(実装では2ターン目以降のみ)/ パワー行タップ=サイクル開閉(横スクロール可)/ ぬいパワープレートタップ=必殺使用時表示(会心×２)切替 / メッセージ欄タップ=文言切替 / きらめき2個=精神統一残り2の表示例 / 「27」=発光マス・「88」=しつけ×発光マスの表示例<br>
-  右上ボタン=プレイ→数値表→ログの3状態ループ(§5.10)。数値表(§5.8)はステータス行を表示のまま1手戻す/進むを無効化。マスタップで選択+倍率を1行送り(3倍の次は糸ほぐしへループ)、選択マス周囲に残数値を扇状に一時表示 / 下フリック=倍率を1行戻す / 表の行タップ=倍率を直接選択 / 表下部でぬいパワー・しつけ・光を切替すると表と扇状表示に反映 / ログ画面(§5.13)は5列(ターン・特技・ぬいパワー・位置・ダメージ)。位置=A〜I(左上から横方向)、？から変化したターンは「？→X」表記、+値(糸ほぐし回復)=緑・会心=橙。1手戻す/進むでハイライト行が連動し、ログ表示中は布グリッドタップとぬいパワー行のサイクル開閉を無効化</div>
+  <div class="caption">UIモック v2.15(トーンB・画像AI実素材)— 1手戻す/進む=円形曲がり矢印(btn_step実素材)/ 布グリッドタップ=必殺チャージ演出(プレイ中のみ)/ ◀もどるタップ=確認ダイアログ(実装では2ターン目以降のみ)/ パワー行タップ=サイクル開閉(横スクロール可)/ ぬいパワープレートタップ=必殺使用時表示(会心×２)切替 / メッセージ欄タップ=文言切替 / きらめき2個=精神統一残り2の表示例 / 「27」=発光マス・「88」=しつけ×発光マスの表示例<br>
+  右上ボタン=プレイ→数値表→ログの3状態ループ(§5.10)。数値表(§5.8)はステータス行を表示のまま1手戻す/進むを無効化。糸ほぐしは負数表記。マスタップで選択+倍率を1行送り(3倍の次は糸ほぐしへループ)、選択マス周囲に残数値の出目7種(糸ほぐし4種)をすべて涙型チップ(先端=マス中央向き)で扇状に一時表示(重複は畳まない)/ 下フリック=倍率を1行戻す / 表の行タップ=倍率を直接選択 / 表下部でぬいパワー・しつけ・光を切替すると表と扇状表示に反映 / ログ画面(§5.13)は5列(ターン・特技・ぬいパワー・位置・ダメージ左寄せ)。位置=A〜I(左上から横方向)、？から変化したターンは「？→X」表記、−値(糸ほぐし回復)=緑・会心=橙。1手戻す/進むでハイライト行が連動し、ログ表示中は布グリッドタップとぬいパワー行のサイクル開閉を無効化</div>
 </div>
 
 <script>
@@ -723,15 +732,11 @@
     { key: 'triple', mul: 3, values: [12, 13, 14, 15, 16, 17, 18] },
   ];
   const STAT_POWER_COEF = { weak: 0.5, normal: 1, strong: 1.5, max: 2 };
-  // 残数値の扇状表示: 値数ごとの固定角度(7値時 225/180/135/90/45/0/315°。下方向270°は空き)
+  // 残数値の扇状表示の固定角度(下方向270°は空き)。v2.15: 重複値を畳まないため
+  // 常に 7値(糸ほぐしのみ4値)の2パターンだけを使用する
   const STAT_FAN_ANGLES = {
     7: [225, 180, 135, 90, 45, 0, 315],
-    6: [225, 180, 135, 45, 0, 315],
-    5: [180, 135, 90, 45, 0],
     4: [180, 135, 45, 0],
-    3: [180, 90, 0],
-    2: [180, 0],
-    1: [90],
   };
 
   // 現在プレートのぬいパワー(viewCycle の chipCurrent)に初期値を連動(§5.8)
@@ -760,10 +765,11 @@
   const statHikariBtn = document.getElementById('statHikariBtn');
 
   // SPEC §3.2: 括弧を閉じるたびに正方向丸め(Math.ceil)。
-  // 糸ほぐし以外: ((基礎値×特技倍率)×ぬいパワー係数)×マス補正 / 糸ほぐし: (基礎値×ぬいパワー係数×マス補正)、絶対値表示
+  // 糸ほぐし以外: ((基礎値×特技倍率)×ぬいパワー係数)×マス補正 /
+  // 糸ほぐし: (基礎値×ぬいパワー係数×マス補正)。基礎値が負のため負数のまま表示(v2.15)
   function calcStatValue(row, baseVal, coef, mod) {
     if (row.isUnravel) {
-      return Math.abs(Math.ceil(baseVal * coef * mod));
+      return Math.ceil(baseVal * coef * mod);
     }
     let v = Math.ceil(baseVal * row.mul);
     v = Math.ceil(v * coef);
@@ -805,10 +811,12 @@
     const coef = STAT_POWER_COEF[statPower];
     const mod = currentMod();
     const vals = row.values.map((bv) => {
-      const amount = calcStatValue(row, bv, coef, mod); // ダメージ量(常に非負の絶対値)
-      return row.isUnravel ? remaining + amount : remaining - amount;
+      // ダメージ量(糸ほぐしは負値=回復)。残数値 − ダメージで統一(負ダメージなら残数値が増える)
+      const amount = calcStatValue(row, bv, coef, mod);
+      return remaining - amount;
     });
-    return Array.from(new Set(vals)).sort((a, b) => a - b);
+    // v2.15: 重複値は畳まず全出目を表示(同値の並びで確率の高い出目が視覚的に分かる)。昇順ソートのみ
+    return vals.sort((a, b) => a - b);
   }
 
   function clearStatFan() {
@@ -827,7 +835,8 @@
     const cy = cellRect.top - gaRect.top + cellRect.height / 2;
     const r = 54;
     vals.forEach((v, i) => {
-      const rad = (angles[i] * Math.PI) / 180;
+      const theta = angles[i];
+      const rad = (theta * Math.PI) / 180;
       const x = cx + r * Math.cos(rad);
       const y = cy - r * Math.sin(rad); // 画面座標はY下向きのため反転
       const neg = v < 0;
@@ -835,7 +844,12 @@
       wrap.className = 'fanVal';
       wrap.style.left = x + 'px';
       wrap.style.top = y + 'px';
-      wrap.innerHTML = '<span class="t2 fanNum' + (neg ? ' fanNeg' : '') + '">'
+      // 涙型の先端をマス中央へ向ける: 素体の先端=上向き(画面上方)。配置角θのチップから
+      // 中央への方向はθ+180°で、CSS回転(時計回り正)では 270°−θ が「上」をその方向へ写す
+      wrap.style.setProperty('--fan-rot', (270 - theta) + 'deg');
+      wrap.innerHTML = '<svg class="fanBg" viewBox="0 0 40 52" aria-hidden="true">'
+        + '<path d="M20 0 C 8 18 4 26 4 34 a16 16 0 0 0 32 0 C 36 26 32 18 20 0 Z"/></svg>'
+        + '<span class="t2 fanNum' + (neg ? ' fanNeg' : '') + '">'
         + '<span class="t2s">' + v + '</span><span class="t2f">' + v + '</span></span>';
       fanLayer.appendChild(wrap);
     });
@@ -919,7 +933,7 @@
   );
   console.assert(
     JSON.stringify(STAT_ROWS[0].values.map((v) => calcStatValue(STAT_ROWS[0], v, STAT_POWER_COEF.normal, 2)))
-      === JSON.stringify([12, 14, 16, 18]),
+      === JSON.stringify([-12, -14, -16, -18]), // v2.15: 負数表記(絶対値では12,14,16,18)
     '自己検証NG: 糸ほぐし・普通・補正2'
   );
   console.assert(
