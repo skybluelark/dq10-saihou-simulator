@@ -113,6 +113,11 @@ GREEN_EDGE_STRICT_PARTS = {"panel_grid_regen"}
 # 非対称の透明帯が残って 100%伸縮表示でプレートが偏る。αバウンディングボックスへ
 # 再クロップして目標サイズに再リサイズする(label_power_normal: 右12px・下8pxの帯。2026-07-12)
 FIT_PARTS = {"label_power_normal"}
+# 縁の切り込み: 一枚絵の単純伸縮+CSS角丸で表示するパーツは、シルエットのAAリング
+# (アンミックス失敗の混色)と透明マージンを切り落とし、画像本体が端まで達する
+# 完全不透明の一枚絵にする(縁の直線・角丸はブラウザ描画に移管。2026-07-12 実機レビュー:
+# 「クリップ線→透明数px→混色1px→画像」の層が視認された問題への対処)
+EDGE_CROP_PARTS = {"panel_grid_normal", "panel_grid_regen", "panel_grid_rainbow", "panel_grid_light"}
 # 左右反転で生成するパーツ: 値のIDの原本を水平反転して処理する。
 # (redo を生成AIで左右反転させると意図しない差異が入るため、プログラムで鏡像を作る)
 MIRROR_SRC = {
@@ -357,6 +362,28 @@ def process(name, tw, th):
         rgbf[grow] = acc[grow] / cnt[grow][..., None]
         filled |= grow
     out_arr[..., :3] = np.clip(rgbf, 0, 255).astype(np.uint8)
+    if name in EDGE_CROP_PARTS:
+        # 各辺で「中央60%が完全不透明(α>=0.99)になる最初の行/列」を検出し、+3pxの安全代で
+        # 内側にクロップ。クロップ後は全面 α=1 に固定(残存の半透明画素を排除)
+        fa = out_arr[..., 3].astype(np.float32) / 255.0
+        hh, ww = fa.shape
+        cx0, cx1 = int(ww * 0.2), int(ww * 0.8)
+        cy0, cy1 = int(hh * 0.2), int(hh * 0.8)
+
+        def _first_solid(rng, line):
+            for i in rng:
+                if (line(i) >= 0.99).mean() > 0.999:
+                    return i
+            return 0
+
+        t_in = _first_solid(range(0, 30), lambda i: fa[i, cx0:cx1])
+        b_in = _first_solid(range(hh - 1, hh - 31, -1), lambda i: fa[i, cx0:cx1])
+        l_in = _first_solid(range(0, 30), lambda i: fa[cy0:cy1, i])
+        r_in = _first_solid(range(ww - 1, ww - 31, -1), lambda i: fa[cy0:cy1, i])
+        ins = max(t_in, hh - 1 - b_in, l_in, ww - 1 - r_in) + 3
+        out_arr = out_arr[ins:hh - ins, ins:ww - ins].copy()
+        out_arr[..., 3] = 255
+        print(f"  edge crop: inset {ins}px -> {out_arr.shape[1]}x{out_arr.shape[0]}, alpha=1")
     if name in FIT_PARTS:
         # 余白詰め: αバウンディングボックスに再クロップして目標サイズへ再リサイズ。
         # 透明画素のRGBはブリード済みのため straight-alpha の再リサイズでもフリンジは出ない
