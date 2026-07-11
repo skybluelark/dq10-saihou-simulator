@@ -267,6 +267,32 @@
   .skill.finish { border-image-source: url('./assets/btn_finish_normal.png'); }
   .skill.finish:active { border-image-source: url('./assets/btn_finish_pressed.png'); }
 
+  /* ---- §5.10 右上ボタン3状態ループ: プレイ→数値表(プレースホルダ)→ログ→プレイ ---- */
+  /* 非表示は [hidden] だが、対象要素はいずれも display:grid/flex を別途指定しているため
+     (author内では通常のカスケードで上書きされず)、ID/属性セレクタで確実に上書きする */
+  #skills[hidden], #statsPanel[hidden], #logPanel[hidden] { display: none; }
+  .statusGrid[hidden] { display: none; }
+
+  /* 数値表状態(プレースホルダ。§5.10): .skills と同程度の面積を .win 相当の9-sliceで確保 */
+  .statsPanel { min-height: 244px; display: flex; align-items: center; justify-content: center;
+    text-align: center; padding: 16px; font-size: 14px; font-weight: bold; }
+
+  /* ログ画面(§5.13): .skills の占有域をログ表示領域に差し替え。内側のみ縦スクロール */
+  .logPanel { height: 244px; padding: 6px 4px; overflow: hidden; }
+  .logList { height: 100%; overflow-y: auto; display: flex; flex-direction: column; gap: 2px;
+    -webkit-overflow-scrolling: touch; }
+  .logRow { display: grid; grid-template-columns: 26px 1fr 46px 68px; gap: 4px;
+    align-items: center; padding: 3px 6px; border-radius: 4px;
+    font-size: 12px; color: #fff; text-shadow: 0 1px 1px rgba(0,0,0,.4); }
+  .logTurn { opacity: .8; }
+  .logTarget { opacity: .85; }
+  .logDmg { text-align: right; }
+  /* 会心行はオレンジ系で強調(§5.13: 会心率は管理者モードのみのため出目・会心率自体は表示しない) */
+  .logCrit .logDmg { color: #ffce6b; font-weight: bold; text-shadow: 0 1px 2px rgba(0,0,0,.5); }
+  /* 現在の履歴位置ハイライト(D30と同様に位置連動。パーチメント/暗色パネルどちらでも視認できる青系半透明) */
+  .logCurrent { background: rgba(90, 150, 255, .38);
+    box-shadow: inset 0 0 0 1px rgba(170, 205, 255, .7); }
+
   .caption { text-align: center; font-size: 10px; color: rgba(60,40,10,.55); padding: 2px 0 6px; flex: 0 0 auto; }
 
   /* ---- 結果オーバーレイ(D40/D42〜D44。プレイ画面の上に重ねる) ---- */
@@ -329,7 +355,7 @@
   <header>
     <button class="hdrBtn" type="button" id="backBtn"><span class="hdrArrow">◀</span>もどる</button>
     <div class="hdrTitle">カテドラルローブ</div>
-    <button class="hdrBtn" type="button">ログ</button>
+    <button class="hdrBtn" type="button" id="viewBtn">数値表</button>
   </header>
 
   <main>
@@ -417,6 +443,27 @@
       <button class="skill" type="button"><span class="skName">糸ほぐし</span><span class="skCost">16</span></button>
       <button class="skill finish" id="finishBtn" type="button"><span class="skName">しあげる</span><span class="skCost">終了</span></button>
     </section>
+
+    <!-- 数値表画面(§5.10/§5.8。次モックで作成予定のプレースホルダ) -->
+    <section class="statsPanel win" id="statsPanel" hidden>数値表(次モックで作成)</section>
+
+    <!-- ログ画面(§5.13): 特技ボタン部分をログ表示領域に差し替え。statusGrid(1手戻す/進む)は表示のまま -->
+    <section class="logPanel win" id="logPanel" hidden>
+      <div class="logList" id="logList">
+        <div class="logRow"><span class="logTurn">T1</span><span class="logSkill">ぬう</span><span class="logTarget">中央</span><span class="logDmg">24</span></div>
+        <div class="logRow"><span class="logTurn">T2</span><span class="logSkill">たすきぬい</span><span class="logTarget">左上</span><span class="logDmg">18</span></div>
+        <div class="logRow"><span class="logTurn">T3</span><span class="logSkill">かげんぬい</span><span class="logTarget">右上</span><span class="logDmg">15</span></div>
+        <div class="logRow"><span class="logTurn">T4</span><span class="logSkill">水平ぬい</span><span class="logTarget">左下</span><span class="logDmg">20</span></div>
+        <div class="logRow"><span class="logTurn">T5</span><span class="logSkill">巻きこみぬい</span><span class="logTarget">左上</span><span class="logDmg">36/14/15</span></div>
+        <div class="logRow"><span class="logTurn">T6</span><span class="logSkill">半かげんぬい</span><span class="logTarget">中央</span><span class="logDmg">12</span></div>
+        <div class="logRow"><span class="logTurn">T7</span><span class="logSkill">精神統一</span><span class="logTarget">-</span><span class="logDmg">-</span></div>
+        <div class="logRow"><span class="logTurn">T8</span><span class="logSkill">みだれぬい</span><span class="logTarget">右下</span><span class="logDmg">22/19</span></div>
+        <div class="logRow logCrit"><span class="logTurn">T9</span><span class="logSkill">2倍ぬい</span><span class="logTarget">右下</span><span class="logDmg">60(会心)</span></div>
+        <div class="logRow"><span class="logTurn">T10</span><span class="logSkill">かげんぬい</span><span class="logTarget">左上</span><span class="logDmg">14</span></div>
+        <div class="logRow"><span class="logTurn">T11</span><span class="logSkill">たすきぬい</span><span class="logTarget">中央</span><span class="logDmg">17</span></div>
+        <div class="logRow"><span class="logTurn">T12</span><span class="logSkill">ぬう</span><span class="logTarget">右上</span><span class="logDmg">25</span></div>
+      </div>
+    </section>
   </main>
 
   <!-- 結果オーバーレイ(しあげるタップで表示されるデモ) -->
@@ -448,12 +495,14 @@
     </div>
   </div>
 
-  <div class="caption">UIモック v2.11(トーンB・画像AI実素材)— 1手戻す/進む=円形曲がり矢印(btn_step実素材)/ 布グリッドタップ=必殺チャージ演出 / ◀もどるタップ=確認ダイアログ(実装では2ターン目以降のみ)/ パワー行タップ=サイクル開閉(横スクロール可)/ ぬいパワープレートタップ=必殺使用時表示(会心×２)切替 / メッセージ欄タップ=文言切替 / きらめき2個=精神統一残り2の表示例 / 「27」=発光マス・「88」=しつけ×発光マスの表示例</div>
+  <div class="caption">UIモック v2.12(トーンB・画像AI実素材)— 1手戻す/進む=円形曲がり矢印(btn_step実素材)/ 布グリッドタップ=必殺チャージ演出 / ◀もどるタップ=確認ダイアログ(実装では2ターン目以降のみ)/ パワー行タップ=サイクル開閉(横スクロール可)/ ぬいパワープレートタップ=必殺使用時表示(会心×２)切替 / メッセージ欄タップ=文言切替 / きらめき2個=精神統一残り2の表示例 / 「27」=発光マス・「88」=しつけ×発光マスの表示例<br>
+  右上ボタン=プレイ→数値表(プレースホルダ)→ログの3状態ループ(§5.10)。数値表は次モックで作成 / ログ画面(§5.13)は特技ボタン部を差し替え、statusGridは表示のまま。1手戻す/進むでハイライト行が連動し、ログ表示中は布グリッドタップとぬいパワー行のサイクル開閉を無効化</div>
 </div>
 
 <script>
-  // ぬいパワー行: サイクル開閉(案A: その場トグル)
+  // ぬいパワー行: サイクル開閉(案A: その場トグル)。ログ画面表示中は無効化(§5.13)
   document.getElementById('powerRow').addEventListener('click', (e) => {
+    if (screenState === 'log') return;
     e.currentTarget.classList.toggle('cycleOpen');
   });
 
@@ -489,6 +538,7 @@
   const fxLane = document.getElementById('fxLane');
   const fxMsg = fxLane.querySelector('.fxMsg');
   document.querySelector('.gridArea').addEventListener('click', () => {
+    if (screenState === 'log') return; // ログ表示中は布グリッドのタップを無効化(§5.13)
     fxLane.classList.remove('play');
     fxMsg.style.fontSize = '87px';
     fxMsg.style.display = 'inline-block'; // 一時表示して全幅を実測
@@ -539,6 +589,69 @@
     copyBtn.textContent = 'コピーしました';
     setTimeout(() => { copyBtn.textContent = orig; }, 1500);
   });
+
+  // ---- §5.10 右上ボタン3状態ループ + §5.13 ログ画面 ----
+  // screenState: 'play'(プレイ画面) → 'stats'(数値表・プレースホルダ) → 'log'(ログ画面) → 'play' … の順にループ
+  let screenState = 'play';
+  const viewBtn = document.getElementById('viewBtn');
+  const skillsEl = document.getElementById('skills');
+  const statusGridEl = document.querySelector('.statusGrid');
+  const statsPanel = document.getElementById('statsPanel');
+  const logPanel = document.getElementById('logPanel');
+  const stepBackBtn = document.querySelector('.stepBack');
+  const stepFwdBtn = document.querySelector('.stepFwd');
+  const logRows = Array.from(document.querySelectorAll('#logList .logRow'));
+  // モック用の履歴位置(初期値=最終行=現在ターンの表示例)
+  let logPos = logRows.length - 1;
+
+  function renderLogHighlight() {
+    logRows.forEach((row, i) => row.classList.toggle('logCurrent', i === logPos));
+  }
+  function scrollCurrentLogIntoView() {
+    const cur = logRows[logPos];
+    if (cur) cur.scrollIntoView({ block: 'nearest' });
+  }
+  function updateStepButtons() {
+    if (screenState === 'log') {
+      // ログ画面では1手戻す/進むが履歴位置(ハイライト)の移動に連動し、端でdisabled(§5.13)
+      stepBackBtn.disabled = logPos <= 0;
+      stepFwdBtn.disabled = logPos >= logRows.length - 1;
+    } else {
+      // プレイ画面ではモック固定表示のため常時有効(D45相当の表示例)
+      stepBackBtn.disabled = false;
+      stepFwdBtn.disabled = false;
+    }
+  }
+  function applyScreenState() {
+    skillsEl.hidden = screenState !== 'play';
+    statsPanel.hidden = screenState !== 'stats';
+    logPanel.hidden = screenState !== 'log';
+    statusGridEl.hidden = screenState === 'stats';
+    viewBtn.textContent = screenState === 'play' ? '数値表' : (screenState === 'stats' ? 'ログ' : 'プレイ');
+    updateStepButtons();
+    if (screenState === 'log') { renderLogHighlight(); scrollCurrentLogIntoView(); }
+  }
+  viewBtn.addEventListener('click', () => {
+    screenState = screenState === 'play' ? 'stats' : (screenState === 'stats' ? 'log' : 'play');
+    applyScreenState();
+  });
+  // 1手戻す/進む: ログ画面表示中のみハイライト位置(D30と同様の現在位置)を移動する。
+  // プレイ画面での盤面巻き戻し自体は本モックの対象外(既存どおり無処理)
+  stepBackBtn.addEventListener('click', () => {
+    if (screenState !== 'log' || logPos <= 0) return;
+    logPos -= 1;
+    renderLogHighlight();
+    scrollCurrentLogIntoView();
+    updateStepButtons();
+  });
+  stepFwdBtn.addEventListener('click', () => {
+    if (screenState !== 'log' || logPos >= logRows.length - 1) return;
+    logPos += 1;
+    renderLogHighlight();
+    scrollCurrentLogIntoView();
+    updateStepButtons();
+  });
+  applyScreenState(); // 初期状態(プレイ画面)を反映
 </script>
 </body>
 </html>
