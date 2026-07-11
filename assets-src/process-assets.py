@@ -130,20 +130,29 @@ def process(name, tw, th):
     # 背景色 = 外周1pxの中央値
     border = np.concatenate([img[0], img[-1], img[:, 0], img[:, -1]])
     bg = np.median(border, axis=0)
+    # 背景キーの判別: 緑(#00FF00系)またはマゼンタ(#FF00FF系)。緑を含む素材(緑枠の
+    # panel_grid_regen 等)はマゼンタ背景で生成する運用(2026-07-12)。緑専用の追加処理
+    # (GREEN_WIPE / GREEN_EDGE)は背景が緑のときのみ適用する
+    bg_is_green = (bg[1] - max(bg[0], bg[2])) > 40.0
     dist = np.sqrt(((img - bg) ** 2).sum(axis=2))
     solid = dist > 25.0
-    # 3px 侵食した確実な内部は α=1(緑がかった布地等を保護)
+    # 3px 侵食した確実な内部は α=1(背景と同系色の布地等を保護)
     er = solid.copy()
     for dy in (-3, -2, -1, 0, 1, 2, 3):
         for dx in (-3, -2, -1, 0, 1, 2, 3):
             er &= np.roll(np.roll(solid, dy, 0), dx, 1)
-    # 境界・グロー帯は緑過剰(G - max(R,B))から α を推定(混色の unmix 用)
-    g_ex = img[..., 1] - np.maximum(img[..., 0], img[..., 2])
-    bg_ex = max(bg[1] - max(bg[0], bg[2]), 1.0)
+    # 境界・グロー帯は背景キーの色過剰から α を推定(混色の unmix 用)
+    # 緑: G - max(R,B) / マゼンタ: min(R,B) - G
+    if bg_is_green:
+        g_ex = img[..., 1] - np.maximum(img[..., 0], img[..., 2])
+        bg_ex = max(bg[1] - max(bg[0], bg[2]), 1.0)
+    else:
+        g_ex = np.minimum(img[..., 0], img[..., 2]) - img[..., 1]
+        bg_ex = max(min(bg[0], bg[2]) - bg[1], 1.0)
     alpha_chroma = np.clip(1.0 - g_ex / bg_ex, 0.0, 1.0)
     if name in GLOW_PARTS:
         alpha = np.where(dist > 15.0, alpha_chroma, 0.0)
-    elif name in GREEN_WIPE_PARTS:
+    elif name in GREEN_WIPE_PARTS and bg_is_green:
         maxc = np.maximum(np.maximum(img[..., 0], img[..., 1]), img[..., 2])
         greenness = g_ex / np.maximum(maxc, 1.0)
         bg_maxc = max(bg[0], bg[1], bg[2])
@@ -288,7 +297,7 @@ def process(name, tw, th):
             halo |= grown
         out_arr[halo, 3] = 0
         print(f"  output halo removed: {int(halo.sum())} px")
-    if name in GREEN_EDGE_PARTS or name in GREEN_EDGE_STRICT_PARTS:
+    if (name in GREEN_EDGE_PARTS or name in GREEN_EDGE_STRICT_PARTS) and bg_is_green:
         # 外周の緑ヘイズ除去(帯域方式。2026-07-12 連結方式から変更): コンタミはシルエット境界の
         # 現象なので「透明領域(画像外含む)から6px以内の帯域」×「色条件」で除去する。
         # 連結方式は緑帯が透明リングで画像端/透明から浮くと取り逃す(512px出力で実測)。
