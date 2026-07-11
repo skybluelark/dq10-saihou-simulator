@@ -98,9 +98,17 @@ ROUND_PARTS = {
     "btn_step_redo_normal", "btn_step_redo_pressed", "btn_step_redo_disabled",
 }
 # 布グリッド枠: 外周(画像端)に純緑背景のヘイズ(半透明の緑被り)が残るため、出力解像度で
-# 「画像端に連結した緑味画素」(greenness>0.25)を連鎖除去する。panel_grid_regen は枠自体が
-# 正当な緑で、外周AAも緑が正しい(緑枠に緑フリンジは視認されない)ため対象外。
+# 「画像端に連結した緑味画素」(greenness>0.25)を連鎖除去する。
 GREEN_EDGE_PARTS = {"panel_grid_normal", "panel_grid_light", "panel_grid_rainbow"}
+# panel_grid_regen は枠自体が正当な緑のため、通常閾値では枠を侵食する。実測では
+# 枠本体=暗い濁り緑(G<=127・greenness<=0.45)に対しコンタミ=明るい純緑(G~255・greenness~0.84)で
+# 分離可能: 「greenness>0.55、または G>=140 かつ greenness>0.40」の画像端連結のみ除去する
+# (2026-07-12。透過色を変えた再生成は不要と判断)
+GREEN_EDGE_STRICT_PARTS = {"panel_grid_regen"}
+# 出力の余白詰め: ソースに焼き込みシャドウ等があるとトリムがそれを含み、透過後に
+# 非対称の透明帯が残って 100%伸縮表示でプレートが偏る。αバウンディングボックスへ
+# 再クロップして目標サイズに再リサイズする(label_power_normal: 右12px・下8pxの帯。2026-07-12)
+FIT_PARTS = {"label_power_normal"}
 # 左右反転で生成するパーツ: 値のIDの原本を水平反転して処理する。
 # (redo を生成AIで左右反転させると意図しない差異が入るため、プログラムで鏡像を作る)
 MIRROR_SRC = {
@@ -276,14 +284,18 @@ def process(name, tw, th):
             halo |= grown
         out_arr[halo, 3] = 0
         print(f"  output halo removed: {int(halo.sum())} px")
-    if name in GREEN_EDGE_PARTS:
-        # 外周の緑ヘイズ除去: 画像端に連結した緑味画素(greenness>0.25)を連鎖除去する。
-        # 内側の枠色(茶/淡彩/虹)は greenness が低く連鎖が届かない
+    if name in GREEN_EDGE_PARTS or name in GREEN_EDGE_STRICT_PARTS:
+        # 外周の緑ヘイズ除去: 画像端に連結した緑味画素を連鎖除去する。
+        # 通常: greenness>0.25(枠色=茶/淡彩/虹は届かない)。
+        # regen(緑枠): 純緑寄りのみ(枠本体の濁り緑 G<=127・gn<=0.45 は残す)
         o = out_arr.astype(np.float32)
         oa = o[..., 3] / 255.0
         gx = o[..., 1] - np.maximum(o[..., 0], o[..., 2])
         gness = gx / np.maximum(o[..., :3].max(axis=2), 1)
-        greenish = (gness > 0.25) & (oa > 0.0)
+        if name in GREEN_EDGE_STRICT_PARTS:
+            greenish = ((gness > 0.55) | ((o[..., 1] >= 140.0) & (gness > 0.40))) & (oa > 0.0)
+        else:
+            greenish = (gness > 0.25) & (oa > 0.0)
 
         def neigh_pad_g(m, fill):
             p = np.pad(m, 1, constant_values=fill)
@@ -325,6 +337,15 @@ def process(name, tw, th):
         rgbf[grow] = acc[grow] / cnt[grow][..., None]
         filled |= grow
     out_arr[..., :3] = np.clip(rgbf, 0, 255).astype(np.uint8)
+    if name in FIT_PARTS:
+        # 余白詰め: αバウンディングボックスに再クロップして目標サイズへ再リサイズ。
+        # 透明画素のRGBはブリード済みのため straight-alpha の再リサイズでもフリンジは出ない
+        fa = out_arr[..., 3].astype(np.float32) / 255.0
+        fys, fxs = np.where(fa >= 0.3)
+        fitted = out_arr[fys.min():fys.max() + 1, fxs.min():fxs.max() + 1]
+        out_arr = np.asarray(
+            Image.fromarray(fitted, "RGBA").resize((tw, th), Image.LANCZOS)).copy()
+        print(f"  fit: bbox {fxs.max()-fxs.min()+1}x{fys.max()-fys.min()+1} -> {tw}x{th}")
     Image.fromarray(out_arr, "RGBA").save(OUT / f"{name}.png")
     ar_tgt = tw / th
     warn = " <-- AR diff!" if abs(ar_src / ar_tgt - 1) > 0.12 else ""
