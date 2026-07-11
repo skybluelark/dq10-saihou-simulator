@@ -419,7 +419,8 @@
     border-image: url('./assets/panel_window.png') 96 fill / 28px stretch;
     box-shadow: 0 8px 24px rgba(0,0,0,.5); }
   .dlgText { font-size: 14px; font-weight: bold; text-align: center; line-height: 1.8; }
-  .dlgNote { font-size: 11px; color: #cdd3ff; text-align: center; }
+  /* D39改定: リプレイをコピーは7文字で3ボタン横並びに収まらないため全幅の上段に置く */
+  .dlgCopy { width: 100%; }
   .dlgBtns { width: 100%; display: flex; gap: 8px; }
 </style>
 </head>
@@ -663,7 +664,8 @@
   <div class="resultScrim" id="backDlg" hidden>
     <div class="dlgWin">
       <div class="dlgText">プレイを中断して、<br>レシピ選択に戻りますか？</div>
-      <div class="dlgNote">※現在のプレイ内容は保存されません</div>
+      <!-- D39改定(2026-07-11): 注記は削除(コピーで保存できるため)。コピー範囲=現在の履歴位置まで -->
+      <button class="resultBtn dlgCopy" id="backCopy" type="button">リプレイをコピー</button>
       <div class="dlgBtns">
         <button class="resultBtn" id="backNo" type="button">キャンセル</button>
         <button class="resultBtn" id="backYes" type="button">戻る</button>
@@ -671,7 +673,7 @@
     </div>
   </div>
 
-  <div class="caption">UIモック v2.24(トーンB・画像AI実素材)— 1手戻す/進む=円形曲がり矢印(btn_step実素材)/ 布グリッドタップ=必殺チャージ演出(プレイ中のみ)/ ◀もどるタップ=確認ダイアログ(実装では2ターン目以降のみ)/ パワー行タップ=サイクル開閉(横スクロール可)/ ぬいパワープレートタップ=必殺使用時表示(会心×２)切替 / メッセージ欄タップ=文言切替 / きらめき2個=精神統一残り2の表示例 / 「27」=発光マス・「88」=しつけ×発光マスの表示例 / マス左上のA〜I=位置表記(**ログ画面のみ**表示。ログの位置欄と対応)/ グリッド枠=マゼンタ再生成素材の一枚絵伸縮(縁を8〜9px切り込み全面不透明化 — 縁の直線・角丸はブラウザ描画)/ ぬいパワータイトル=通常時マット(label_power_normal)・プレートタップの必殺表示で光沢版に切替<br>
+  <div class="caption">UIモック v2.25(トーンB・画像AI実素材)— 1手戻す/進む=円形曲がり矢印(btn_step実素材)/ 布グリッドタップ=必殺チャージ演出(プレイ中のみ)/ ◀もどるタップ=確認ダイアログ(D39改定: リプレイをコピー付き・注記なし。実装では履歴の最大ターンが2以上のときのみ)/ パワー行タップ=サイクル開閉(横スクロール可)/ ぬいパワープレートタップ=必殺使用時表示(会心×２)切替 / メッセージ欄タップ=文言切替 / きらめき2個=精神統一残り2の表示例 / 「27」=発光マス・「88」=しつけ×発光マスの表示例 / マス左上のA〜I=位置表記(**ログ画面のみ**表示。ログの位置欄と対応)/ グリッド枠=マゼンタ再生成素材の一枚絵伸縮(縁を8〜9px切り込み全面不透明化 — 縁の直線・角丸はブラウザ描画)/ ぬいパワータイトル=通常時マット(label_power_normal)・プレートタップの必殺表示で光沢版に切替<br>
   右上ボタン=プレイ→数値表→ログの3状態ループ(§5.10)。数値表(§5.8)はステータス行を表示のまま1手戻す/進むを無効化。糸ほぐしは負数表記。マスタップで選択+倍率を1行送り(3倍の次は糸ほぐしへループ)、選択マス周囲に残数値の出目7種(糸ほぐし4種)をすべて涙型チップ(ベージュ50%透過×橙金枠・本体径28px・数値はマス表示と同じ白抜き・先端=マス中央向き)で扇状に一時表示(重複は畳まない)。倍率送りは候補表示中の同一マス再タップのみ(扇が消えた後のタップは選択し直し)/ 下フリック=倍率を1行戻す / 表の行タップ=倍率を直接選択 / 表下部でぬいパワー・しつけ・光を切替すると表と扇状表示に反映 / ログ画面(§5.13)は5列(ターン・特技・ぬいパワー・位置・ダメージ左寄せ)。位置=A〜I(左上から横方向)、？から変化したターンは「？→X」表記、−値(糸ほぐし回復)=緑・会心=文言なしの橙(複数ヒットは該当値のみ)。1手戻す/進むでハイライト行が連動し、ログ表示中は布グリッドタップとぬいパワー行のサイクル開閉を無効化</div>
 </div>
 
@@ -968,6 +970,14 @@
   document.getElementById('backBtn').addEventListener('click', () => { backDlg.hidden = false; });
   document.getElementById('backNo').addEventListener('click', () => { backDlg.hidden = true; });
   document.getElementById('backYes').addEventListener('click', () => { location.href = './recipe-select.html'; });
+  // D39改定: コピー押下=「コピーしました」1.5秒表示・ダイアログは開いたまま。範囲は現在の履歴位置まで
+  const backCopy = document.getElementById('backCopy');
+  backCopy.addEventListener('click', () => {
+    try { navigator.clipboard.writeText('DQ10S-r1.AbC9xYz'); } catch (e) { /* モックでは失敗しても続行 */ }
+    const orig = backCopy.textContent;
+    backCopy.textContent = 'コピーしました';
+    setTimeout(() => { backCopy.textContent = orig; }, 1500);
+  });
 
   // 特技選択(単一選択のトグル。しあげるは結果オーバーレイのデモへ)
   document.querySelectorAll('#skills .skill:not(:disabled)').forEach((b) => {
