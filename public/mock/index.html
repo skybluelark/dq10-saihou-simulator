@@ -160,15 +160,6 @@
   .fxMsg .t2w { position: absolute; inset: 0; color: transparent;
     -webkit-text-stroke-width: .13em; -webkit-text-stroke-color: #ffffff; }
   .fxLane.play .fxMsg { display: inline-block; animation: fxCharge 1.25s both; }
-  /* 火花バースト(fx_hissatsu 6コマのスプライトシート。輝度→α変換済み)。
-     文字の背後(z-index 4 < 5)で 0.35s から 0.9s 再生(コマ150ms)し、文字と同時に終わる */
-  .fxSparks { position: absolute; left: 50%; top: 50%; width: 280px; height: 172px;
-    margin: -86px 0 0 -140px; pointer-events: none; z-index: 4; opacity: 0;
-    background: url('./assets/fx_hissatsu_sheet.png') 0 0 / 100% 600% no-repeat; }
-  .fxSparks.play { animation: fxFrames .9s steps(6, jump-none) .35s both,
-                              fxFade .9s linear .35s both; }
-  @keyframes fxFrames { from { background-position-y: 0%; } to { background-position-y: 100%; } }
-  @keyframes fxFade { 0% { opacity: 0; } 10% { opacity: 1; } 75% { opacity: 1; } 100% { opacity: 0; } }
   @keyframes fxCharge {
     /* 0.4s(32%)で中央: 減速イン → 0.5s静止 → 0.35sで加速アウト */
     0%   { transform: translateX(calc(50vw + 50%)); animation-timing-function: cubic-bezier(.16,.84,.44,1); }
@@ -379,7 +370,6 @@
         <button class="cell c-normal" type="button"><span class="cellNum t2"><span class="t2s">62</span><span class="t2f">62</span></span></button>
       </div>
       <!-- 必殺チャージ演出(D20)。モックでは布グリッドタップで再生 -->
-      <div class="fxSparks" id="fxSparks"></div>
       <div class="fxLane" id="fxLane"><span class="fxMsg t2"><span class="t2s">ひっさつチャージ！！</span><span class="t2w">ひっさつチャージ！！</span><span class="t2f">ひっさつチャージ！！</span></span></div>
     </section>
 
@@ -490,10 +480,8 @@
   // 文字高はマス縦幅1.5倍(87px)を上限に、全文が画面幅の約77%(96%の8割)に収まるサイズへ自動縮小
   const fxLane = document.getElementById('fxLane');
   const fxMsg = fxLane.querySelector('.fxMsg');
-  const fxSparks = document.getElementById('fxSparks');
   document.querySelector('.gridArea').addEventListener('click', () => {
     fxLane.classList.remove('play');
-    fxSparks.classList.remove('play');
     fxMsg.style.fontSize = '87px';
     fxMsg.style.display = 'inline-block'; // 一時表示して全幅を実測
     const w = fxMsg.getBoundingClientRect().width;
@@ -502,7 +490,6 @@
     fxMsg.style.display = '';
     void fxLane.offsetWidth; // リフローを挟んでアニメーションを最初から再生
     fxLane.classList.add('play');
-    fxSparks.classList.add('play');
   });
 
   // ◀もどる: 確認ダイアログ(D39/§7-7)。実装では1ターン目(未行動)は確認なしで即もどる。
