@@ -12,10 +12,12 @@ OUT = Path(r"E:\dev\dq10-saihou-simulator\public\mock\assets")
 PARTS = {
     "bg_main": (860, 1864),
     "panel_window": (384, 384),          # 結果窓の表示幅28px(56dev px)に耐えるよう角96で拡大採用
-    "panel_grid_normal": (128, 128),
-    "panel_grid_regen": (128, 128),
-    "panel_grid_rainbow": (128, 128),
-    "panel_grid_light": (128, 128),
+    # 2026-07-12: 128→512に拡大(スライス96・表示16px)。128では9-slice中面が80pxしかなく、
+    # グリッド内側へ3〜4倍に引き伸ばされて布の斜め織りが消えていた(実機レビューA案+C案)
+    "panel_grid_normal": (512, 512),
+    "panel_grid_regen": (512, 512),
+    "panel_grid_rainbow": (512, 512),
+    "panel_grid_light": (512, 512),
     "cell": (176, 116),
     "cell_shitsuke": (176, 116),
     "cell_glow": (176, 116),
@@ -103,9 +105,8 @@ ROUND_PARTS = {
 # 布グリッド枠: 外周(画像端)に純緑背景のヘイズ(半透明の緑被り)が残るため、出力解像度で
 # 「画像端に連結した緑味画素」(greenness>0.25)を連鎖除去する。
 GREEN_EDGE_PARTS = {"panel_grid_normal", "panel_grid_light", "panel_grid_rainbow"}
-# panel_grid_regen は枠自体が正当な緑のため、通常閾値では枠を侵食する。実測では
-# 枠本体=暗い濁り緑(G<=127・greenness<=0.45)に対しコンタミ=明るい純緑(G~255・greenness~0.84)で
-# 分離可能: 「greenness>0.55、または G>=140 かつ greenness>0.40」の画像端連結のみ除去する
+# panel_grid_regen は枠自体が正当な緑のため、通常閾値では枠を侵食する。512px出力の実測では
+# 枠本体の明るい緑(G>=140 かつ greenness>0.40)は帯域外に0のため、「明るい純緑」のみ除去する
 # (2026-07-12。透過色を変えた再生成は不要と判断)
 GREEN_EDGE_STRICT_PARTS = {"panel_grid_regen"}
 # 出力の余白詰め: ソースに焼き込みシャドウ等があるとトリムがそれを含み、透過後に
@@ -288,15 +289,17 @@ def process(name, tw, th):
         out_arr[halo, 3] = 0
         print(f"  output halo removed: {int(halo.sum())} px")
     if name in GREEN_EDGE_PARTS or name in GREEN_EDGE_STRICT_PARTS:
-        # 外周の緑ヘイズ除去: 画像端に連結した緑味画素を連鎖除去する。
-        # 通常: greenness>0.25(枠色=茶/淡彩/虹は届かない)。
-        # regen(緑枠): 純緑寄りのみ(枠本体の濁り緑 G<=127・gn<=0.45 は残す)
+        # 外周の緑ヘイズ除去(帯域方式。2026-07-12 連結方式から変更): コンタミはシルエット境界の
+        # 現象なので「透明領域(画像外含む)から6px以内の帯域」×「色条件」で除去する。
+        # 連結方式は緑帯が透明リングで画像端/透明から浮くと取り逃す(512px出力で実測)。
+        # 実測根拠: 4種とも該当色の画素は帯域外に0(regenの正当な緑は「明るい純緑」条件で除外)。
+        # 通常: greenness>0.25 / regen(緑枠): G>=140 かつ greenness>0.40 の明るい純緑のみ
         o = out_arr.astype(np.float32)
         oa = o[..., 3] / 255.0
         gx = o[..., 1] - np.maximum(o[..., 0], o[..., 2])
         gness = gx / np.maximum(o[..., :3].max(axis=2), 1)
         if name in GREEN_EDGE_STRICT_PARTS:
-            greenish = ((gness > 0.55) | ((o[..., 1] >= 140.0) & (gness > 0.40))) & (oa > 0.0)
+            greenish = (o[..., 1] >= 140.0) & (gness > 0.40) & (oa > 0.0)
         else:
             greenish = (gness > 0.25) & (oa > 0.0)
 
@@ -304,14 +307,13 @@ def process(name, tw, th):
             p = np.pad(m, 1, constant_values=fill)
             return p[:-2, 1:-1] | p[2:, 1:-1] | p[1:-1, :-2] | p[1:-1, 2:]
 
-        edge_green = greenish & neigh_pad_g(np.zeros_like(greenish), True)  # 画像端に接する緑
-        for _ in range(32):
-            grown = greenish & neigh_pad_g(edge_green, False)
-            if not (grown & ~edge_green).any():
-                break
-            edge_green |= grown
-        out_arr[edge_green, 3] = 0
-        print(f"  green edge removed: {int(edge_green.sum())} px")
+        transparent_g = oa <= 0.03
+        band = transparent_g.copy()
+        for _ in range(6):
+            band |= neigh_pad_g(band, True)  # 画像外は透明扱い
+        kill = greenish & band & ~transparent_g
+        out_arr[kill, 3] = 0
+        print(f"  green edge removed: {int(kill.sum())} px")
     # アルファブリード: 透明画素(α=0)のRGBを最近傍の不透明色で埋める。
     # 事前乗算リサイズの逆算(premul/α)は α≈0 でノイズが増幅されて透明画素に白系の
     # ゴミRGBが残り、ブラウザが border-image を端末解像度へ再補間する際に
