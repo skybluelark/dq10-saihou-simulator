@@ -56,7 +56,8 @@ PARTS = {
     "star_result_off": (80, 80),
     "plate_crit": (120, 48),
     "icon_power": (116, 64),
-    "label_power": (136, 48),
+    "label_power": (136, 48),   # 必殺チャージ時用(光沢あり)として継続
+    "label_power_normal": (136, 48),  # 非チャージ時用(光沢控えめ。ユーザー生成待ち 2026-07-12)
 }
 # fx_hissatsu は黒背景コマ連番のため対象外(演出実装時に別処理)
 
@@ -96,6 +97,10 @@ ROUND_PARTS = {
     "btn_step_undo_normal", "btn_step_undo_pressed", "btn_step_undo_disabled",
     "btn_step_redo_normal", "btn_step_redo_pressed", "btn_step_redo_disabled",
 }
+# 布グリッド枠: 外周(画像端)に純緑背景のヘイズ(半透明の緑被り)が残るため、出力解像度で
+# 「画像端に連結した緑味画素」(greenness>0.25)を連鎖除去する。panel_grid_regen は枠自体が
+# 正当な緑で、外周AAも緑が正しい(緑枠に緑フリンジは視認されない)ため対象外。
+GREEN_EDGE_PARTS = {"panel_grid_normal", "panel_grid_light", "panel_grid_rainbow"}
 # 左右反転で生成するパーツ: 値のIDの原本を水平反転して処理する。
 # (redo を生成AIで左右反転させると意図しない差異が入るため、プログラムで鏡像を作る)
 MIRROR_SRC = {
@@ -271,6 +276,27 @@ def process(name, tw, th):
             halo |= grown
         out_arr[halo, 3] = 0
         print(f"  output halo removed: {int(halo.sum())} px")
+    if name in GREEN_EDGE_PARTS:
+        # 外周の緑ヘイズ除去: 画像端に連結した緑味画素(greenness>0.25)を連鎖除去する。
+        # 内側の枠色(茶/淡彩/虹)は greenness が低く連鎖が届かない
+        o = out_arr.astype(np.float32)
+        oa = o[..., 3] / 255.0
+        gx = o[..., 1] - np.maximum(o[..., 0], o[..., 2])
+        gness = gx / np.maximum(o[..., :3].max(axis=2), 1)
+        greenish = (gness > 0.25) & (oa > 0.0)
+
+        def neigh_pad_g(m, fill):
+            p = np.pad(m, 1, constant_values=fill)
+            return p[:-2, 1:-1] | p[2:, 1:-1] | p[1:-1, :-2] | p[1:-1, 2:]
+
+        edge_green = greenish & neigh_pad_g(np.zeros_like(greenish), True)  # 画像端に接する緑
+        for _ in range(32):
+            grown = greenish & neigh_pad_g(edge_green, False)
+            if not (grown & ~edge_green).any():
+                break
+            edge_green |= grown
+        out_arr[edge_green, 3] = 0
+        print(f"  green edge removed: {int(edge_green.sum())} px")
     # アルファブリード: 透明画素(α=0)のRGBを最近傍の不透明色で埋める。
     # 事前乗算リサイズの逆算(premul/α)は α≈0 でノイズが増幅されて透明画素に白系の
     # ゴミRGBが残り、ブラウザが border-image を端末解像度へ再補間する際に
@@ -304,13 +330,26 @@ def process(name, tw, th):
     warn = " <-- AR diff!" if abs(ar_src / ar_tgt - 1) > 0.12 else ""
     print(f"{name}: crop {x1-x0}x{y1-y0} -> {tw}x{th} (AR {ar_src:.2f} -> {ar_tgt:.2f}){warn}")
 
+def src_exists(name):
+    return (SRC / f"{MIRROR_SRC.get(name, name)}.png").exists()
+
 if len(sys.argv) > 1:
     targets = sys.argv[1:]
+    done = 0
     for name in targets:
+        if not src_exists(name):
+            print(f"{name}: SKIP (source not found)")
+            continue
         tw, th = PARTS[name]
         process(name, tw, th)
-    print("done:", len(targets), "files")
+        done += 1
+    print("done:", done, "files")
 else:
+    done = 0
     for name, (tw, th) in PARTS.items():
+        if not src_exists(name):
+            print(f"{name}: SKIP (source not found)")
+            continue
         process(name, tw, th)
-    print("done:", len(PARTS), "files")
+        done += 1
+    print("done:", done, "files")

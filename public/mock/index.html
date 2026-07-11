@@ -115,7 +115,8 @@
   /* D5: 精神統一固定中は残りターン数と同数の「きらめき」バッジ(白発光の円形オーブ画像)を付ける。
      素材は発光の裾(グロー)を含むため画像端=見た目の境界ではない。複数並ぶ場合は左端を基準に、
      グロー同士の重なりを許容して中心間距離12px(15px+間隔1pxの25%詰め)で並べる */
-  .sparkles { position: absolute; top: -8px; left: 4px; display: flex; }
+  /* きらめきの可視左端をプレートの左端に揃える(素材の透過マージン1.5px分を補正。2026-07-12) */
+  .sparkles { position: absolute; top: -8px; left: -1.5px; display: flex; }
   .spark + .spark { margin-left: -3px; }
   /* D5: サイクル全体表示では布特性バッジと3個表示時に重なるため非表示(コンパクト表示のみで見せる) */
   .viewCycle .sparkles { display: none; }
@@ -193,6 +194,10 @@
   .cellNum.t2 { font-size: 28px; font-weight: bold; }
   .cellNum .t2s { -webkit-text-stroke-width: 2.2px; }
   .cellNum { filter: drop-shadow(0 2px 2px rgba(0,0,0,.5)); }
+  /* マスの位置アルファベット(A〜I 左上から行優先。ログの位置表記と対応): 縁なし白の小文字。
+     マス画像の茶ステッチ帯(端から約4px)と重ならないよう内側にオフセット */
+  .cellPos { position: absolute; top: 4px; left: 6px; font-size: 10px; font-weight: bold;
+    line-height: 1; color: #fff; pointer-events: none; }
   /* しつけがけ・発光マス: 下地画像そのものをマスごと差し替え(重ね枠ではない) */
   .cellShitsuke { background-image: url('./assets/cell_shitsuke.png'); }
   .cellGlow { background-image: url('./assets/cell_glow.png'); }
@@ -454,15 +459,15 @@
     <!-- 布グリッド(再生布) -->
     <section class="gridArea">
       <div class="grid">
-        <button class="cell c-normal" type="button"><span class="cellNum t2"><span class="t2s">46</span><span class="t2f">46</span></span></button>
-        <button class="cell c-yellow" type="button"><span class="cellNum t2"><span class="t2s">3</span><span class="t2f">3</span></span></button>
-        <button class="cell c-done" type="button"><span class="cellNum t2"><span class="t2s">0</span><span class="t2f">0</span></span></button>
-        <button class="cell c-normal cellGlow" type="button"><span class="cellNum t2"><span class="t2s">27</span><span class="t2f">27</span></span></button>
-        <button class="cell c-normal cellShitsuke cellGlow" type="button"><span class="cellNum t2"><span class="t2s">88</span><span class="t2f">88</span></span><span class="shitsukeMark t2"><span class="t2s">×２</span><span class="t2f">×２</span></span></button>
-        <button class="cell c-normal cellShitsuke" type="button"><span class="cellNum t2"><span class="t2s">12</span><span class="t2f">12</span></span><span class="shitsukeMark t2"><span class="t2s">×２</span><span class="t2f">×２</span></span></button>
-        <button class="cell c-done" type="button"><span class="cellNum t2"><span class="t2s">0</span><span class="t2f">0</span></span></button>
-        <button class="cell c-over" type="button"><span class="cellNum t2"><span class="t2s">-6</span><span class="t2f">-6</span></span></button>
-        <button class="cell c-normal" type="button"><span class="cellNum t2"><span class="t2s">62</span><span class="t2f">62</span></span></button>
+        <button class="cell c-normal" type="button"><span class="cellPos">A</span><span class="cellNum t2"><span class="t2s">46</span><span class="t2f">46</span></span></button>
+        <button class="cell c-yellow" type="button"><span class="cellPos">B</span><span class="cellNum t2"><span class="t2s">3</span><span class="t2f">3</span></span></button>
+        <button class="cell c-done" type="button"><span class="cellPos">C</span><span class="cellNum t2"><span class="t2s">0</span><span class="t2f">0</span></span></button>
+        <button class="cell c-normal cellGlow" type="button"><span class="cellPos">D</span><span class="cellNum t2"><span class="t2s">27</span><span class="t2f">27</span></span></button>
+        <button class="cell c-normal cellShitsuke cellGlow" type="button"><span class="cellPos">E</span><span class="cellNum t2"><span class="t2s">88</span><span class="t2f">88</span></span><span class="shitsukeMark t2"><span class="t2s">×２</span><span class="t2f">×２</span></span></button>
+        <button class="cell c-normal cellShitsuke" type="button"><span class="cellPos">F</span><span class="cellNum t2"><span class="t2s">12</span><span class="t2f">12</span></span><span class="shitsukeMark t2"><span class="t2s">×２</span><span class="t2f">×２</span></span></button>
+        <button class="cell c-done" type="button"><span class="cellPos">G</span><span class="cellNum t2"><span class="t2s">0</span><span class="t2f">0</span></span></button>
+        <button class="cell c-over" type="button"><span class="cellPos">H</span><span class="cellNum t2"><span class="t2s">-6</span><span class="t2f">-6</span></span></button>
+        <button class="cell c-normal" type="button"><span class="cellPos">I</span><span class="cellNum t2"><span class="t2s">62</span><span class="t2f">62</span></span></button>
       </div>
       <!-- 必殺チャージ演出(D20)。モックでは布グリッドタップで再生 -->
       <div class="fxLane" id="fxLane"><span class="fxMsg t2"><span class="t2s">ひっさつチャージ！！</span><span class="t2w">ひっさつチャージ！！</span><span class="t2f">ひっさつチャージ！！</span></span></div>
@@ -660,7 +665,7 @@
     </div>
   </div>
 
-  <div class="caption">UIモック v2.19(トーンB・画像AI実素材)— 1手戻す/進む=円形曲がり矢印(btn_step実素材)/ 布グリッドタップ=必殺チャージ演出(プレイ中のみ)/ ◀もどるタップ=確認ダイアログ(実装では2ターン目以降のみ)/ パワー行タップ=サイクル開閉(横スクロール可)/ ぬいパワープレートタップ=必殺使用時表示(会心×２)切替 / メッセージ欄タップ=文言切替 / きらめき2個=精神統一残り2の表示例 / 「27」=発光マス・「88」=しつけ×発光マスの表示例<br>
+  <div class="caption">UIモック v2.20(トーンB・画像AI実素材)— 1手戻す/進む=円形曲がり矢印(btn_step実素材)/ 布グリッドタップ=必殺チャージ演出(プレイ中のみ)/ ◀もどるタップ=確認ダイアログ(実装では2ターン目以降のみ)/ パワー行タップ=サイクル開閉(横スクロール可)/ ぬいパワープレートタップ=必殺使用時表示(会心×２)切替 / メッセージ欄タップ=文言切替 / きらめき2個=精神統一残り2の表示例 / 「27」=発光マス・「88」=しつけ×発光マスの表示例 / マス左上のA〜I=位置表記(ログの位置欄と対応)/ グリッド枠3種(通常・光・虹)の外周緑ヘイズを除去<br>
   右上ボタン=プレイ→数値表→ログの3状態ループ(§5.10)。数値表(§5.8)はステータス行を表示のまま1手戻す/進むを無効化。糸ほぐしは負数表記。マスタップで選択+倍率を1行送り(3倍の次は糸ほぐしへループ)、選択マス周囲に残数値の出目7種(糸ほぐし4種)をすべて涙型チップ(ベージュ50%透過×橙金枠・本体径28px・数値はマス表示と同じ白抜き・先端=マス中央向き)で扇状に一時表示(重複は畳まない)。倍率送りは候補表示中の同一マス再タップのみ(扇が消えた後のタップは選択し直し)/ 下フリック=倍率を1行戻す / 表の行タップ=倍率を直接選択 / 表下部でぬいパワー・しつけ・光を切替すると表と扇状表示に反映 / ログ画面(§5.13)は5列(ターン・特技・ぬいパワー・位置・ダメージ左寄せ)。位置=A〜I(左上から横方向)、？から変化したターンは「？→X」表記、−値(糸ほぐし回復)=緑・会心=文言なしの橙(複数ヒットは該当値のみ)。1手戻す/進むでハイライト行が連動し、ログ表示中は布グリッドタップとぬいパワー行のサイクル開閉を無効化</div>
 </div>
 
