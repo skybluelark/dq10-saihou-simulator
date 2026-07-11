@@ -90,6 +90,13 @@ WHITE_RIM_PARTS = {
     "btn_skill_normal", "btn_skill_pressed", "btn_skill_selected", "btn_skill_disabled",
     "btn_finish_normal", "btn_finish_pressed",
 }
+# 正円ボタン: 円の上下端・左右端は行/列の被覆率が薄く、標準しきい値(15%)のトリムでは
+# 縁が切れて非正方形クロップ→88×88圧縮で楕円化する。低しきい値でトリムし、
+# 中心維持の正方形+マージン(片側4%)で切り出して真円と縁の完全性を保つ
+ROUND_PARTS = {
+    "btn_step_undo_normal", "btn_step_undo_pressed", "btn_step_undo_disabled",
+    "btn_step_redo_normal", "btn_step_redo_pressed", "btn_step_redo_disabled",
+}
 # 左右反転で生成するパーツ: 値のIDの原本を水平反転して処理する。
 # (redo を生成AIで左右反転させると意図しない差異が入るため、プログラムで鏡像を作る)
 MIRROR_SRC = {
@@ -183,6 +190,9 @@ def process(name, tw, th):
         mask &= ~wm
         mask_for_trim = mask
         cov_thresh = 0.005
+    elif name in ROUND_PARTS:
+        mask_for_trim = mask
+        cov_thresh = 0.02
     else:
         mask_for_trim = mask
         cov_thresh = 0.15
@@ -194,11 +204,14 @@ def process(name, tw, th):
     # パネル類は正方形前提: 下側に落ち影が混入するため、幅を基準に上端から正方形で切る
     if name.startswith(("panel_window", "panel_grid")):
         y1 = min(y0 + (x1 - x0), h)
-    # 発光パーツは正円/正方形が前提: トリム後の外接矩形を中心維持で正方形に拡張する(画像端でクリップ)
-    if name in GLOW_PARTS:
+    # 発光パーツ・正円ボタンは正円/正方形が前提: トリム後の外接矩形を中心維持で正方形に
+    # 拡張する(画像端でクリップ)。正円ボタンは縁が切れないよう片側4%のマージンも付ける
+    if name in GLOW_PARTS or name in ROUND_PARTS:
         cy = (y0 + y1) / 2.0
         cx = (x0 + x1) / 2.0
         side = max(y1 - y0, x1 - x0)
+        if name in ROUND_PARTS:
+            side = int(round(side * 1.08))
         ny0 = int(round(cy - side / 2.0))
         nx0 = int(round(cx - side / 2.0))
         ny1 = ny0 + side
