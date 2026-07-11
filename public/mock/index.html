@@ -273,9 +273,50 @@
   #skills[hidden], #statsPanel[hidden], #logPanel[hidden] { display: none; }
   .statusGrid[hidden] { display: none; }
 
-  /* 数値表状態(プレースホルダ。§5.10): .skills と同程度の面積を .win 相当の9-sliceで確保 */
-  .statsPanel { min-height: 244px; display: flex; align-items: center; justify-content: center;
-    text-align: center; padding: 16px; font-size: 14px; font-weight: bold; }
+  /* 数値表状態(§5.8/§5.10): 縦=倍率7行・横=乱数、下部にぬいパワー選択+しつけ/光トグル */
+  .statsPanel { min-height: 222px; display: flex; flex-direction: column;
+    gap: 6px; padding: 6px 6px 8px; }
+  .statTable { display: flex; flex-direction: column; gap: 1px; }
+  /* 左3割=名称+倍率列、右7割=乱数値(§5.8) */
+  .statRow2 { display: grid; grid-template-columns: 30% 1fr; align-items: center;
+    min-height: 21px; padding: 1px 2px; border-radius: 4px; cursor: pointer; }
+  /* 選択行の青ハイライト(.logCurrent と同系。§5.8) */
+  .statRow2.statRowSelected { background: rgba(90, 150, 255, .38);
+    box-shadow: inset 0 0 0 1px rgba(170, 205, 255, .7); }
+  /* 名称・倍率はそれぞれ列を持ち、各列内でセンタリング(§5.8)。
+     名称は最大4文字(半かげん/糸ほぐし等)を1行に収めるため倍率列より広めに配分 */
+  .statLabelCol { display: grid; grid-template-columns: 3fr 2fr; align-items: baseline; }
+  .statName { font-size: 11px; font-weight: bold; text-align: center; white-space: nowrap;
+    color: #fff; text-shadow: 0 1px 1px rgba(0,0,0,.45); }
+  .statMulTxt { font-size: 9px; font-weight: bold; text-align: center; white-space: nowrap;
+    color: #ffe9b8; text-shadow: 0 1px 1px rgba(0,0,0,.45); }
+  /* 数値領域: 行内の乱数値を等間隔に表示(マス表示と同系の白系太字+影) */
+  .statValCol { display: flex; justify-content: space-between; align-items: center; padding: 0 2px; }
+  .statVal.t2 { font-size: 13px; font-weight: bold; }
+  .statVal .t2s { -webkit-text-stroke-width: 1.6px; }
+  .statVal { filter: drop-shadow(0 1px 1.5px rgba(0,0,0,.5)); }
+
+  /* ぬいパワー選択+しつけ/光トグル(レシピ選択画面のできのよさ部分と同様の3分割チップ) */
+  .statPowerRow { display: flex; align-items: center; gap: 3px;
+    padding-top: 4px; border-top: 1px solid rgba(255,255,255,.25); }
+  .statPowerChips { display: flex; gap: 3px; }
+  .statToggles { display: flex; gap: 3px; margin-left: auto; }
+  .statChip { flex: 0 0 auto; height: 26px; padding: 0 1px;
+    font-size: 11px; font-weight: bold; color: #cdd3ff; background: none;
+    border: solid transparent; border-width: 0 11px;
+    border-image: url('./assets/chip_off.png') 0 32 fill stretch; }
+  .statChip.on { border-image-source: url('./assets/chip_on.png'); color: #fff; }
+
+  /* 残数値の扇状表示(タップ時に一時表示。マス表示と同じ色・デザイン) */
+  .fanLayer { position: absolute; inset: 0; pointer-events: none; z-index: 6; }
+  .fanVal { position: absolute; transform: translate(-50%, -50%); }
+  .fanNum.t2 { font-size: 14px; font-weight: bold; }
+  .fanNum .t2s { -webkit-text-stroke-width: 1.8px; }
+  .fanNum { --t2fill: linear-gradient(180deg, #ffffff 0%, #e7e7e7 100%);
+    filter: drop-shadow(0 1px 1.5px rgba(0,0,0,.5)); }
+  /* マイナス値(縫いすぎ)は赤系(c-over 相当) */
+  .fanNum.fanNeg { --t2fill: linear-gradient(180deg, #f4b3a3 0%, #c94438 100%); }
+  .fanNum.fanNeg .t2s { -webkit-text-stroke-color: #7a1f16; }
 
   /* ログ画面(§5.13): .skills の占有域をログ表示領域に差し替え。内側のみ縦スクロール */
   .logPanel { height: 244px; padding: 6px 4px; overflow: hidden; }
@@ -400,6 +441,8 @@
       </div>
       <!-- 必殺チャージ演出(D20)。モックでは布グリッドタップで再生 -->
       <div class="fxLane" id="fxLane"><span class="fxMsg t2"><span class="t2s">ひっさつチャージ！！</span><span class="t2w">ひっさつチャージ！！</span><span class="t2f">ひっさつチャージ！！</span></span></div>
+      <!-- 数値表画面(§5.8): 選択マスの残数値の扇状表示(表示専用) -->
+      <div class="fanLayer" id="fanLayer"></div>
     </section>
 
     <!-- D45改定: 数値・メッセージ領域(左右対称: ◀戻す|数値+メッセージ|進む▶。メッセージ欄タップでサンプル切替) -->
@@ -444,8 +487,104 @@
       <button class="skill finish" id="finishBtn" type="button"><span class="skName">しあげる</span><span class="skCost">終了</span></button>
     </section>
 
-    <!-- 数値表画面(§5.10/§5.8。次モックで作成予定のプレースホルダ) -->
-    <section class="statsPanel win" id="statsPanel" hidden>数値表(次モックで作成)</section>
+    <!-- 数値表画面(§5.8/§5.10): 縦=倍率7行・横=乱数、下部にぬいパワー選択+しつけ/光トグル -->
+    <section class="statsPanel win" id="statsPanel" hidden>
+      <div class="statTable" id="statTable">
+        <div class="statRow2" data-row="0">
+          <div class="statLabelCol"><span class="statName">糸ほぐし</span><span class="statMulTxt"></span></div>
+          <div class="statValCol">
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+          </div>
+        </div>
+        <div class="statRow2" data-row="1">
+          <div class="statLabelCol"><span class="statName">かげん</span><span class="statMulTxt">×0.5</span></div>
+          <div class="statValCol">
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+          </div>
+        </div>
+        <div class="statRow2" data-row="2">
+          <div class="statLabelCol"><span class="statName">半かげん</span><span class="statMulTxt">×0.75</span></div>
+          <div class="statValCol">
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+          </div>
+        </div>
+        <div class="statRow2" data-row="3">
+          <div class="statLabelCol"><span class="statName">通常</span><span class="statMulTxt">×1</span></div>
+          <div class="statValCol">
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+          </div>
+        </div>
+        <div class="statRow2" data-row="4">
+          <div class="statLabelCol"><span class="statName">巻きこみ</span><span class="statMulTxt">×1.5</span></div>
+          <div class="statValCol">
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+          </div>
+        </div>
+        <div class="statRow2" data-row="5">
+          <div class="statLabelCol"><span class="statName">2倍</span><span class="statMulTxt">×2</span></div>
+          <div class="statValCol">
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+          </div>
+        </div>
+        <div class="statRow2" data-row="6">
+          <div class="statLabelCol"><span class="statName">3倍</span><span class="statMulTxt">×3</span></div>
+          <div class="statValCol">
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+            <span class="statVal t2"><span class="t2s">0</span><span class="t2f">0</span></span>
+          </div>
+        </div>
+      </div>
+      <div class="statPowerRow" id="statPowerRow">
+        <div class="statPowerChips">
+          <button class="statChip" type="button" data-power="weak">弱い</button>
+          <button class="statChip" type="button" data-power="normal">普通</button>
+          <button class="statChip" type="button" data-power="strong">強い</button>
+          <button class="statChip" type="button" data-power="max">最強</button>
+        </div>
+        <div class="statToggles">
+          <button class="statChip" type="button" id="statShitsukeBtn">しつけ</button>
+          <button class="statChip" type="button" id="statHikariBtn">光</button>
+        </div>
+      </div>
+    </section>
 
     <!-- ログ画面(§5.13): 特技ボタン部分をログ表示領域に差し替え。statusGrid(1手戻す/進む)は表示のまま -->
     <section class="logPanel win" id="logPanel" hidden>
@@ -495,8 +634,8 @@
     </div>
   </div>
 
-  <div class="caption">UIモック v2.12(トーンB・画像AI実素材)— 1手戻す/進む=円形曲がり矢印(btn_step実素材)/ 布グリッドタップ=必殺チャージ演出 / ◀もどるタップ=確認ダイアログ(実装では2ターン目以降のみ)/ パワー行タップ=サイクル開閉(横スクロール可)/ ぬいパワープレートタップ=必殺使用時表示(会心×２)切替 / メッセージ欄タップ=文言切替 / きらめき2個=精神統一残り2の表示例 / 「27」=発光マス・「88」=しつけ×発光マスの表示例<br>
-  右上ボタン=プレイ→数値表(プレースホルダ)→ログの3状態ループ(§5.10)。数値表は次モックで作成 / ログ画面(§5.13)は特技ボタン部を差し替え、statusGridは表示のまま。1手戻す/進むでハイライト行が連動し、ログ表示中は布グリッドタップとぬいパワー行のサイクル開閉を無効化</div>
+  <div class="caption">UIモック v2.13(トーンB・画像AI実素材)— 1手戻す/進む=円形曲がり矢印(btn_step実素材)/ 布グリッドタップ=必殺チャージ演出(プレイ中のみ)/ ◀もどるタップ=確認ダイアログ(実装では2ターン目以降のみ)/ パワー行タップ=サイクル開閉(横スクロール可)/ ぬいパワープレートタップ=必殺使用時表示(会心×２)切替 / メッセージ欄タップ=文言切替 / きらめき2個=精神統一残り2の表示例 / 「27」=発光マス・「88」=しつけ×発光マスの表示例<br>
+  右上ボタン=プレイ→数値表→ログの3状態ループ(§5.10)。数値表(§5.8)はマスタップで選択+倍率を1行送り(3倍の次は糸ほぐしへループ)、選択マス周囲に残数値を扇状に一時表示 / 下フリック=倍率を1行戻す / 表の行タップ=倍率を直接選択 / 表下部でぬいパワー・しつけ・光を切替すると表と扇状表示に反映 / ログ画面(§5.13)は特技ボタン部を差し替え、statusGridは表示のまま。1手戻す/進むでハイライト行が連動し、ログ表示中は布グリッドタップとぬいパワー行のサイクル開閉を無効化</div>
 </div>
 
 <script>
@@ -537,8 +676,19 @@
   // 文字高はマス縦幅1.5倍(87px)を上限に、全文が画面幅の約77%(96%の8割)に収まるサイズへ自動縮小
   const fxLane = document.getElementById('fxLane');
   const fxMsg = fxLane.querySelector('.fxMsg');
-  document.querySelector('.gridArea').addEventListener('click', () => {
+  const gridAreaEl = document.querySelector('.gridArea');
+  const gridEl = document.querySelector('.grid');
+  const fanLayer = document.getElementById('fanLayer');
+  gridAreaEl.addEventListener('click', (e) => {
     if (screenState === 'log') return; // ログ表示中は布グリッドのタップを無効化(§5.13)
+    if (screenState === 'stats') {
+      // 数値表画面中はチャージ演出を発火させず、マス選択/倍率サイクルの処理に切り替える(§5.8)
+      if (statSuppressClick) { statSuppressClick = false; return; } // 直前が下フリック=タップとして扱わない
+      const cellEl = e.target.closest('.cell');
+      if (!cellEl) return;
+      handleStatsCellTap(cellEl);
+      return;
+    }
     fxLane.classList.remove('play');
     fxMsg.style.fontSize = '87px';
     fxMsg.style.display = 'inline-block'; // 一時表示して全幅を実測
@@ -549,6 +699,223 @@
     void fxLane.offsetWidth; // リフローを挟んでアニメーションを最初から再生
     fxLane.classList.add('play');
   });
+
+  // ---- 数値表画面(§5.8): ダメージ計算(SPEC §3.2)+マス選択/倍率サイクル+残数値の扇状表示 ----
+  // 行(縦)=倍率。表示順は上から: 糸ほぐし(倍率表記なし)/かげん×0.5/半かげん×0.75/通常×1/巻きこみ×1.5/2倍×2/3倍×3
+  const STAT_ROWS = [
+    { key: 'unravel', mul: null, values: [-6, -7, -8, -9], isUnravel: true },
+    { key: 'kagen', mul: 0.5, values: [12, 13, 14, 15, 16, 17, 18] },
+    { key: 'hankagen', mul: 0.75, values: [12, 13, 14, 15, 16, 17, 18] },
+    { key: 'normal', mul: 1, values: [12, 13, 14, 15, 16, 17, 18] },
+    { key: 'makikomi', mul: 1.5, values: [12, 13, 14, 15, 16, 17, 18] },
+    { key: 'double', mul: 2, values: [12, 13, 14, 15, 16, 17, 18] },
+    { key: 'triple', mul: 3, values: [12, 13, 14, 15, 16, 17, 18] },
+  ];
+  const STAT_POWER_COEF = { weak: 0.5, normal: 1, strong: 1.5, max: 2 };
+  // 残数値の扇状表示: 値数ごとの固定角度(7値時 225/180/135/90/45/0/315°。下方向270°は空き)
+  const STAT_FAN_ANGLES = {
+    7: [225, 180, 135, 90, 45, 0, 315],
+    6: [225, 180, 135, 45, 0, 315],
+    5: [180, 135, 90, 45, 0],
+    4: [180, 135, 45, 0],
+    3: [180, 90, 0],
+    2: [180, 0],
+    1: [90],
+  };
+
+  // 現在プレートのぬいパワー(viewCycle の chipCurrent)に初期値を連動(§5.8)
+  function detectCurrentPower() {
+    const cur = document.querySelector('.viewCycle .chipCurrent');
+    if (cur) {
+      if (cur.classList.contains('pw-weak')) return 'weak';
+      if (cur.classList.contains('pw-strong')) return 'strong';
+      if (cur.classList.contains('pw-max')) return 'max';
+    }
+    return 'normal';
+  }
+
+  let statMul = 3; // 選択倍率行index(初期=通常×1)
+  let statPower = detectCurrentPower();
+  let statShitsuke = false;
+  let statHikari = false;
+  let statCellEl = null;
+  let statDragStartY = null;
+  let statSuppressClick = false;
+
+  const statTableEl = document.getElementById('statTable');
+  const statRowEls = Array.from(statTableEl.querySelectorAll('.statRow2'));
+  const statPowerBtns = Array.from(document.querySelectorAll('.statPowerChips .statChip'));
+  const statShitsukeBtn = document.getElementById('statShitsukeBtn');
+  const statHikariBtn = document.getElementById('statHikariBtn');
+
+  // SPEC §3.2: 括弧を閉じるたびに正方向丸め(Math.ceil)。
+  // 糸ほぐし以外: ((基礎値×特技倍率)×ぬいパワー係数)×マス補正 / 糸ほぐし: (基礎値×ぬいパワー係数×マス補正)、絶対値表示
+  function calcStatValue(row, baseVal, coef, mod) {
+    if (row.isUnravel) {
+      return Math.abs(Math.ceil(baseVal * coef * mod));
+    }
+    let v = Math.ceil(baseVal * row.mul);
+    v = Math.ceil(v * coef);
+    return v * mod;
+  }
+
+  function currentMod() {
+    return (statShitsuke ? 2 : 1) * (statHikari ? 2 : 1);
+  }
+
+  function renderStatsTable() {
+    const coef = STAT_POWER_COEF[statPower];
+    const mod = currentMod();
+    statRowEls.forEach((rowEl, idx) => {
+      const row = STAT_ROWS[idx];
+      const valEls = rowEl.querySelectorAll('.statVal');
+      row.values.forEach((bv, i) => {
+        const val = calcStatValue(row, bv, coef, mod);
+        const el = valEls[i];
+        el.querySelector('.t2s').textContent = val;
+        el.querySelector('.t2f').textContent = val;
+      });
+      rowEl.classList.toggle('statRowSelected', idx === statMul);
+    });
+  }
+
+  function updateStatPowerUI() {
+    statPowerBtns.forEach((b) => b.classList.toggle('on', b.dataset.power === statPower));
+  }
+  function updateStatToggleUI() {
+    statShitsukeBtn.classList.toggle('on', statShitsuke);
+    statHikariBtn.classList.toggle('on', statHikari);
+  }
+
+  function computeFanValues() {
+    if (!statCellEl) return [];
+    const row = STAT_ROWS[statMul];
+    const remaining = parseInt(statCellEl.querySelector('.cellNum .t2f').textContent, 10);
+    const coef = STAT_POWER_COEF[statPower];
+    const mod = currentMod();
+    const vals = row.values.map((bv) => {
+      const amount = calcStatValue(row, bv, coef, mod); // ダメージ量(常に非負の絶対値)
+      return row.isUnravel ? remaining + amount : remaining - amount;
+    });
+    return Array.from(new Set(vals)).sort((a, b) => a - b);
+  }
+
+  function clearStatFan() {
+    fanLayer.innerHTML = '';
+  }
+
+  function renderStatFan() {
+    clearStatFan();
+    if (screenState !== 'stats' || !statCellEl) return;
+    const vals = computeFanValues();
+    const angles = STAT_FAN_ANGLES[vals.length];
+    if (!angles) return;
+    const gaRect = gridAreaEl.getBoundingClientRect();
+    const cellRect = statCellEl.getBoundingClientRect();
+    const cx = cellRect.left - gaRect.left + cellRect.width / 2;
+    const cy = cellRect.top - gaRect.top + cellRect.height / 2;
+    const r = 54;
+    vals.forEach((v, i) => {
+      const rad = (angles[i] * Math.PI) / 180;
+      const x = cx + r * Math.cos(rad);
+      const y = cy - r * Math.sin(rad); // 画面座標はY下向きのため反転
+      const neg = v < 0;
+      const wrap = document.createElement('span');
+      wrap.className = 'fanVal';
+      wrap.style.left = x + 'px';
+      wrap.style.top = y + 'px';
+      wrap.innerHTML = '<span class="t2 fanNum' + (neg ? ' fanNeg' : '') + '">'
+        + '<span class="t2s">' + v + '</span><span class="t2f">' + v + '</span></span>';
+      fanLayer.appendChild(wrap);
+    });
+  }
+
+  function handleStatsCellTap(cellEl) {
+    const wasNoSelection = !statCellEl;
+    if (statCellEl === cellEl) {
+      // 同じマスの再タップ=倍率を1行下へ(3倍の次は糸ほぐし→…とループ)
+      statMul = (statMul + 1) % STAT_ROWS.length;
+    } else {
+      // 別のマスのタップ=そのマスを選択(倍率は変えない)。実状態にしつけ/光トグルを追従
+      statCellEl = cellEl;
+      statShitsuke = cellEl.classList.contains('cellShitsuke');
+      statHikari = cellEl.classList.contains('cellGlow');
+      if (wasNoSelection) statMul = 3; // 未選択からの最初のタップは通常×1
+      updateStatToggleUI();
+    }
+    renderStatsTable();
+    renderStatFan();
+  }
+
+  // 下フリック(30px以上)=倍率を1行上へ(ループ)。タップと誤認しないよう直後のclickを抑制
+  gridEl.addEventListener('pointerdown', (e) => {
+    if (screenState !== 'stats') return;
+    statDragStartY = e.clientY;
+  });
+  gridEl.addEventListener('pointerup', (e) => {
+    if (screenState !== 'stats' || statDragStartY === null) return;
+    const dy = e.clientY - statDragStartY;
+    statDragStartY = null;
+    if (dy >= 30) {
+      statSuppressClick = true;
+      statMul = (statMul + STAT_ROWS.length - 1) % STAT_ROWS.length;
+      renderStatsTable();
+      renderStatFan();
+    }
+  });
+
+  // 数値表の行タップ=その倍率を直接選択
+  statTableEl.addEventListener('click', (e) => {
+    const rowEl = e.target.closest('.statRow2');
+    if (!rowEl) return;
+    statMul = parseInt(rowEl.dataset.row, 10);
+    renderStatsTable();
+    renderStatFan();
+  });
+
+  // ぬいパワーチップ
+  statPowerBtns.forEach((b) => {
+    b.addEventListener('click', () => {
+      statPower = b.dataset.power;
+      updateStatPowerUI();
+      renderStatsTable();
+      renderStatFan();
+    });
+  });
+  // しつけ/光トグル(タップごとに切替)
+  statShitsukeBtn.addEventListener('click', () => {
+    statShitsuke = !statShitsuke;
+    updateStatToggleUI();
+    renderStatsTable();
+    renderStatFan();
+  });
+  statHikariBtn.addEventListener('click', () => {
+    statHikari = !statHikari;
+    updateStatToggleUI();
+    renderStatsTable();
+    renderStatFan();
+  });
+
+  updateStatPowerUI();
+  updateStatToggleUI();
+  renderStatsTable();
+
+  // 自己検証(SPEC §3.2 の数表準拠。コンソールで確認): 通常×1・強い・補正1 / 糸ほぐし・普通・補正2 / かげん×0.5・弱い・補正1
+  console.assert(
+    JSON.stringify(STAT_ROWS[3].values.map((v) => calcStatValue(STAT_ROWS[3], v, STAT_POWER_COEF.strong, 1)))
+      === JSON.stringify([18, 20, 21, 23, 24, 26, 27]),
+    '自己検証NG: 通常×1・強い・補正1'
+  );
+  console.assert(
+    JSON.stringify(STAT_ROWS[0].values.map((v) => calcStatValue(STAT_ROWS[0], v, STAT_POWER_COEF.normal, 2)))
+      === JSON.stringify([12, 14, 16, 18]),
+    '自己検証NG: 糸ほぐし・普通・補正2'
+  );
+  console.assert(
+    JSON.stringify(STAT_ROWS[1].values.map((v) => calcStatValue(STAT_ROWS[1], v, STAT_POWER_COEF.weak, 1)))
+      === JSON.stringify([3, 4, 4, 4, 4, 5, 5]),
+    '自己検証NG: かげん×0.5・弱い・補正1'
+  );
 
   // ◀もどる: 確認ダイアログ(D39/§7-7)。実装では1ターン目(未行動)は確認なしで即もどる。
   // モックの盤面は進行中(2ターン目以降)の表示例のため常にダイアログを出す
@@ -591,7 +958,7 @@
   });
 
   // ---- §5.10 右上ボタン3状態ループ + §5.13 ログ画面 ----
-  // screenState: 'play'(プレイ画面) → 'stats'(数値表・プレースホルダ) → 'log'(ログ画面) → 'play' … の順にループ
+  // screenState: 'play'(プレイ画面) → 'stats'(数値表画面・§5.8) → 'log'(ログ画面) → 'play' … の順にループ
   let screenState = 'play';
   const viewBtn = document.getElementById('viewBtn');
   const skillsEl = document.getElementById('skills');
@@ -630,6 +997,7 @@
     viewBtn.textContent = screenState === 'play' ? '数値表' : (screenState === 'stats' ? 'ログ' : 'プレイ');
     updateStepButtons();
     if (screenState === 'log') { renderLogHighlight(); scrollCurrentLogIntoView(); }
+    if (screenState !== 'stats') { clearStatFan(); } // プレイ/ログ遷移時は扇状表示を消す(§5.8)
   }
   viewBtn.addEventListener('click', () => {
     screenState = screenState === 'play' ? 'stats' : (screenState === 'stats' ? 'log' : 'play');
