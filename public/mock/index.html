@@ -152,14 +152,13 @@
     --t2fill: linear-gradient(180deg, #ffe14d 0%, #f07f1a 100%);
     filter: drop-shadow(0 3px 4px rgba(0,0,0,.35)); }
   /* 文字は内側から「グラデーション→白縁→山吹縁」の3層構造(2026-07-10)。
-     グラデ部分は字画いっぱい+中間色の細ストローク(.028em)で太らせる(擬似ボールド。
-     源暎ラテミンのサブセットは単一ウェイトのため font-weight では太らない)。
-     ストロークは字画の内外に半分ずつ広がるため、見えるリング幅は
-     白 = (.13-.028)/2 ≒ .05em、山吹 = (.21-.13)/2 = .04em。太さの調整は白縁で行う */
+     グラデ部分は元の字画そのまま(擬似ボールドの単色ストロークは、細い字画では
+     内部をほぼ覆ってグラデーションを平坦化するため撤去。2026-07-10)。
+     ストロークは字画の内外に半分ずつ広がり、内側は上のグラデ塗りが覆うため、
+     見えるリング幅は 白 = .13/2 ≒ .065em、山吹 = (.21-.13)/2 = .04em。調整は白縁で行う */
   .fxMsg .t2s { -webkit-text-stroke-width: .21em; -webkit-text-stroke-color: #e8a000; }
   .fxMsg .t2w { position: absolute; inset: 0; color: transparent;
     -webkit-text-stroke-width: .13em; -webkit-text-stroke-color: #ffffff; }
-  .fxMsg .t2f { -webkit-text-stroke-width: .028em; -webkit-text-stroke-color: #f8b53a; }
   .fxLane.play .fxMsg { display: inline-block; animation: fxCharge 1.25s both; }
   @keyframes fxCharge {
     /* 0.4s(32%)で中央: 減速イン → 0.5s静止 → 0.35sで加速アウト */
