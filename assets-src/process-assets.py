@@ -79,6 +79,9 @@ GREEN_WIPE_PARTS = {
     "btn_step_undo_normal", "btn_step_undo_pressed", "btn_step_undo_disabled",
     "btn_step_redo_normal", "btn_step_redo_pressed", "btn_step_redo_disabled",
     "chip_on", "chip_off",
+    # 2026-07-12 追加: 金/ベージュのプレートで正当な緑なし(normal は焼き込みシャドウ×緑背景の
+    # 混色が右下境界に残った実機指摘への対処。label_power も同種のため予防的に追加)
+    "label_power", "label_power_normal",
 }
 GREEN_HI = 0.35  # これを超えたら確実に背景 → α=0(solid判定・侵食保護より優先)
 GREEN_LO = 0.12  # これ以下は前景 → 既存のdist/erosionロジックに委ねる(中間はAA帯として半透明処理)
