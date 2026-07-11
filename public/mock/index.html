@@ -224,16 +224,15 @@
   .errNum { min-width: 52px; text-align: left; }
   /* 集中力のラベルは「残り/集中力」の2行表記(左端揃え) */
   .statLbl2 { font-size: 11px; line-height: 1.2; text-align: left; }
-  /* 1手戻す/1手進む: 左右対称の小型ボタン(矢印+2行ラベル。幅は特技列と独立。D45/D52)。
+  /* 1手戻す/1手進む: 円形ボタン+曲がり矢印アイコンのみ(戻す=↺反時計回り/進む=↻時計回り。
+     D45/D52・§4.4 btn_step_*)。素材(btn_step_*)生成までの繋ぎとしてCSS円+SVG矢印で仮描画。
      プレイ中の「進む」はPC版実装済みのredo(履歴ポインタ)準拠、無効時はグレー(モックは表示例) */
-  .stepBtn { height: 44px; padding: 0; font-size: 10.5px; font-weight: bold;
-    display: flex; align-items: center; justify-content: center; gap: 2px;
-    color: #fff; background: none;
-    border: 8px solid transparent;
-    border-image: url('./assets/btn_undo_normal.png') 26 fill / 8px stretch; }
-  .stepBtn:active { border-image-source: url('./assets/btn_undo_pressed.png'); }
-  .stepArrow { font-size: 9px; }
-  .stepLbl { line-height: 1.15; text-align: center; }
+  .stepBtn { width: 44px; height: 44px; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: #ead9b3; border: 1.5px solid #6b4a26; border-radius: 50%;
+    color: #4a3313; }
+  .stepBtn:active { background: #d9c497; }
+  .stepBtn svg { width: 24px; height: 24px; }
   /* メッセージ欄: ウィンドウ調にしない(ボタンと混同するため)。
      上辺の罫線(中央ブロック幅)で数値行と区別する */
   .msgCell {
@@ -376,7 +375,9 @@
 
     <!-- D45改定: 数値・メッセージ領域(左右対称: ◀戻す|数値+メッセージ|進む▶。メッセージ欄タップでサンプル切替) -->
     <div class="statusGrid">
-      <button class="stepBtn" type="button"><span class="stepArrow">◀</span><span class="stepLbl">1手<br>戻す</span></button>
+      <button class="stepBtn" type="button" aria-label="1手戻す">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.2 7.2 A 7 7 0 1 0 12 5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><polygon points="13.6,1.6 13.6,8.4 7.8,5" fill="currentColor"/></svg>
+      </button>
       <div class="statusCenter">
         <div class="statRow">
           <span class="stat">ターン <b class="turnNum">6</b></span>
@@ -385,7 +386,9 @@
         </div>
         <div class="msgCell" id="msgWin">消費集中力が 半分になった！</div>
       </div>
-      <button class="stepBtn" type="button"><span class="stepLbl">1手<br>進む</span><span class="stepArrow">▶</span></button>
+      <button class="stepBtn" type="button" aria-label="1手進む">
+        <svg viewBox="0 0 24 24" aria-hidden="true" style="transform: scaleX(-1)"><path d="M7.2 7.2 A 7 7 0 1 0 12 5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><polygon points="13.6,1.6 13.6,8.4 7.8,5" fill="currentColor"/></svg>
+      </button>
     </div>
 
     <!-- 特技 5行4列(§5.3.1) -->
@@ -446,7 +449,7 @@
     </div>
   </div>
 
-  <div class="caption">UIモック v2.9(トーンB・画像AI実素材)— 1手戻す/進む=左右対称配置(進む=リドゥ、表示例)/ 布グリッドタップ=必殺チャージ演出 / ◀もどるタップ=確認ダイアログ(実装では2ターン目以降のみ)/ パワー行タップ=サイクル開閉(横スクロール可)/ ぬいパワープレートタップ=必殺使用時表示(会心×２)切替 / メッセージ欄タップ=文言切替 / きらめき2個=精神統一残り2の表示例 / 「27」=発光マス・「88」=しつけ×発光マスの表示例</div>
+  <div class="caption">UIモック v2.10(トーンB・画像AI実素材)— 1手戻す/進む=円形曲がり矢印(素材生成までSVG仮描画)/ 布グリッドタップ=必殺チャージ演出 / ◀もどるタップ=確認ダイアログ(実装では2ターン目以降のみ)/ パワー行タップ=サイクル開閉(横スクロール可)/ ぬいパワープレートタップ=必殺使用時表示(会心×２)切替 / メッセージ欄タップ=文言切替 / きらめき2個=精神統一残り2の表示例 / 「27」=発光マス・「88」=しつけ×発光マスの表示例</div>
 </div>
 
 <script>
