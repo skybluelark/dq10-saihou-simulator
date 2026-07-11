@@ -151,10 +151,14 @@
   .fxMsg { display: none; white-space: nowrap; font-size: 87px; font-weight: bold;
     --t2fill: linear-gradient(180deg, #ffe14d 0%, #f07f1a 100%);
     filter: drop-shadow(0 3px 4px rgba(0,0,0,.35)); }
-  /* 縁は文字サイズ比例。インパクト重視で太めの山吹縁(.11em)。
-     塗り層にも中間色の細ストローク(.028em)を足して字画自体を太らせる(擬似ボールド。
-     源暎ラテミンのサブセットは単一ウェイトのため font-weight では太らない) */
-  .fxMsg .t2s { -webkit-text-stroke-width: .11em; -webkit-text-stroke-color: #e8a000; }
+  /* 文字は内側から「グラデーション→白縁→山吹縁」の3層構造(2026-07-10)。
+     グラデ部分は字画いっぱい+中間色の細ストローク(.028em)で太らせる(擬似ボールド。
+     源暎ラテミンのサブセットは単一ウェイトのため font-weight では太らない)。
+     ストロークは字画の内外に半分ずつ広がるため、見えるリング幅は
+     白 = (.13-.028)/2 ≒ .05em、山吹 = (.21-.13)/2 = .04em。太さの調整は白縁で行う */
+  .fxMsg .t2s { -webkit-text-stroke-width: .21em; -webkit-text-stroke-color: #e8a000; }
+  .fxMsg .t2w { position: absolute; inset: 0; color: transparent;
+    -webkit-text-stroke-width: .13em; -webkit-text-stroke-color: #ffffff; }
   .fxMsg .t2f { -webkit-text-stroke-width: .028em; -webkit-text-stroke-color: #f8b53a; }
   .fxLane.play .fxMsg { display: inline-block; animation: fxCharge 1.25s both; }
   @keyframes fxCharge {
@@ -367,7 +371,7 @@
         <button class="cell c-normal" type="button"><span class="cellNum t2"><span class="t2s">62</span><span class="t2f">62</span></span></button>
       </div>
       <!-- 必殺チャージ演出(D20)。モックでは布グリッドタップで再生 -->
-      <div class="fxLane" id="fxLane"><span class="fxMsg t2"><span class="t2s">ひっさつチャージ！！</span><span class="t2f">ひっさつチャージ！！</span></span></div>
+      <div class="fxLane" id="fxLane"><span class="fxMsg t2"><span class="t2s">ひっさつチャージ！！</span><span class="t2w">ひっさつチャージ！！</span><span class="t2f">ひっさつチャージ！！</span></span></div>
     </section>
 
     <!-- D45: 数値・メッセージ領域(2行×4列。メッセージ欄タップでサンプル切替) -->
