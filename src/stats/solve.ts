@@ -79,9 +79,12 @@ export function solve(ctx: SolverContext, state: GameState, options: SolveOption
   const {
     timeBudgetMs = 1000,
     maxRollouts = Infinity,
-    topK = 8,
-    minSamples = 30,
-    batchSize = 25,
+    // 既定は1秒予算(現状約60試行)と整合させる: topK×minSamples が初回予算の
+    // 1〜2回分に収まらないと、「精度を上げる」の追加予算が下位候補の初期埋めに
+    // 消えて上位候補の表示が変わらない(S8⓪-(3))。
+    topK = 6,
+    minSamples = 15,
+    batchSize = 15,
     baseSeed = 0x5eed,
     prior,
   } = options;

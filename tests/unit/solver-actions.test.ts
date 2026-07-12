@@ -178,4 +178,13 @@ describe('enumerateCandidates: 除外規則', () => {
     const usedAlready = grid3x3(engine, { hissatsuCharged: true, hissatsuUsed: true });
     expect(skillIds(enumerateCandidates(engine, usedAlready, config))).not.toContain('muga_no_kyochi');
   });
+
+  it('精神統一: ロック中(lockPowerRemaining>0)は再ロックが除外される。非ロック時は候補に含まれる', () => {
+    const engine = buildEngine();
+    const locked = grid3x3(engine, { lockPowerRemaining: 2, lockedPower: 'strong' });
+    expect(skillIds(enumerateCandidates(engine, locked, config))).not.toContain('seishin_toitsu');
+
+    const unlocked = grid3x3(engine, { lockPowerRemaining: 0, lockedPower: null });
+    expect(skillIds(enumerateCandidates(engine, unlocked, config))).toContain('seishin_toitsu');
+  });
 });

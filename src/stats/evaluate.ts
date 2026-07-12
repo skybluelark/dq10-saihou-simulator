@@ -37,6 +37,34 @@ function scheduleFromState(state: GameState): ScheduleState {
   };
 }
 
+/**
+ * 全候補を「その行動でターンが1つ進んだ後」のスケジュールで評価する(手番の機会費用を
+ * 同一土俵化。S8⓪-(1))。エンジンの endTurn と同じ規則でロック残り・サイクル位置を1ターン
+ * 分進める。forcedNextPower は endTurn では変化しないためそのまま引き継ぐ(avgCoeff のループ
+ * が次ターン開始時に消費する)。元オブジェクトは変更せず新オブジェクトを返す。
+ */
+function advanceSchedule(schedule: ScheduleState): ScheduleState {
+  let lockPowerRemaining = schedule.lockPowerRemaining;
+  let lockedPower = schedule.lockedPower;
+  let cycleIndex = schedule.cycleIndex;
+
+  if (lockPowerRemaining > 0) {
+    lockPowerRemaining -= 1;
+    if (lockPowerRemaining === 0) lockedPower = null;
+  }
+  if (lockPowerRemaining === 0 && schedule.powerCycle.length > 0) {
+    cycleIndex = (cycleIndex + 1) % schedule.powerCycle.length;
+  }
+
+  return {
+    lockPowerRemaining,
+    lockedPower,
+    forcedNextPower: schedule.forcedNextPower,
+    cycleIndex,
+    powerCycle: schedule.powerCycle,
+  };
+}
+
 /** 実効パワー係数('？'=unknownCoeff、会心×2=1)。 */
 function coeffFor(ctx: SolverContext, power: Power): number {
   if (power === 'unknown') return ctx.params.unknownCoeff;
@@ -201,7 +229,7 @@ function scoreDistribution(
   index: number,
 ): ScoredCandidate {
   const dist = actionDistribution(ctx.engine, state, ctx.config, candidate);
-  const schedule = scheduleFromState(state);
+  const schedule = advanceSchedule(scheduleFromState(state)); // 手番の機会費用(S8⓪-(1))
   const muga: 0 | 1 = state.mugaActive ? 1 : 0;
   const targetPmf = new Map<string, CellPmf>(dist.cells.map((d) => [`${d.r},${d.c}`, d.pmf]));
 
@@ -237,7 +265,7 @@ function scoreDistribution(
 
 /** 無我の境地: muga=1 変種で評価する(集中力は変化しない)。 */
 function scoreMuga(ctx: SolverContext, state: GameState, candidate: Candidate, index: number): ScoredCandidate {
-  const schedule = scheduleFromState(state);
+  const schedule = advanceSchedule(scheduleFromState(state)); // 手番の機会費用(S8⓪-(1))
   const { totalErr, concNeed } = accumulate(ctx, state, schedule, 1);
   const concAvailable = state.concentration - candidate.cost;
   const boundary = boundsFor(state.massCount, state.errorLimit, ctx.data.params);
@@ -248,7 +276,7 @@ function scoreMuga(ctx: SolverContext, state: GameState, candidate: Candidate, i
 /** しつけがけ: 対象マスのみ correction=2 で評価する。 */
 function scoreShitsuke(ctx: SolverContext, state: GameState, candidate: Candidate, index: number): ScoredCandidate {
   const target = candidate.targetCells[0];
-  const schedule = scheduleFromState(state);
+  const schedule = advanceSchedule(scheduleFromState(state)); // 手番の機会費用(S8⓪-(1))
   const muga: 0 | 1 = state.mugaActive ? 1 : 0;
   const { totalErr, concNeed } = accumulate(ctx, state, schedule, muga, target);
   const concAvailable = state.concentration - candidate.cost;
@@ -265,6 +293,8 @@ function scoreLockPower(
   duration: number,
   index: number,
 ): ScoredCandidate {
+  // 使用ターンの endTurn で dur+1→dur に減るため残り dur(手番の機会費用込み・S8⓪-(1))。
+  // ロック中はサイクル前進しないため cycleIndex はそのまま。
   const schedule: ScheduleState = {
     lockPowerRemaining: duration,
     lockedPower: state.currentPower,
@@ -291,13 +321,9 @@ function scoreShiftPower(ctx: SolverContext, state: GameState, candidate: Candid
   let sumErr = 0;
   let sumConc = 0;
   for (const to of options) {
-    const schedule: ScheduleState = {
-      lockPowerRemaining: state.lockPowerRemaining,
-      lockedPower: state.lockedPower,
-      forcedNextPower: to,
-      cycleIndex: state.cycleIndex,
-      powerCycle: state.powerCycle,
-    };
+    // 手番の機会費用(S8⓪-(1)): forcedNextPower=to をセットした上でエンジンの endTurn と
+    // 同じ規則で1ターン進める(ロック中でなければサイクルも前進する)。
+    const schedule = advanceSchedule({ ...scheduleFromState(state), forcedNextPower: to });
     const { totalErr, concNeed } = accumulate(ctx, state, schedule, muga);
     sumV += toV(ctx, totalErr, concNeed, concAvailable, boundary.star3);
     sumErr += totalErr;

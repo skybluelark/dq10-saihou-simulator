@@ -93,6 +93,8 @@ export function enumerateCandidates(
     }
 
     if (skill.kind === 'support' && skill.effect !== 'cellCorrection') {
+      // 精神統一: ロック中の再ロックは合法だが実戦上無意味(連打の温床)なので除外
+      if (skill.effect === 'lockPower' && state.lockPowerRemaining > 0) continue;
       // 精神統一・ぬいパワーシフト: 対象なし、常に候補
       candidates.push({ action: { type: 'skill', skillId: skill.id }, skillId: skill.id, cost, targetCells: [] });
       continue;

@@ -177,3 +177,53 @@ describe('scoreCandidates: 決定論', () => {
     expect(s2).toEqual(s1);
   });
 });
+
+describe('scoreCandidates: 待ち手の回帰テスト(発光ターン・ユーザー報告事例)', () => {
+  it('光布・発光中の残り6マスは非会心で必ず縫いすぎになるため、支援候補(精神統一/シフト)が縫い候補より上位', () => {
+    const ctx = makeCtx();
+    // 2×2・4マス盤面(base30)。残り[0,0,1,6]、(2,2)が発光中。
+    const cells = [
+      { r: 1, c: 1, base: 30, cumulative: 30, shitsuke: false }, // 残り0
+      { r: 1, c: 2, base: 30, cumulative: 30, shitsuke: false }, // 残り0
+      { r: 2, c: 1, base: 30, cumulative: 29, shitsuke: false }, // 残り1
+      { r: 2, c: 2, base: 30, cumulative: 24, shitsuke: false }, // 残り6(発光中)
+    ];
+    const state = ctx.engine.createStateFromSnapshot({
+      recipeId: 'test_light',
+      clothType: 'light',
+      rows: 2,
+      cols: 2,
+      massCount: 4,
+      cells,
+      powerCycle: ['normal'],
+      currentPower: 'normal',
+      glowCell: { r: 2, c: 2 },
+      turnStarted: true,
+      hissatsuUsed: true,
+      concentration: 100,
+    });
+
+    const scored = scoreCandidates(ctx, state);
+
+    const sewSkillIds = new Set(ctx.engine.listSkills().filter((s) => s.kind === 'sew').map((s) => s.id));
+    const sewsGlowCell = (s: (typeof scored)[number]): boolean =>
+      s.candidate.skillId !== null &&
+      sewSkillIds.has(s.candidate.skillId) &&
+      s.candidate.targetCells.some((t) => t.r === 2 && t.c === 2);
+
+    const glowSewCandidates = scored.filter(sewsGlowCell);
+    const supportCandidates = scored.filter(
+      (s) => s.candidate.skillId === 'seishin_toitsu' || s.candidate.skillId === 'power_shift',
+    );
+    expect(glowSewCandidates.length).toBeGreaterThan(0);
+    expect(supportCandidates.length).toBeGreaterThan(0);
+
+    // 1. 発光マスを対象に含む縫い候補より、支援候補(精神統一 or ぬいパワーシフト)のほうが上位
+    const bestGlowSewScore = Math.max(...glowSewCandidates.map((s) => s.score));
+    const bestSupportScore = Math.max(...supportCandidates.map((s) => s.score));
+    expect(bestSupportScore).toBeGreaterThan(bestGlowSewScore);
+
+    // 2. トップ候補が「発光マスへの縫い」ではない
+    expect(sewsGlowCell(scored[0])).toBe(false);
+  });
+});
