@@ -3,9 +3,9 @@
 # デプロイは公開用リポジトリ(fluoritedq10)の GitHub Actions から
 # `wrangler pages deploy` で行う。Git 連携ビルドは使わない(品質ゲートは Actions 側)。
 #
-# name は Cloudflare Pages のプロジェクト名。<project>.pages.dev のサブドメインになるため、
-# ブランド確定(docs/PUBLISHING.md §8 の未決事項)後に改名する場合は、
-# Cloudflare 側プロジェクト名とこの値・CI の --project-name を必ず一致させること。
-name = "dq10-saihou-sim"
+# name は Cloudflare Pages のプロジェクト名 = <name>.pages.dev のサブドメイン(英小文字のみ)。
+# ブランド "FluoNote" 確定(2026-07-12)により fluonote に確定。Cloudflare 側プロジェクト名と
+# この値を必ず一致させること(不一致だと CI のデプロイ先がずれる)。
+name = "fluonote"
 compatibility_date = "2026-07-12"
 pages_build_output_dir = "dist"
