@@ -13,7 +13,8 @@
     "test:stats": "vitest run tests/stats",
     "lint": "eslint src",
     "recipes:import": "vite-node scripts/recipes-import.ts",
-    "recipes:export": "vite-node scripts/recipes-export.ts"
+    "recipes:export": "vite-node scripts/recipes-export.ts",
+    "solver:bench": "vite-node scripts/solver-bench.ts"
   },
   "dependencies": {
     "react": "^18.3.1",
