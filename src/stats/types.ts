@@ -31,6 +31,10 @@ export interface SolverParams {
   unknownCoeff: number;    // 「？」の期待係数(既定1.2)
   sigmoidScale: number;    // マージンのシグモイド尺度 s0(既定3)
   concPenalty: number;     // 集中力不足ペナルティ λ(既定0.01)
+  workEfficiencyBase: number; // パワー係数1.0時の「集中力1あたりの期待削り量」(既定8)。
+                              // みだれ・ライン系等の高効率特技を前提とした達成可能効率で、
+                              // 削り工程(r > fineLimit)の所要集中力 = 残り作業量 ÷ (この値×係数平均)。
+                              // 終盤の無駄打ち分を織り込んだ割引済みの値をM④で校正する
   rMin: number;            // DPドメイン下限(既定-30)
   rMax: number;            // DPドメイン上限(既定+30)
 }
@@ -43,6 +47,7 @@ export const DEFAULT_SOLVER_PARAMS: SolverParams = {
   unknownCoeff: 1.2,
   sigmoidScale: 3,
   concPenalty: 0.01,
+  workEfficiencyBase: 8,
   rMin: -30,
   rMax: 30,
 };

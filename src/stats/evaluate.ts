@@ -71,22 +71,15 @@ function avgCoeff(ctx: SolverContext, schedule: ScheduleState): number {
   return sum / horizon;
 }
 
-/** 削り工程(r > fineLimit)の合成値。仕上げテーブル r=8..16 の平均に削り分の見積もりを加える。 */
+/**
+ * 削り工程(r > fineLimit)の合成値。
+ * 期待誤差は仕上げテーブル r=8..16 の平均(削り後は仕上げ域に入る前提)。
+ * 所要集中力は「残り作業量 ÷ 達成可能効率」で見積もる。効率 = workEfficiencyBase ×
+ * 今後のパワー係数平均。これにより高効率な行動(削り量が大きくコストが小さい)ほど
+ * 次状態の所要集中力が下がり、ダメージ/集中力効率が候補スコアの勾配として働く。
+ */
 function roughCompose(ctx: SolverContext, r: number, muga: 0 | 1, schedule: ScheduleState): FinishEntry {
-  const { data, config, params } = ctx;
-  const sewSkills = data.skills.skills.filter(
-    (s) => s.kind === 'sew' && s.target === 'single' && (s.learnLv === undefined || s.learnLv <= config.level),
-  );
-  let maxSkill = sewSkills[0];
-  for (const s of sewSkills) {
-    if ((s.multiplier ?? 0) > (maxSkill?.multiplier ?? 0)) maxSkill = s;
-  }
-  const Mmax = maxSkill?.multiplier ?? 1;
-  const bigCost = maxSkill?.cost ?? 0;
-
-  const coeff = avgCoeff(ctx, schedule);
-  const bigAvg = 15 * Mmax * coeff; // 基礎値平均15
-  const kBig = bigAvg > 0 ? Math.max(0, Math.ceil((r - params.fineTarget) / bigAvg)) : 0;
+  const { params } = ctx;
 
   const lo = 8;
   const hi = 16;
@@ -101,10 +94,14 @@ function roughCompose(ctx: SolverContext, r: number, muga: 0 | 1, schedule: Sche
   }
   const n = hi - lo + 1;
 
+  const coeff = avgCoeff(ctx, schedule);
+  const efficiency = Math.max(1e-9, params.workEfficiencyBase * coeff); // 集中力1あたりの期待削り量
+  const extraWork = Math.max(0, r - params.fineTarget);
+
   return {
     expErr: sumErr / n,
-    actions: kBig + sumAct / n,
-    conc: kBig * bigCost + sumConc / n,
+    actions: extraWork / Math.max(1, 15 * 3 * coeff) + sumAct / n, // 概算(3倍ぬい相当の1打あたり削り量)
+    conc: extraWork / efficiency + sumConc / n,
   };
 }
 
@@ -177,12 +174,20 @@ export function evaluateState(
 
 // ---- 候補スコアリング ----
 
+/**
+ * finish候補のスコア。★3なら確定値1(継続のvは常に1未満のため最優先になる)。
+ * ★3未達なら-1: 目的関数は★3到達確率のみであり「★3未達でしあげる」の価値は厳密に0、
+ * 継続には僅かでも到達の望みがあるため、望みのある候補(v>-1)が常に優位になるようにする。
+ * (0にすると集中力ペナルティ等でvが負の序盤に「即しあげる」が最善と誤判定される)
+ */
+const FINISH_FAIL_SCORE = -1;
+
 function scoreFinish(ctx: SolverContext, state: GameState, candidate: Candidate, index: number): ScoredCandidate {
   const j = ctx.engine.judge(state);
   return {
     candidate,
     index,
-    score: j.star === 'star3' ? 1 : 0,
+    score: j.star === 'star3' ? 1 : FINISH_FAIL_SCORE,
     expTotalErr: j.totalError,
     expConcNeed: 0,
   };

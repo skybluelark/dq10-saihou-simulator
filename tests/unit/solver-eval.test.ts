@@ -137,12 +137,12 @@ describe('scoreCandidates: finish判定', () => {
     expect(finish.score).toBe(1);
   });
 
-  it('★3を外れる盤面ではfinishのscoreは0', () => {
+  it('★3を外れる盤面ではfinishのscoreは-1(望みのある継続候補が常に優位)', () => {
     const ctx = makeCtx();
     const state = grid3x3(ctx); // 全マス残り100(誤差評価値9×9=81 > star0=49)
     const scored = scoreCandidates(ctx, state);
     const finish = scored.find((s) => s.candidate.action.type === 'finish')!;
-    expect(finish.score).toBe(0);
+    expect(finish.score).toBe(-1);
   });
 });
 

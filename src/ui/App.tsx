@@ -33,6 +33,7 @@ import { ReplayDialog } from './ReplayDialog';
 import { ResultPanel } from './ResultPanel';
 import { RightPanel } from './RightPanel';
 import { SkillPanel } from './SkillPanel';
+import { SolverPanel } from './SolverPanel';
 import { formatEvents } from './format';
 import {
   deriveBalloons,
@@ -153,6 +154,11 @@ function App() {
   // バンドルデータとエンジン(不変)
   const data = useMemo(() => loadGameData(), []);
   const engine = useMemo(() => new Engine(data), [data]);
+  // ソルバー用データ(loadGameData() の戻り値には recipes が余分に含まれるため詰め替える)
+  const engineData = useMemo(
+    () => ({ params: data.params, needles: data.needles, skills: data.skills, concentration: data.concentration }),
+    [data],
+  );
   const skillMap = useMemo(
     () => new Map(data.skills.skills.map((s) => [s.id, s])),
     [data],
@@ -789,6 +795,15 @@ function App() {
             onSkillClick={handleSkillClick}
             onFinish={handleFinish}
           />
+
+          {devMode && session && currentGame && !currentGame.finished && (
+            <SolverPanel
+              engineData={engineData}
+              config={config}
+              game={currentGame}
+              skillName={skillName}
+            />
+          )}
 
           <LogPanel log={logItems} currentTurn={currentTurn} />
         </>
