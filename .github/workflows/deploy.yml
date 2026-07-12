@@ -1,6 +1,10 @@
 # GitHub Pages へのデプロイ (ARCHITECTURE A7)
 # master への push で品質ゲート(unit + stats + eslint + build)を通し、
 # 成功した場合のみ dist/ を Pages へ公開する。
+#
+# 開発リポジトリ(skybluelark)専用。公開は Cloudflare Pages(fluoritedq10)へ移行中のため、
+# repository_owner ガードでミラー先(fluoritedq10)では動作させない(docs/PUBLISHING.md)。
+# Cloudflare 仮公開の確認後、この GitHub Pages デプロイは廃止を検討する(§8 未決事項)。
 
 name: Deploy to GitHub Pages
 
@@ -20,6 +24,8 @@ concurrency:
 
 jobs:
   build:
+    # 開発リポジトリ(skybluelark)でのみ実行。ミラー先(fluoritedq10)では動かさない。
+    if: github.repository_owner == 'skybluelark'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -38,6 +44,7 @@ jobs:
 
   deploy:
     needs: build
+    if: github.repository_owner == 'skybluelark'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

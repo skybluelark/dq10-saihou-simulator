@@ -1,0 +1,37 @@
+# Cloudflare Pages へのデプロイ (docs/PUBLISHING.md)
+# 公開用リポジトリ(fluoritedq10)でのみ動作する。master への push で
+# 品質ゲート(unit + stats + eslint + build)を通し、成功時のみ dist/ を
+# Cloudflare Pages へ Direct Upload する。開発リポジトリ(skybluelark)では
+# repository_owner ガードによりスキップされる(両リポジトリにこのファイルが
+# ミラーされてもコンフリクト・無用な実行が起きない)。
+
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    # 公開アカウント(fluoritedq10)のリポジトリでのみ実行する
+    if: github.repository_owner == 'fluoritedq10'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run test:stats
+      - run: npx eslint src tests scripts
+      - run: npm run build
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # wrangler.toml の name / pages_build_output_dir を使用。
+          # --branch=master は Cloudflare Pages 上で本番デプロイ(Production)として扱わせる。
+          command: pages deploy --branch=master

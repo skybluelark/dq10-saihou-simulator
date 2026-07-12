@@ -1,0 +1,11 @@
+# Cloudflare Pages 構成 (docs/PUBLISHING.md 参照)
+# デモアプリ(ブラウザ版)を Cloudflare Pages へ Direct Upload するための設定。
+# デプロイは公開用リポジトリ(fluoritedq10)の GitHub Actions から
+# `wrangler pages deploy` で行う。Git 連携ビルドは使わない(品質ゲートは Actions 側)。
+#
+# name は Cloudflare Pages のプロジェクト名。<project>.pages.dev のサブドメインになるため、
+# ブランド確定(docs/PUBLISHING.md §8 の未決事項)後に改名する場合は、
+# Cloudflare 側プロジェクト名とこの値・CI の --project-name を必ず一致させること。
+name = "dq10-saihou-sim"
+compatibility_date = "2026-07-12"
+pages_build_output_dir = "dist"
