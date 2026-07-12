@@ -1,6 +1,8 @@
 # GitHub Pages へのデプロイ (ARCHITECTURE A7)
 # master への push で品質ゲート(unit + stats + eslint + build)を通し、
-# 成功した場合のみ dist/ を Pages へ公開する。
+# 成功した場合のみ dist-site/ を Pages へ公開する。
+# 配信構成は Cloudflare Pages(deploy-cloudflare.yml)と同一のサブパス構成
+# (build:site: / = ランディング, /sample/ = シンプルUI, /demo/ = プレースホルダ)。
 #
 # 開発リポジトリ(skybluelark)専用。公開は Cloudflare Pages(fluoritedq10)へ移行中のため、
 # repository_owner ガードでミラー先(fluoritedq10)では動作させない(docs/PUBLISHING.md)。
@@ -37,10 +39,10 @@ jobs:
       - run: npm test
       - run: npm run test:stats
       - run: npx eslint src tests scripts
-      - run: npm run build
+      - run: npm run build:site
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: dist-site
 
   deploy:
     needs: build
