@@ -693,7 +693,13 @@
   font-weight: bold;
   text-align: center;
   line-height: 1.15;
-  white-space: normal; /* 長い名前(ぬいパワーシフト等)は2行に折り返す */
+  white-space: normal; /* 長い名前は折り返す */
+}
+
+/* 特技名の分割セグメント(§5.3.1: ぬいパワーシフト)。各部分は途中で折り返さず、
+   折り返しはセグメント境界(「ぬいパワー」/「シフト」の間)でのみ起こす。 */
+.skillNameSeg {
+  white-space: nowrap;
 }
 
 .skillCost {

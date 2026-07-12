@@ -29,6 +29,22 @@ const orderIndex = (id: string): number => {
   return i === -1 ? SKILL_ORDER.length : i; // 未知の特技は末尾側(しあげるの直前)へ
 };
 
+// 特技名の改行位置を明示するための分割(スマホ版 §5.3.1: ぬいパワーシフトは「ぬいパワー/シフト」)。
+// 各セグメントを nowrap にし、折り返しはセグメント境界でのみ起こす(狭幅時)。
+const SKILL_NAME_SEGMENTS: Record<string, readonly string[]> = {
+  power_shift: ['ぬいパワー', 'シフト'],
+};
+
+function renderSkillName(id: string, name: string) {
+  const segs = SKILL_NAME_SEGMENTS[id];
+  if (!segs) return name;
+  return segs.map((s, i) => (
+    <span key={i} className={styles.skillNameSeg}>
+      {s}
+    </span>
+  ));
+}
+
 export function SkillPanel({
   skills,
   game,
@@ -56,7 +72,7 @@ export function SkillPanel({
             onClick={() => onSkillClick(skill.id)}
             title={skill.kind === 'hissatsu' ? '必殺チャージ時のみ使用可' : undefined}
           >
-            <span className={styles.skillName}>{skill.name}</span>
+            <span className={styles.skillName}>{renderSkillName(skill.id, skill.name)}</span>
             <span className={styles.skillCost}>{cost}</span>
           </button>
         );
