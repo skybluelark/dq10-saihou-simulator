@@ -639,14 +639,15 @@
 
 /* ---- 特技ボタン ---- */
 
-/* スマホアプリ版の配置(§5.3.1)に合わせ、固定幅の5行4列グリッドに整列。
-   ボタンの並び順は SkillPanel の SKILL_ORDER(行優先)で固定。 */
+/* スマホアプリ版の配置(§5.3.1)に合わせ、5行4列グリッドに整列。
+   ボタンの並び順は SkillPanel の SKILL_ORDER(行優先)で固定。
+   4列は均等可変(minmax(0,1fr))でコンテナ幅いっぱいに広げ、4列目の右端を
+   行動ログ(=.app 幅)の右端に一致させる。狭い画面でも横あふれしない。 */
 .skills {
   display: grid;
-  grid-template-columns: repeat(4, 104px);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 6px;
   margin-top: 16px;
-  justify-content: start;
 }
 
 .skillButton {
