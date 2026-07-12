@@ -1,4 +1,4 @@
-# ドラクエ10 さいほうシミュレータ 方式設計書 (v0.12)
+# ドラクエ10 さいほうシミュレータ 方式設計書 (v0.13)
 
 作成日: 2026-07-03 / 状態: A1〜A10 承認済み (2026-07-03)
 関連文書: [SPEC.md](SPEC.md)(ゲーム仕様) / [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md)(開発計画)
@@ -16,7 +16,7 @@
 src/
   core/   ゲームエンジン(状態遷移・判定。純関数のみ)
   data/   スキーマ型・ローダ・バリデーション
-  stats/  モンテカルロ実行・集計(将来対応: F8統計モード・F9ソルバー・W3計算機の共通基盤。初期は未実装)
+  stats/  ソルバー・モンテカルロ実行・集計(F9推奨・W3計算機・F8統計の共通基盤。設計=SOLVER_DESIGN.md、2026-07-13実装開始)
   ui/     Reactコンポーネント
 ```
 
@@ -100,6 +100,7 @@ evaluate(state: GameState, config: SimulatorConfig, options: EvaluateOptions)
 ```
 
 - stats のモンテカルロ基盤を共用。途中状態の入力は A3 の `createStateFromSnapshot()` を使う。
+- 実体は A12 のソルバー(`src/stats/solve.ts`)が提供する(F9 と共通基盤)。
 
 ## A11. リプレイコード(共有用圧縮表現。D38)
 
@@ -112,6 +113,16 @@ evaluate(state: GameState, config: SimulatorConfig, options: EvaluateOptions)
 - **完全/短縮の判別**(BACKEND_DESIGN §4): 「8文字かつ先頭が版数文字でない=短縮(サーバー照会)/それ以外=完全(ローカル復号)」。クライアントはこの判別と、短縮取得後の Base64url→復元のみを実装する(短縮キーの採番はサーバー側)。
 - **A6(JSON形式)との関係**: A6 の `{v:1, seed, recipeId, config, actions, check?}` は開発・検証用(verify UI・テスト・T9)の正として維持する。リプレイコードは同一情報の圧縮表現で、`recipeId`(文字列)↔数値IDの対応はレシピマスタ(`numericId`)で解決する。`check` はコードに含めない(誤入力検出はチェックデジット、版数はスキーマ版数フィールドが担う)。
 
+## A12. ソルバー(F9 最善手推奨・W3 共通基盤)
+
+方式・アルゴリズムの正は [SOLVER_DESIGN.md](SOLVER_DESIGN.md)。本節は方式上の位置づけのみ定める。
+
+- 配置は `src/stats/`(A2 の依存方向 `ui → stats → core` に従う純TS。stats → data 依存は作らない。データは `EngineData`/`Engine` 経由)。
+- 構成: Stage A(候補列挙+解析的1手分布+静的評価)→ Stage B(モンテカルロ・ロールアウトで★3率推定、anytime合算+racing)→ Stage C(公称プラン)。遷移は既存 `Engine.applyAction`/`beginTurn` を再利用する。
+- **乱数分離**: 探索・ロールアウトは専用RNG(決定的シード払い出し)を使い、セッションの乱数列を一切消費しない。A4 の乱数消費順・リプレイ互換に不干渉。
+- コアAPIの公開化(挙動・乱数消費順の変更なし): `effectiveCost` / `resolveTargets` / `cellAt` の public 化、乱数を消費しない会心率計算 `critRate()` の公開(`rollCrit` が内部利用)、特技一覧 getter。
+- 実行は Web Worker(M③)。`GameState` はシリアライズ可能なのでそのまま postMessage する。
+
 ## 非機能要件の決定 (2026-07-03)
 
 | # | 項目 | 決定 |
@@ -123,6 +134,7 @@ evaluate(state: GameState, config: SimulatorConfig, options: EvaluateOptions)
 
 ## 更新履歴
 
+- v0.13 (2026-07-13): A12 新設 — ソルバー(F9/W3共通基盤)の方式上の位置づけ(stats/ 配置・乱数分離・コアAPI公開化・Worker実行)。正は SOLVER_DESIGN.md(新設)。A2 の stats/ 説明と A10 の実体参照を更新。
 - v0.12 (2026-07-13): A11 新設 — リプレイコード(D38)のクライアント実装方針。config-compact-codec を src/core/codec に vendoring、3層表現・版数文字とchecksumPrefix・完全/短縮判別規則・A6 JSON形式との関係(A6は開発・検証用の正として維持)を記録。正は BACKEND_DESIGN §3〜§4。
 - v0.11 (2026-07-07): A5を全面改訂(SPEC v1.18)。レシピの正を recipes.json のバンドルに変更、recipes.csv は入出力IF(import/export コマンド)。実行時 fetch と DataProvider 抽象を撤去(W1で再導入)。
 - v0.10 (2026-07-07): A5をF7の変更(パラメータエディタ→レシピ入力: SPEC v1.17)に合わせて改訂。ゲームパラメータのオーバーライド機構は設けない。

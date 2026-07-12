@@ -44,8 +44,8 @@ export default tseslint.config(
             },
             {
               target: './src/stats',
-              from: ['./src/ui'],
-              message: 'src/stats は src/ui に依存してはいけません。',
+              from: ['./src/ui', './src/data'],
+              message: 'src/stats は src/ui・src/data に依存してはいけません(依存方向: ui → stats → core。データは Engine/EngineData 経由で受け取る)。',
             },
           ],
         },

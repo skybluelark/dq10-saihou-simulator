@@ -392,8 +392,13 @@ export class Engine {
     return targets.some((t) => this.cellAt(state, t.r, t.c) !== undefined);
   }
 
-  /** 虹布の消費集中力補正を反映した実効コスト。 */
-  private effectiveCost(state: GameState, skill: SkillDef): number {
+  /** 全特技定義(ソルバーの候補列挙用。ARCHITECTURE A12)。 */
+  listSkills(): readonly SkillDef[] {
+    return this.skills.skills;
+  }
+
+  /** 虹布の消費集中力補正を反映した実効コスト(ソルバー公開API。A12)。 */
+  effectiveCost(state: GameState, skill: SkillDef): number {
     const baseCost = skill.cost ?? 0;
     if (skill.kind === 'hissatsu') return 0;
     if (state.clothType !== 'rainbow') return baseCost;
@@ -484,14 +489,16 @@ export class Engine {
     return damage;
   }
 
-  /** 会心発生判定。判定結果と、判定に用いた会心率を返す(乱数消費は従来と同一)。 */
-  private rollCrit(
+  /**
+   * 当ターン・対象マスの会心率(乱数を消費しない率計算のみ。ソルバー公開API。A12)。
+   * rollCrit と同一の文脈(ねらい・シフト会心・発光・虹・無我)で計算する。
+   */
+  critRate(
     state: GameState,
     cell: CellState,
     config: SimulatorConfig,
-    rng: Rng,
     aimOverride?: boolean,
-  ): { crit: boolean; rate: number } {
+  ): number {
     // 「会心×2」パワーは会心確定ではなく会心率への補正(SPEC §3.4):
     //   シフト会心(シフト由来の critx2)= 会心率×2 / ランダム会心(？由来)= 補正なし
     const ctx: CritContext = {
@@ -511,7 +518,18 @@ export class Engine {
         ctx.rainbowCritTurn = true;
       }
     }
-    const rate = computeCritRate(this.params, ctx);
+    return computeCritRate(this.params, ctx);
+  }
+
+  /** 会心発生判定。判定結果と、判定に用いた会心率を返す(乱数消費は従来と同一)。 */
+  private rollCrit(
+    state: GameState,
+    cell: CellState,
+    config: SimulatorConfig,
+    rng: Rng,
+    aimOverride?: boolean,
+  ): { crit: boolean; rate: number } {
+    const rate = this.critRate(state, cell, config, aimOverride);
     return { crit: rng.next() < rate, rate };
   }
 
@@ -519,8 +537,8 @@ export class Engine {
     return state.glowCell !== null && state.glowCell.r === cell.r && state.glowCell.c === cell.c;
   }
 
-  /** マス補正(しつけ×2, 光発光×2, 重複×4)。 */
-  private cellCorrection(state: GameState, cell: CellState): number {
+  /** マス補正(しつけ×2, 光発光×2, 重複×4)。ソルバー公開API(A12)。 */
+  cellCorrection(state: GameState, cell: CellState): number {
     let corr = 1;
     if (cell.shitsuke) corr *= 2;
     if (this.isGlow(state, cell)) corr *= this.params.clothTrait.lightCellCorrection;
@@ -758,8 +776,9 @@ export class Engine {
    * アンカーからオフセット配列で対象マスを解決(倍率つき)。
    * ライン系特技(row2/col2/row3/col3/diag_up2/diag_down2)は、はみ出すアンカーを
    * グリッド範囲内へクランプしてから対象を展開する(SPEC §3.3 アンカー自動置換)。
+   * ソルバー公開API(A12)。
    */
-  private resolveTargets(
+  resolveTargets(
     skill: SkillDef,
     anchor: { r: number; c: number },
     rows: number,
@@ -789,7 +808,8 @@ export class Engine {
     }));
   }
 
-  private cellAt(state: GameState, r: number, c: number): CellState | undefined {
+  /** 座標のマスを返す(存在しなければ undefined。ソルバー公開API。A12)。 */
+  cellAt(state: GameState, r: number, c: number): CellState | undefined {
     return state.cells.find((cell) => cell.r === r && cell.c === c);
   }
 }
