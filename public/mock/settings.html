@@ -59,18 +59,19 @@
 
   .rowLabel { font-size: 12px; font-weight: bold; color: #ffe9b8; }
 
-  /* ---- 設定4項目(選択ボタン+説明文言) ---- */
-  .optPanel { padding: 4px 10px; display: flex; flex-direction: column; }
-  .optRow { padding: 8px 0; }
+  /* ---- 設定4項目(v1.1: 1画面収載のため縦幅短縮 — タイトル左・選択ボタン右の同一行+説明1行) ---- */
+  .optPanel { padding: 2px 10px; display: flex; flex-direction: column; }
+  .optRow { padding: 6px 0; }
   .optRow + .optRow { border-top: 1px solid rgba(255,255,255,.18); }
-  .optChoices { display: flex; gap: 6px; margin-top: 6px; }
-  /* 選択チップ: レシピ選択画面の「さいほう針」選択と同系統(chip_off/chip_on の9-slice) */
-  .optChip { flex: 0 0 auto; height: 34px; padding: 0 4px;
-    font-size: 13px; font-weight: bold; color: #cdd3ff; background: none;
-    border: solid transparent; border-width: 0 17px;
+  .optHead { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .optChoices { display: flex; gap: 6px; }
+  /* 選択チップ: レシピ選択画面の「さいほう針」選択と同系統(chip_off/chip_on の9-slice)。高さは小さめ(v1.1) */
+  .optChip { flex: 0 0 auto; height: 28px; padding: 0 4px;
+    font-size: 12px; font-weight: bold; color: #cdd3ff; background: none;
+    border: solid transparent; border-width: 0 14px;
     border-image: url('./assets/chip_off.png') 0 32 fill stretch; }
   .optChip.on { border-image-source: url('./assets/chip_on.png'); color: #fff; }
-  .optDesc { font-size: 11px; color: rgba(255,255,255,.75); margin-top: 6px; line-height: 1.4; }
+  .optDesc { font-size: 10px; color: rgba(255,255,255,.75); margin-top: 3px; line-height: 1.35; }
 
   /* ---- 特技配置の入れ替え ---- */
   .swapPanel { padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 8px; }
@@ -145,7 +146,7 @@
     </section>
   </main>
 
-  <div class="caption">設定画面モック v1.0 — 各設定は選択ボタンをタップで切替(Lv設定/コツ設定/数値の表現/基準値の表示)。Lv設定・コツ設定の選択値はlocalStorageに保存し、レシピ選択画面へ反映されます(「あり」時のみ該当領域を表示)/ 数値の表現・基準値の表示は保存のみ(反映先のプレイ画面は今回のモック対象外)/ 特技の配置は5行4列・全ボタン無効色から開始。1つ目タップで選択色→別ボタンをタップで位置を入れ替え(内容ごと交換)→選択済みボタンの再タップで未選択に戻る(「しあげる」も入れ替え対象)</div>
+  <div class="caption">設定画面モック v1.1 — 各設定は選択ボタンをタップで切替(職人レベル設定/コツ取得有無設定/数値の表現/基準値の表示)。設定の選択値はlocalStorageに保存し、レシピ選択画面へ反映(「あり」時のみ該当領域を表示)/ 数値の表現・基準値の表示は保存のみ(プレイ画面は対象外)/ 特技の配置は1つ目タップで選択色→別ボタンで位置入れ替え→再タップで解除(しあげる含む20個)/ v1.1: 4設定をタイトル+選択ボタン同一行・説明1行に短縮し、特技配置まで縦スクロールなしの1画面に収載。タイトル・説明文言を改定</div>
 </div>
 
 <script>
@@ -156,10 +157,10 @@
   const BASE_DISPLAY_KEY = 'saihou-mock-baseDisplay';
 
   const OPTIONS = [
-    { key: LV_ENABLED_KEY, label: 'Lv設定', choices: ['なし', 'あり'], def: 'なし',
-      desc: '職人レベルを変更するか設定します。変更しない場合はLv80前提となります。' },
-    { key: KOTSU_ENABLED_KEY, label: 'コツ設定', choices: ['なし', 'あり'], def: 'なし',
-      desc: 'コツの取得有無を切り替えられます。設定しない場合はコツあり前提となります。' },
+    { key: LV_ENABLED_KEY, label: '職人レベル設定', choices: ['なし', 'あり'], def: 'なし',
+      desc: '変更しない場合はLv80前提となります。' },
+    { key: KOTSU_ENABLED_KEY, label: 'コツ取得有無設定', choices: ['なし', 'あり'], def: 'なし',
+      desc: '設定しない場合はコツあり前提となります。' },
     { key: NUM_DISPLAY_KEY, label: '数値の表現', choices: ['残数値', '累積ダメージ'], def: '残数値',
       desc: 'グリッドに表示する数値の意味合いを設定します。' },
     { key: BASE_DISPLAY_KEY, label: '基準値の表示', choices: ['なし', 'あり'], def: 'なし',
@@ -171,6 +172,9 @@
     const saved = localStorage.getItem(opt.key) || opt.def;
     const row = document.createElement('div');
     row.className = 'optRow';
+    // v1.1: タイトル左・選択ボタン右の同一行(縦幅短縮)
+    const head = document.createElement('div');
+    head.className = 'optHead';
     const label = document.createElement('div');
     label.className = 'rowLabel';
     label.textContent = opt.label;
@@ -188,11 +192,12 @@
       });
       choices.appendChild(b);
     });
+    head.appendChild(label);
+    head.appendChild(choices);
     const desc = document.createElement('div');
     desc.className = 'optDesc';
     desc.textContent = opt.desc;
-    row.appendChild(label);
-    row.appendChild(choices);
+    row.appendChild(head);
     row.appendChild(desc);
     optPanel.appendChild(row);
   });

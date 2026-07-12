@@ -97,6 +97,9 @@
 
   /* ---- レシピ一覧(この画面ではリストが高さの伸縮を吸収する) ---- */
   .recipeList { flex: 1 1 auto; min-height: 120px; overflow-y: auto; padding: 6px; }
+  /* 設定行(職人レベル/コツ)表示時はその高さ分だけリストの最小高を下げ、
+     「はじめる」の位置が行追加前と変わらないようにする(v3.3: 短縮されるのはレシピ一覧のみ) */
+  .recipeList.hasSetting { min-height: 60px; }
   .recipeRow { display: flex; align-items: center; gap: 8px; width: 100%;
     min-height: 48px; padding: 4px 8px; border-radius: 6px; border: none;
     background: transparent; color: #fff; font: inherit; text-align: left; }
@@ -121,17 +124,25 @@
   .rowLabel { font-size: 12px; font-weight: bold; color: #ffe9b8; }
 
   /* ---- 設定画面(§5.12)で Lv設定/コツ設定を「あり」にした場合に表示する行。
-     さいほう針の上側に1行追加し、その分レシピ一覧が縦方向に短くなる(flexで自動吸収) ---- */
-  .settingRow { display: flex; gap: 12px; padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,.18); }
-  .settingCol { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-  /* 職人レベル: 数字の左右に±1・±10ボタン(chip_off の9-sliceを流用。トグルではなく単発操作のため on 状態は使わない) */
+     さいほう針の上側に1行追加し、その分レシピ一覧が縦方向に短くなる(flexで自動吸収)。
+     行内は左=職人レベル・右端=コツ(v3.3: 両表示時の重なり解消のためコツを右端寄せに) ---- */
+  .settingRow { display: flex; align-items: flex-start; gap: 12px;
+    padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,.18); }
+  .settingCol { flex: 0 0 auto; display: flex; flex-direction: column; gap: 4px; }
+  .kotsuCol { margin-left: auto; }
+  /* 職人レベル: 数字の左右に±1・±10ボタン。ボタンはSVGのシンプルな円ボタン
+     (v3.3: 画像チップだと選択チップとの違いが主張できないため。単発操作=非トグルの区別) */
   .lvStepRow { display: flex; align-items: center; gap: 4px; }
-  .lvStepBtn { flex: 0 0 auto; width: 44px; height: 30px; padding: 0;
-    font-size: 12px; font-weight: bold; color: #cdd3ff; background: none;
-    border: solid transparent; border-width: 0 15px;
-    border-image: url('./assets/chip_off.png') 0 32 fill stretch; }
+  .lvStepBtn { flex: 0 0 auto; width: 32px; height: 32px; padding: 0;
+    background: none; border: none;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,.35)); }
+  .lvStepBtn svg { width: 100%; height: 100%; display: block; }
+  .lvStepBtn circle { fill: #3a4270; stroke: rgba(205,211,255,.6); stroke-width: 1.5; }
+  .lvStepBtn:not(:disabled):active circle { fill: #4a5390; }
+  .lvStepBtn text { fill: #cdd3ff; font-size: 12px; font-weight: bold;
+    text-anchor: middle; dominant-baseline: central; font-family: inherit; }
   .lvStepBtn:disabled { opacity: .35; }
-  .lvVal { flex: 1 1 auto; text-align: center; font-size: 18px; font-weight: bold; color: #fff; }
+  .lvVal { flex: 0 0 auto; min-width: 34px; text-align: center; font-size: 18px; font-weight: bold; color: #fff; }
   /* コツ: できのよさ・さいほう針と同系統の選択チップ(なし/あり) */
   .kotsuChips { display: flex; gap: 6px; }
   .optChip { flex: 0 0 auto; height: 34px; padding: 0 4px;
@@ -226,14 +237,14 @@
         <div class="settingCol" id="lvCol" style="display:none;">
           <div class="rowLabel">職人レベル</div>
           <div class="lvStepRow" id="lvStepRow">
-            <button class="lvStepBtn" type="button" data-delta="-10">-10</button>
-            <button class="lvStepBtn" type="button" data-delta="-1">-1</button>
+            <button class="lvStepBtn" type="button" data-delta="-10" aria-label="レベルを10下げる"><svg viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="16.5"/><text x="18" y="19">−10</text></svg></button>
+            <button class="lvStepBtn" type="button" data-delta="-1" aria-label="レベルを1下げる"><svg viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="16.5"/><text x="18" y="19">−1</text></svg></button>
             <span class="lvVal" id="lvVal">80</span>
-            <button class="lvStepBtn" type="button" data-delta="1">+1</button>
-            <button class="lvStepBtn" type="button" data-delta="10">+10</button>
+            <button class="lvStepBtn" type="button" data-delta="1" aria-label="レベルを1上げる"><svg viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="16.5"/><text x="18" y="19">+1</text></svg></button>
+            <button class="lvStepBtn" type="button" data-delta="10" aria-label="レベルを10上げる"><svg viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="16.5"/><text x="18" y="19">+10</text></svg></button>
           </div>
         </div>
-        <div class="settingCol" id="kotsuCol" style="display:none;">
+        <div class="settingCol kotsuCol" id="kotsuCol" style="display:none;">
           <div class="rowLabel">コツ</div>
           <div class="kotsuChips" id="kotsuChips">
             <button class="optChip" type="button" data-val="なし">なし</button>
@@ -265,7 +276,7 @@
     <button class="startBtn" type="button" onclick="location.href='./index.html'">はじめる</button>
   </main>
 
-  <div class="caption">レシピ選択画面モック v3.2(トーンB・画像AI実素材)— チップ=横3分割(両端曲率固定)/ 布特性バッジ=実装側描画 / 装備Lv・フィルター値はダミー / 針・できのよさの選択は保存されます / ヘッダー右「設定」で設定画面へ遷移 / 設定画面でLv設定・コツ設定を「あり」にすると、さいほう針の上に職人レベル(±1/±10・1〜80)とコツ(なし/あり)の行が表示されます(該当設定が「なし」の側は非表示、両方「なし」なら行ごと非表示)</div>
+  <div class="caption">レシピ選択画面モック v3.3(トーンB・画像AI実素材)— チップ=横3分割(両端曲率固定)/ 布特性バッジ=実装側描画 / 装備Lv・フィルター値はダミー / 針・できのよさの選択は保存されます / ヘッダー右「設定」で設定画面へ遷移 / 設定画面で職人レベル設定・コツ取得有無設定を「あり」にすると、さいほう針の上に職人レベル(±1/±10・1〜80)とコツ(なし/あり・デフォルトあり)の行が表示(「なし」の側は非表示、両方「なし」なら行ごと非表示)/ v3.3: Lvステッパーの±ボタンをSVG円ボタンに変更・コツを行の右端寄せに(両表示時の重なり解消)・設定行表示時もレシピ一覧のみ短縮し「はじめる」の位置を維持</div>
 </div>
 
 <script>
@@ -396,6 +407,8 @@
     settingRow.style.display = 'flex';
     if (lvEnabled) lvCol.style.display = 'flex';
     if (kotsuEnabled) kotsuCol.style.display = 'flex';
+    // 追加行の高さ分だけレシピ一覧の最小高を下げ、「はじめる」の位置を維持する(v3.3)
+    list.classList.add('hasSetting');
   }
 
   // 職人レベル: ±1・±10(デフォルト80、範囲1〜80)。範囲超過はクランプし、端にあるボタンは無効化
