@@ -138,6 +138,10 @@
 
 .gridWrap {
   flex: 0 0 auto;
+  /* 布グリッド・凡例等を水平センタリング */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .grid {
@@ -454,11 +458,17 @@
 }
 
 .powerBadge {
+  position: relative; /* 布特性予告の下線(::after)の基準 */
   padding: 3px 12px;
   border-radius: 12px;
   font-weight: bold;
   font-size: 14px;
   background: #ddd;
+}
+
+/* ぬいパワー行はバッジ下線(::after: bottom -6px)の描画余白を確保する */
+.powerRow {
+  padding-bottom: 6px;
 }
 
 .power_weak {
@@ -629,20 +639,24 @@
 
 /* ---- 特技ボタン ---- */
 
+/* スマホアプリ版の配置(§5.3.1)に合わせ、固定幅の5行4列グリッドに整列。
+   ボタンの並び順は SkillPanel の SKILL_ORDER(行優先)で固定。 */
 .skills {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(4, 104px);
   gap: 6px;
   margin-top: 16px;
+  justify-content: start;
 }
 
 .skillButton {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 2px;
-  min-width: 92px;
-  padding: 6px 8px;
+  height: 54px; /* 5行の高さを揃える(長い名前の折り返しも吸収) */
+  padding: 4px;
   border: 1px solid #aab;
   border-radius: 6px;
   background: #fff;
@@ -676,7 +690,9 @@
 .skillName {
   font-size: 13px;
   font-weight: bold;
-  white-space: nowrap;
+  text-align: center;
+  line-height: 1.15;
+  white-space: normal; /* 長い名前(ぬいパワーシフト等)は2行に折り返す */
 }
 
 .skillCost {

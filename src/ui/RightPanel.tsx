@@ -100,6 +100,13 @@ export function RightPanel({
     return now ? `このターン(T${next}): ${content}` : `次回 T${next}: ${content}`;
   };
 
+  // ぬいパワー行の下線: サイクル表示と同じ布特性予告の下線を、現在/次パワーのバッジにも付す。
+  // 現在=サイクルの現在位置、次=次の位置(cycleUnderlineClass をそのまま流用し表示と一致させる)。
+  const cycleLen = game.powerCycle.length;
+  const currentPowerUnderline = cycleUnderlineClass(game.cycleIndex);
+  const nextPowerUnderline =
+    cycleLen > 0 ? cycleUnderlineClass((game.cycleIndex + 1) % cycleLen) : '';
+
   return (
     <aside className={styles.panel}>
       <div className={styles.statRow}>
@@ -107,15 +114,17 @@ export function RightPanel({
         <span className={styles.statValue}>{currentTurn}</span>
       </div>
 
-      <div className={styles.statRow}>
+      <div className={`${styles.statRow} ${styles.powerRow}`}>
         <span className={styles.statLabel}>ぬいパワー</span>
         <span
-          className={`${styles.powerBadge} ${styles[`power_${game.currentPower}`] ?? ''}`}
+          className={`${styles.powerBadge} ${styles[`power_${game.currentPower}`] ?? ''} ${currentPowerUnderline}`}
         >
           {POWER_LABELS[game.currentPower]}
         </span>
         <span className={styles.powerArrow}>→</span>
-        <span className={`${styles.powerBadge} ${styles[`power_${nextPower}`] ?? ''}`}>
+        <span
+          className={`${styles.powerBadge} ${styles[`power_${nextPower}`] ?? ''} ${nextPowerUnderline}`}
+        >
           {POWER_LABELS[nextPower]}
         </span>
         {game.lockPowerRemaining > 0 && (

@@ -57,7 +57,7 @@ export function Header({
   };
   return (
     <header className={styles.header}>
-      <h1 className={styles.headerTitle}>DQ10 さいほうシミュレータ</h1>
+      <h1 className={styles.headerTitle}>さいほうシミュレーター（デモ版）</h1>
       <div className={styles.headerControls}>
         <label className={styles.field}>
           レシピ
