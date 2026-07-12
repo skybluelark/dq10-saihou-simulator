@@ -9,6 +9,13 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
+    // ビルド補助スクリプト(Node 実行の .mjs)は Node グローバルを許可する
+    files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      globals: { console: 'readonly', process: 'readonly' },
+    },
+  },
+  {
     files: ['src/**/*.{ts,tsx}'],
     plugins: {
       import: importPlugin,

@@ -8,4 +8,7 @@
 # この値を必ず一致させること(不一致だと CI のデプロイ先がずれる)。
 name = "fluonote"
 compatibility_date = "2026-07-12"
-pages_build_output_dir = "dist"
+# サブパス構成の配信ルート(scripts/build-site.mjs が組み立てる):
+#   / = ランディング, /sample/ = 現行シンプルUI, /demo/ = 最終公開デモ(プレースホルダ)
+# CI/ローカルとも `npm run build:site` で dist-site/ を生成してから deploy する。
+pages_build_output_dir = "dist-site"

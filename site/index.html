@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FluoNote — ドラゴンクエストX さいほう職人 非公式シミュレータ</title>
+    <meta
+      name="description"
+      content="『ドラゴンクエストX』さいほう職人のミニゲームを練習・検証できる、ブラウザで動く非公式ファンツールです。"
+    />
+    <meta name="robots" content="noindex" />
+    <style>
+      :root {
+        --bg: #f6f7fb;
+        --bg-card: #ffffff;
+        --fg: #1f2430;
+        --fg-muted: #5b6472;
+        --accent: #3b6ea5;
+        --accent-fg: #ffffff;
+        --border: #e2e6ee;
+        --shadow: 0 6px 24px rgba(31, 36, 48, 0.08);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #14171d;
+          --bg-card: #1c2029;
+          --fg: #e7eaf0;
+          --fg-muted: #9aa4b4;
+          --accent: #6aa0d8;
+          --accent-fg: #0e1116;
+          --border: #2a3140;
+          --shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: var(--bg);
+        color: var(--fg);
+        font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Kaku Gothic ProN",
+          "Noto Sans JP", Meiryo, sans-serif;
+        line-height: 1.75;
+        -webkit-font-smoothing: antialiased;
+      }
+      .wrap {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: clamp(24px, 5vw, 56px) 20px 40px;
+      }
+      .badge {
+        display: inline-block;
+        font-size: 0.8rem;
+        letter-spacing: 0.04em;
+        color: var(--fg-muted);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 3px 12px;
+        margin-bottom: 18px;
+      }
+      .brand {
+        font-size: clamp(1.7rem, 5vw, 2.4rem);
+        font-weight: 700;
+        margin: 0 0 10px;
+        letter-spacing: 0.01em;
+      }
+      .tagline {
+        font-size: clamp(1rem, 2.6vw, 1.15rem);
+        color: var(--fg-muted);
+        margin: 0 0 28px;
+      }
+      .card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        padding: clamp(22px, 4vw, 32px);
+        margin-bottom: 24px;
+      }
+      .cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--accent);
+        color: var(--accent-fg);
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 1.05rem;
+        padding: 13px 26px;
+        border-radius: 10px;
+        transition: transform 0.08s ease, opacity 0.15s ease;
+      }
+      .cta:hover {
+        opacity: 0.92;
+      }
+      .cta:active {
+        transform: translateY(1px);
+      }
+      .cta-note {
+        display: block;
+        font-size: 0.85rem;
+        color: var(--fg-muted);
+        margin-top: 12px;
+      }
+      h2 {
+        font-size: 1.05rem;
+        margin: 0 0 12px;
+      }
+      ul.features {
+        margin: 0;
+        padding-left: 1.2em;
+      }
+      ul.features li {
+        margin-bottom: 8px;
+      }
+      .disclaimer {
+        font-size: 0.85rem;
+        color: var(--fg-muted);
+        border-top: 1px solid var(--border);
+        margin-top: 8px;
+        padding-top: 20px;
+      }
+      .disclaimer p {
+        margin: 0 0 8px;
+      }
+      footer {
+        font-size: 0.8rem;
+        color: var(--fg-muted);
+        text-align: center;
+        margin-top: 28px;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <span class="badge">暫定公開版 (Preview)</span>
+      <h1 class="brand">FluoNote</h1>
+      <p class="tagline">
+        『ドラゴンクエストX』の さいほう職人 ミニゲームを、練習・検証できる非公式シミュレータです。
+      </p>
+
+      <div class="card">
+        <!-- 現行シンプルUI(サブパス /sample/)。将来リッチUIが /demo/ に入ったら差し替え -->
+        <a class="cta" href="/sample/" rel="noopener">
+          デモアプリを開く →
+        </a>
+        <span class="cta-note">インストール不要・ブラウザだけで動作します。</span>
+      </div>
+
+      <div class="card">
+        <h2>できること</h2>
+        <ul class="features">
+          <li>針・レシピ・コツなどの条件を切り替えて、縫い上げの手順を試せます。</li>
+          <li>アンドゥ/リドゥ(1手戻す・1手進む)で手順をじっくり検討できます。</li>
+          <li>できのよさ(★評価)と誤差評価値を、行動ごとに確認できます。</li>
+        </ul>
+      </div>
+
+      <div class="disclaimer">
+        <p>
+          本サイトは個人が制作した<strong>非公式のファンツール</strong>です。株式会社スクウェア・エニックス、および『ドラゴンクエストX』の運営・公式サイトとは一切関係ありません。
+        </p>
+        <p>
+          本サイトはゲーム内の画像・ロゴ・フォント・スクリーンショット等の著作物を使用していません。
+        </p>
+        <p>「ドラゴンクエスト」は株式会社スクウェア・エニックスの登録商標です。</p>
+      </div>
+
+      <footer>© 2026 FluoNote</footer>
+    </main>
+  </body>
+</html>
