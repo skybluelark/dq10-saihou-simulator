@@ -575,11 +575,6 @@
   font-weight: bold;
 }
 
-.cycleHidden {
-  font-size: 12px;
-  color: #999;
-}
-
 .concBlock {
   display: flex;
   align-items: center;

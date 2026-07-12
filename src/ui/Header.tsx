@@ -103,14 +103,6 @@ export function Header({
             ))}
           </select>
         </label>
-        <label className={styles.toggle}>
-          <input
-            type="checkbox"
-            checked={settings.showCyclePreview}
-            onChange={(e) => onChangeSettings({ showCyclePreview: e.target.checked })}
-          />
-          サイクル予告表示
-        </label>
         {/* アンドゥ/リドゥは通常操作として常時表示(§②) */}
         <button
           type="button"

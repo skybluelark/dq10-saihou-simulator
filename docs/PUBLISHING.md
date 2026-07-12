@@ -104,6 +104,7 @@ npx wrangler pages deploy dist --project-name=fluonote --branch=master
 - ブラウザ版は**デモアプリ**として、検証/開発向けUI(シード指定・リプレイ入出力・マス別誤差内訳・ログのロール表示)を通常画面から隠す。
 - これらは URL クエリ `?verify=1` を付けたときのみ表示される隠しフラグ(`App.tsx` の `devMode`)。公開デモの既定は非表示。開発・QA は `https://<host>/?verify=1` で従来機能を復帰できる。
 - アンドゥ/リドゥ(1手戻す・1手進む)は検証UIから独立した**通常操作**として常時表示。
+- **サイクル予告表示は ON 固定**(トグル・localStorage 設定を廃止。2026-07-12)。予告(次パワー・サイクル全体)は常時表示。
 - UI層のみの変更で `src/core` は不変。上記はデモ挙動のため、主セッションのUI設計書へ相互参照を残すかは主セッション判断。
 
 ### 7.2 仮公開ページ(ランディング)(§③ 2026-07-12・**公開済**)
@@ -125,6 +126,7 @@ npx wrangler pages deploy dist --project-name=fluonote --branch=master
 
 ## 9. 更新履歴
 
+- v0.9 (2026-07-12): デモUI調整 — 「サイクル予告表示」をON固定化(トグル・設定廃止、UI層のみ・`src/core` 不変)。§7.1 に記録。
 - v0.8 (2026-07-12): **仮公開ランディング公開完了**。表示ブランドを FluoNote に確定、ソースを `fluoritedq10/FluoNote-Landing`(非公開)へ push、Cloudflare `fluonote-landing` にデプロイ → `fluonote-landing.pages.dev` 稼働。これで ①環境/②デモUI/③仮公開ページ すべて公開まで到達。ランディングは CI 未設定(手動デプロイ)。
 - v0.7 (2026-07-12): **デモの自動デプロイ完成・稼働確認**。APIトークン(無期限)・Account ID・GitHub Secrets 登録済。`fluoritedq10/FluoNote` の本番ブランチを `master` に設定 → `git push fluorite master`(ミラー)→ Actions 緑 → Cloudflare `fluonote` に Production/master デプロイ → `fluonote.pages.dev` 稼働を確認。認証は skybluelark→fluoritedq10 の切替が必要(GCM 資格情報の入れ替え)。以降のリリースは `git push fluorite master` のみ。
 - v0.6 (2026-07-12): 命名規則を明確化。GitHub リポジトリはブランド表記(大文字可、ランディング=`FluoNote-Landing`)、Cloudflare/wrangler は英小文字(`fluonote-landing`)。デモの `FluoNote`↔`fluonote` と同じ対応。§7.2/§8-1 を更新。

@@ -1,5 +1,5 @@
 // UI設定の localStorage 自動保存/復元 (ARCHITECTURE N4)
-// 対象: レシピ選択・針(種類・★数)・サイクル予告表示トグル。
+// 対象: レシピ選択・針(種類・★数)。サイクル予告表示は ON 固定(トグル廃止)。
 
 import type { NeedleType } from '../core';
 
@@ -7,14 +7,12 @@ export interface UiSettings {
   recipeId: string | null;
   needleType: NeedleType;
   needleStars: 0 | 1 | 2 | 3;
-  showCyclePreview: boolean;
 }
 
 export const DEFAULT_SETTINGS: UiSettings = {
   recipeId: null,
   needleType: 'copper',
   needleStars: 0,
-  showCyclePreview: true,
 };
 
 const STORAGE_KEY = 'dq10-saihou:ui-settings:v1';
@@ -43,10 +41,6 @@ export function loadSettings(): UiSettings {
         p.needleStars === 0 || p.needleStars === 1 || p.needleStars === 2 || p.needleStars === 3
           ? p.needleStars
           : DEFAULT_SETTINGS.needleStars,
-      showCyclePreview:
-        typeof p.showCyclePreview === 'boolean'
-          ? p.showCyclePreview
-          : DEFAULT_SETTINGS.showCyclePreview,
     };
   } catch {
     return { ...DEFAULT_SETTINGS };

@@ -14,7 +14,6 @@ interface RightPanelProps {
   needle: NeedleDef;
   levelBase: number; // Lv80基礎 207
   initialConcentration: number;
-  showCyclePreview: boolean;
 }
 
 export function RightPanel({
@@ -23,7 +22,6 @@ export function RightPanel({
   needle,
   levelBase,
   initialConcentration,
-  showCyclePreview,
 }: RightPanelProps) {
   // 進行中ターン番号(beginTurn 済みのため turn+1)。終了後は使用ターン数。
   const currentTurn = game.finished ? game.turn : game.turn + 1;
@@ -116,14 +114,10 @@ export function RightPanel({
         >
           {POWER_LABELS[game.currentPower]}
         </span>
-        {showCyclePreview && (
-          <>
-            <span className={styles.powerArrow}>→</span>
-            <span className={`${styles.powerBadge} ${styles[`power_${nextPower}`] ?? ''}`}>
-              {POWER_LABELS[nextPower]}
-            </span>
-          </>
-        )}
+        <span className={styles.powerArrow}>→</span>
+        <span className={`${styles.powerBadge} ${styles[`power_${nextPower}`] ?? ''}`}>
+          {POWER_LABELS[nextPower]}
+        </span>
         {game.lockPowerRemaining > 0 && (
           <span className={styles.lockNote}>精神統一固定中(残{game.lockPowerRemaining})</span>
         )}
@@ -131,20 +125,16 @@ export function RightPanel({
 
       <div className={styles.cycleBlock}>
         <span className={styles.statLabel}>サイクル</span>
-        {showCyclePreview ? (
-          <div className={styles.cycleRow}>
-            {game.powerCycle.map((p, i) => (
-              <span
-                key={i}
-                className={`${styles.cycleItem} ${i === game.cycleIndex ? styles.cycleCurrent : ''} ${cycleUnderlineClass(i)}`}
-              >
-                {POWER_LABELS[p]}
-              </span>
-            ))}
-          </div>
-        ) : (
-          <span className={styles.cycleHidden}>(予告OFF: 現在のみ表示)</span>
-        )}
+        <div className={styles.cycleRow}>
+          {game.powerCycle.map((p, i) => (
+            <span
+              key={i}
+              className={`${styles.cycleItem} ${i === game.cycleIndex ? styles.cycleCurrent : ''} ${cycleUnderlineClass(i)}`}
+            >
+              {POWER_LABELS[p]}
+            </span>
+          ))}
+        </div>
       </div>
 
       <div className={styles.concBlock}>

@@ -766,7 +766,6 @@ function App() {
               needle={needle}
               levelBase={levelBase}
               initialConcentration={session.initialConcentration}
-              showCyclePreview={settings.showCyclePreview}
             />
             <ClothGrid
               game={displayGame ?? currentGame}
