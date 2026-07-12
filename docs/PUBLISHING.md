@@ -106,11 +106,12 @@ npx wrangler pages deploy dist --project-name=fluonote --branch=master
 - アンドゥ/リドゥ(1手戻す・1手進む)は検証UIから独立した**通常操作**として常時表示。
 - UI層のみの変更で `src/core` は不変。上記はデモ挙動のため、主セッションのUI設計書へ相互参照を残すかは主セッション判断。
 
-### 7.2 仮公開ページ(ランディング)(§③ 2026-07-12)
+### 7.2 仮公開ページ(ランディング)(§③ 2026-07-12・**公開済**)
 
-- デモアプリへのリンクを持つ**暫定公開ページ**。**デモとは別の小さな Cloudflare Pages プロジェクト**として Direct Upload する(静的HTML1枚・ビルド不要)。
-- ソースは別リポジトリ(このリポジトリ外)。ローカル作業フォルダは現状 `E:\dev\dq10-saihou-landing`(VS Code ロック中で改名保留・配信に無関係)。詳細・デプロイ手順は同フォルダの `README.md`。
-- 名称: **GitHub リポジトリ = `FluoNote-Landing`**(未作成・ブランド表記/大文字可)、**Cloudflare Pages プロジェクト / wrangler `name` = `fluonote-landing`**(小文字)。デモの `FluoNote`↔`fluonote` と同じ規則(ユーザー決定 2026-07-12)。
+- デモアプリへのリンクを持つ**暫定公開ページ**。**デモとは別の小さな Cloudflare Pages プロジェクト**として Direct Upload(静的HTML1枚・ビルド不要)。**`fluonote-landing.pages.dev` で公開済(2026-07-12)** → CTA が `fluonote.pages.dev` へ。表示ブランド=**FluoNote**、`noindex`+「暫定公開版」バッジ付き。
+- ソースは別リポジトリ **`fluoritedq10/FluoNote-Landing`(非公開・push済)**。ローカル作業フォルダは現状 `E:\dev\dq10-saihou-landing`(VS Code ロック中で改名保留・配信に無関係)。詳細・デプロイ手順は同フォルダの `README.md`。
+- 名称: **GitHub リポジトリ = `FluoNote-Landing`**、**Cloudflare Pages プロジェクト / wrangler `name` = `fluonote-landing`**(小文字)。デモの `FluoNote`↔`fluonote` と同じ規則。
+- 更新フロー: ランディングは**CI未設定**(手動デプロイ)。`public/` を変更したら `git push origin master`(記録用)＋ `wrangler pages deploy public` 手動再デプロイ、またはドラッグ&ドロップ。自動化したい場合はデモ同様の `wrangler-action` ワークフロー追加を検討。
 - 権利方針(§③ 確定): **ゲーム名を記述的に言及+免責文**。『ドラゴンクエストX』を記述的に参照し、「スクウェア・エニックス社とは無関係の非公式ファンツール」「ゲーム内の画像・ロゴ・フォント・SS等の著作物は不使用」「『ドラゴンクエスト』は登録商標」を明記。§4.2 の流用不可を順守。
 - **公開前の差し替え必須**: サイト名/ブランド表記("FluoNote" 確定)。デモアプリの公開URLは `https://fluonote.pages.dev/` に確定済(CTAリンク反映済)。
 
@@ -124,6 +125,7 @@ npx wrangler pages deploy dist --project-name=fluonote --branch=master
 
 ## 9. 更新履歴
 
+- v0.8 (2026-07-12): **仮公開ランディング公開完了**。表示ブランドを FluoNote に確定、ソースを `fluoritedq10/FluoNote-Landing`(非公開)へ push、Cloudflare `fluonote-landing` にデプロイ → `fluonote-landing.pages.dev` 稼働。これで ①環境/②デモUI/③仮公開ページ すべて公開まで到達。ランディングは CI 未設定(手動デプロイ)。
 - v0.7 (2026-07-12): **デモの自動デプロイ完成・稼働確認**。APIトークン(無期限)・Account ID・GitHub Secrets 登録済。`fluoritedq10/FluoNote` の本番ブランチを `master` に設定 → `git push fluorite master`(ミラー)→ Actions 緑 → Cloudflare `fluonote` に Production/master デプロイ → `fluonote.pages.dev` 稼働を確認。認証は skybluelark→fluoritedq10 の切替が必要(GCM 資格情報の入れ替え)。以降のリリースは `git push fluorite master` のみ。
 - v0.6 (2026-07-12): 命名規則を明確化。GitHub リポジトリはブランド表記(大文字可、ランディング=`FluoNote-Landing`)、Cloudflare/wrangler は英小文字(`fluonote-landing`)。デモの `FluoNote`↔`fluonote` と同じ対応。§7.2/§8-1 を更新。
 - v0.5 (2026-07-12): デモ初回デプロイ確認済(`fluonote.pages.dev` 表示OK)。ランディング名称をユーザー決定によりGitHub/Cloudflare/wrangler すべて `fluonote-landing`(ハイフン)へ統一(アンダースコア案を撤回)。ローカル作業フォルダの改名は別プロセスのロックで保留。
