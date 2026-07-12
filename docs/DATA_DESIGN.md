@@ -1,4 +1,4 @@
-# ドラクエ10 さいほうシミュレータ データ設計書 (v0.4)
+# ドラクエ10 さいほうシミュレータ データ設計書 (v0.5)
 
 作成日: 2026-07-03 / 状態: **承認済み (2026-07-03。修正2点を反映済み)**
 関連文書: [SPEC.md](SPEC.md)(数値の正) / [ARCHITECTURE.md](ARCHITECTURE.md)(A5 データ読み込み方式)
@@ -178,6 +178,7 @@
 - `npm run recipes:import` — data/recipes.csv → src/data/recipes.json。V1〜V8 検証を行い、**エラーが1件でもあれば取り込み失敗**(行番号つきで理由を表示)。
 - `npm run recipes:export` — src/data/recipes.json → data/recipes.csv(BOM付きUTF-8)。
 - CSV 列順(2026-07-08 改定。craft_level 以下3列を追加): `id, name, category, cloth_type, craft_level, equip_level, error_limit, rows, cols, cell_r1c1〜cell_r3c3, power_order, notes`。equip_level の「-」は JSON では null、error_limit の 0/1 は JSON では boolean。
+- **numeric_id 列の追加(D38。2026-07-13 設計確定・実装は正式版レシピ更新時)**: リプレイコード(ARCHITECTURE A11 / BACKEND_DESIGN §3.1)がレシピを整数で参照するための列。`id` の直後に挿入し、列順は `id, numeric_id, name, …` となる。値は **0〜999 の整数・全行で一意**。採番はユーザーが正式版レシピ更新時にソート後の行ベースで行う(採番タイミングはユーザーから連絡。**更新をまたぐ互換性維持は不要**=振り直し可。BACKEND_DESIGN §3.1)。JSON フィールド名は `numericId`、検証は V12、recipes.json の version は **"1.2"** に上げる。**実装(列追加・V12・ローダ改修)は採番と同時に行い、それまで現行スキーマを変更しない。**
 
 ### recipes.json スキーマ
 
@@ -187,6 +188,7 @@
   "recipes": [
     {
       "id": "cathedral_robe",          // ^[a-z0-9_]+$、一意
+      "numericId": 12,                 // 0〜999、一意(リプレイコード用。version "1.2" から)
       "name": "カテドラルローブ",
       "category": "body_upper",        // enum(§0)。rows/cols は category から導出(保持しない)
       "clothType": "regen",            // enum(§0)
@@ -211,6 +213,7 @@
 ```ts
 interface RecipeDef {
   id: string;
+  numericId: number;                                // 0〜999、一意(リプレイコード用。version "1.2" から)
   name: string;
   category: Category;
   clothType: ClothType;
@@ -238,6 +241,7 @@ interface RecipeDef {
 | V9 | craft_level: 1〜999 の整数 | エラー |
 | V10 | equip_level: 1〜999 の整数、または「-」(任意の部位で許容) | エラー |
 | V11 | error_limit: 0 または 1 | エラー |
+| V12 | numeric_id: 0〜999 の整数かつ全行で一意(version "1.2" から。実装は正式版レシピ更新時) | エラー |
 
 - CSVの日本語トークン(部位・布・パワー)→enumへの対訳表は変換層が持つ(export は逆引き)。
 - 取り込み・エクスポートの変換ロジックは純関数として src/data に置き(テスト対象)、scripts/ のコマンドは薄いラッパとする。往復変換(JSON→CSV→JSON)の一致をテストで保証する。
@@ -268,6 +272,7 @@ interface RecipeDef {
 
 ## 9. 更新履歴
 
+- v0.5 (2026-07-13): レシピ数値ID `numeric_id`/`numericId`(0〜999・一意。リプレイコード D38 用)の設計を追加(CSV列順は id の直後・V12・recipes.json version "1.2")。**実装は正式版レシピ更新時のユーザー採番と同時**とし、それまで現行スキーマは変更しない。
 - v0.4 (2026-07-08): レシピ3属性を追加(SPEC v1.23): craftLevel(必要職人レベル)・equipLevel(装備可能レベル。「-」=null)・errorLimit(誤差制限)。CSV 列 craft_level/equip_level/error_limit と検証 V9〜V11 を追加、recipes.json version を 1.1 に。game-params.json に evaluationRestricted(誤差制限あり境界。7マスは evaluation にフォールバック)を追加。
 - v0.3 (2026-07-07): レシピデータの再設計(SPEC v1.18)。正を src/data/recipes.json に変更し、recipes.csv は入出力IFへ(§6 改稿: JSONスキーマ・変換コマンド・ロード時検証・往復一致テスト)。W1 での正の移行方針を §8 に明記。パラメータエディタ廃止を §0-5 に反映。
 - v0.2 (2026-07-03): 承認反映。ダメージテーブルのデータファイル化を廃止(コア計算式方式へ)、ラグ=2行×3列確定。レシピデータの将来の持ち方(§8)を追記。

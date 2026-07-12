@@ -1,4 +1,4 @@
-# ドラクエ10 さいほうシミュレータ 方式設計書 (v0.11)
+# ドラクエ10 さいほうシミュレータ 方式設計書 (v0.12)
 
 作成日: 2026-07-03 / 状態: A1〜A10 承認済み (2026-07-03)
 関連文書: [SPEC.md](SPEC.md)(ゲーム仕様) / [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md)(開発計画)
@@ -101,6 +101,17 @@ evaluate(state: GameState, config: SimulatorConfig, options: EvaluateOptions)
 
 - stats のモンテカルロ基盤を共用。途中状態の入力は A3 の `createStateFromSnapshot()` を使う。
 
+## A11. リプレイコード(共有用圧縮表現。D38)
+
+方式・スキーマ・サーバー側の正は [BACKEND_DESIGN.md](BACKEND_DESIGN.md) §3〜§4。本節はクライアント側の実装方針(モジュール配置・A6 との関係)を定める。
+
+- **codec**: `config-compact-codec`(自作ライブラリ)を **`src/core/codec/` に vendoring** する(スナップショット取り込み。原本 = `E:\dev\config-compact-codec`、以後の改修は vendoring 側を正とする)。純TS・外部依存なしのため core の依存規則(A2)に適合。方式はスキーマ定義に基づくランキング/アンランキング(mixed-radix の一般化)で、実際に到達可能な組み合わせのみを単一整数(rank)に合成し、任意アルファベットで基数変換+チェックデジット1文字を付与する。
+- **3層表現**(BACKEND_DESIGN §3): 正準データ=rank+スキーマ版数 / ユーザー向け完全じゅもん=ひらがな71進(**版数文字1字+可変長ペイロード+チェックデジット1字**。サーバー消滅後もローカル復号可能な恒久フォールバック) / サーバー送受・格納=同一 rank の Base64url。アルファベット差し替えのみで同一実装から生成する。
+- **スキーマ(D38)**: レシピ数値ID 0〜999(DATA_DESIGN §6 の `numeric_id`)・針の種類/★・職人Lv・コツ・シード・行動列(特技+アンカー。対象を取らない特技はアンカー省略)。**行動列は maxItems=64・schema の `order` で処理順の先頭**(後方に置くと maxItems の理論上限が全コード長に乗算されるため。BACKEND_DESIGN §3.1)。
+- **版数文字とチェックデジット**: v1=「あ」。codec の `checksumPrefix` に版数文字を渡し、版数文字の誤入力もチェックデジットで検出する。非正準表記(ペイロード先頭が「あ」)は decode が拒否するため「完全じゅもんの先頭は常に版数文字」が成立する。
+- **完全/短縮の判別**(BACKEND_DESIGN §4): 「8文字かつ先頭が版数文字でない=短縮(サーバー照会)/それ以外=完全(ローカル復号)」。クライアントはこの判別と、短縮取得後の Base64url→復元のみを実装する(短縮キーの採番はサーバー側)。
+- **A6(JSON形式)との関係**: A6 の `{v:1, seed, recipeId, config, actions, check?}` は開発・検証用(verify UI・テスト・T9)の正として維持する。リプレイコードは同一情報の圧縮表現で、`recipeId`(文字列)↔数値IDの対応はレシピマスタ(`numericId`)で解決する。`check` はコードに含めない(誤入力検出はチェックデジット、版数はスキーマ版数フィールドが担う)。
+
 ## 非機能要件の決定 (2026-07-03)
 
 | # | 項目 | 決定 |
@@ -112,6 +123,7 @@ evaluate(state: GameState, config: SimulatorConfig, options: EvaluateOptions)
 
 ## 更新履歴
 
+- v0.12 (2026-07-13): A11 新設 — リプレイコード(D38)のクライアント実装方針。config-compact-codec を src/core/codec に vendoring、3層表現・版数文字とchecksumPrefix・完全/短縮判別規則・A6 JSON形式との関係(A6は開発・検証用の正として維持)を記録。正は BACKEND_DESIGN §3〜§4。
 - v0.11 (2026-07-07): A5を全面改訂(SPEC v1.18)。レシピの正を recipes.json のバンドルに変更、recipes.csv は入出力IF(import/export コマンド)。実行時 fetch と DataProvider 抽象を撤去(W1で再導入)。
 - v0.10 (2026-07-07): A5をF7の変更(パラメータエディタ→レシピ入力: SPEC v1.17)に合わせて改訂。ゲームパラメータのオーバーライド機構は設けない。
 - v0.9 (2026-07-07): A6リプレイ形式を確定(`{v:1, seed, recipeId, config, actions, check?}`、core/replay.ts に実装。SPEC v1.14 M3対応)。sewCell イベントに基礎値の出目 `baseValue` を追加(検証モード表示用。乱数消費順の変更なし)。
