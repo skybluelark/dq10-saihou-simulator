@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>設定画面モック</title>
+<style>
+  @font-face {
+    font-family: 'GenEiLateMin';
+    src: url('./assets/fonts/GenEiLateMinP_v2_subset.woff2') format('woff2');
+    font-weight: normal; font-style: normal; font-display: swap;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  button, input, select { font-family: inherit; } /* フォーム部品はフォントを継承しないため明示 */
+  body {
+    font-family: 'GenEiLateMin', "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+    display: flex; flex-direction: column; align-items: center;
+    min-height: 100dvh;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    background-color: #cbb98f;
+    background-image: url('./assets/bg_main.png');
+    background-size: cover; background-position: center;
+    color: #fff;
+  }
+  .frame { width: 100%; max-width: 430px; min-height: 100dvh; display: flex; flex-direction: column; }
+
+  .adArea {
+    height: 50px; flex: 0 0 auto;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(60,40,10,.12);
+    border-bottom: 1px dashed rgba(60,40,10,.45); color: rgba(60,40,10,.55);
+    font-size: 12px; letter-spacing: .15em;
+  }
+
+  header { display: flex; align-items: center; gap: 6px; height: 50px; padding: 0 6px; flex: 0 0 auto; }
+  .hdrBtn {
+    width: 76px; height: 40px; flex: 0 0 auto;
+    display: flex; align-items: center; justify-content: center; gap: 2px;
+    border: none; font-size: 14px; font-weight: bold;
+    background: url('./assets/btn_header_normal.png') center / 100% 100% no-repeat; color: #ffe9b8;
+    filter: drop-shadow(0 2px 3px rgba(40,20,0,.4));
+  }
+  .hdrBtn:active { background-image: url('./assets/btn_header_pressed.png'); }
+  .hdrArrow { font-size: 10px; }
+  .hdrSpacer { width: 76px; flex: 0 0 auto; }
+  .hdrTitle { flex: 1 1 auto; text-align: center; font-size: 20px; font-weight: bold;
+    color: #3a2a10; text-shadow: 0 1px 0 rgba(255,255,255,.5);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  main { flex: 1 1 auto; display: flex; flex-direction: column; gap: 10px; padding: 6px 12px 10px; min-height: 0; overflow-y: auto; }
+
+  .win {
+    color: #fff;
+    border: 8px solid transparent;
+    border-image: url('./assets/panel_window.png') 96 fill / 10px stretch;
+    box-shadow: 0 3px 6px rgba(40,20,0,.35);
+  }
+
+  .rowLabel { font-size: 12px; font-weight: bold; color: #ffe9b8; }
+
+  /* ---- 設定4項目(選択ボタン+説明文言) ---- */
+  .optPanel { padding: 4px 10px; display: flex; flex-direction: column; }
+  .optRow { padding: 8px 0; }
+  .optRow + .optRow { border-top: 1px solid rgba(255,255,255,.18); }
+  .optChoices { display: flex; gap: 6px; margin-top: 6px; }
+  /* 選択チップ: レシピ選択画面の「さいほう針」選択と同系統(chip_off/chip_on の9-slice) */
+  .optChip { flex: 0 0 auto; height: 34px; padding: 0 4px;
+    font-size: 13px; font-weight: bold; color: #cdd3ff; background: none;
+    border: solid transparent; border-width: 0 17px;
+    border-image: url('./assets/chip_off.png') 0 32 fill stretch; }
+  .optChip.on { border-image-source: url('./assets/chip_on.png'); color: #fff; }
+  .optDesc { font-size: 11px; color: rgba(255,255,255,.75); margin-top: 6px; line-height: 1.4; }
+
+  /* ---- 特技配置の入れ替え ---- */
+  .swapPanel { padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 8px; }
+  .swapDesc { font-size: 11px; color: rgba(255,255,255,.8); line-height: 1.4; }
+
+  /* ---- 特技 5行4列(index.html の #skills を流用。初期状態は全ボタン無効色) ---- */
+  .skills { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  .skill { position: relative; height: 44px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+    color: #fff; background: none;
+    border: 8px solid transparent;
+    border-image: url('./assets/btn_skill_normal.png') 26 fill / 8px stretch;
+    filter: drop-shadow(0 2px 3px rgba(40,20,0,.3)); }
+  .skill:active { filter: drop-shadow(0 2px 3px rgba(40,20,0,.3)) brightness(.92); }
+  .skName { font-size: 12px; font-weight: bold; white-space: nowrap; }
+  .skName2 { display: flex; flex-direction: column; align-items: center; line-height: 1.05; }
+  .skCost { font-size: 10px; opacity: .75; }
+  /* 無効色(初期状態。プレイ画面の disabled 表示を流用するが実際はタップ可能) */
+  .skill.skOff { opacity: 1; color: rgba(255,255,255,.8);
+    border-image-source: url('./assets/btn_skill_disabled.png'); }
+  /* 選択色(1つ目タップ時。入れ替え待ち状態) */
+  .skill.selected { border-image-source: url('./assets/btn_skill_selected.png'); color: #241a05; text-shadow: none; }
+  .skill.selected .skCost { color: #4a3a10; opacity: 1; }
+
+  .caption { text-align: center; font-size: 10px; color: rgba(60,40,10,.55); padding: 2px 0 6px; flex: 0 0 auto; }
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="adArea">アンカー広告(全幅・高さ50〜90dp可変)</div>
+
+  <header>
+    <button class="hdrBtn" type="button" onclick="location.href='./recipe-select.html'"><span class="hdrArrow">◀</span>もどる</button>
+    <div class="hdrTitle">設定</div>
+    <div class="hdrSpacer"></div>
+  </header>
+
+  <main>
+    <!-- 設定4項目: 選択ボタン+下部に説明文言 -->
+    <section class="win optPanel" id="optPanel"></section>
+
+    <!-- 特技配置の入れ替え(C2): プレイ画面と同じ5行4列。初期状態は全ボタン無効色 -->
+    <section class="win swapPanel">
+      <div class="rowLabel">特技の配置</div>
+      <div class="swapDesc">位置を入れ替えたいボタンを続けてタップしてください</div>
+      <div class="skills" id="swapSkills">
+        <button class="skill skOff" type="button"><span class="skName">ヨコぬい</span><span class="skCost">8</span></button>
+        <button class="skill skOff" type="button"><span class="skName">逆たすきぬい</span><span class="skCost">7</span></button>
+        <button class="skill skOff" type="button"><span class="skName">2倍ぬい</span><span class="skCost">9</span></button>
+        <button class="skill skOff" type="button"><span class="skName skName2"><span>ぬいパワー</span><span>シフト</span></span><span class="skCost">7</span></button>
+
+        <button class="skill skOff" type="button"><span class="skName">水平ぬい</span><span class="skCost">10</span></button>
+        <button class="skill skOff" type="button"><span class="skName">巻きこみぬい</span><span class="skCost">13</span></button>
+        <button class="skill skOff" type="button"><span class="skName">3倍ぬい</span><span class="skCost">12</span></button>
+        <button class="skill skOff" type="button"><span class="skName">しつけがけ</span><span class="skCost">13</span></button>
+
+        <button class="skill skOff" type="button"><span class="skName">滝のぼり</span><span class="skCost">8</span></button>
+        <button class="skill skOff" type="button"><span class="skName">みだれぬい</span><span class="skCost">7</span></button>
+        <button class="skill skOff" type="button"><span class="skName">ねらいぬい</span><span class="skCost">16</span></button>
+        <button class="skill skOff" type="button"><span class="skName">無我の境地</span><span class="skCost">必殺</span></button>
+
+        <button class="skill skOff" type="button"><span class="skName">大滝のぼり</span><span class="skCost">10</span></button>
+        <button class="skill skOff" type="button"><span class="skName">かげんぬい</span><span class="skCost">10</span></button>
+        <button class="skill skOff" type="button"><span class="skName">精神統一</span><span class="skCost">7</span></button>
+        <button class="skill skOff" type="button"><span class="skName">ぬう</span><span class="skCost">5</span></button>
+
+        <button class="skill skOff" type="button"><span class="skName">たすきぬい</span><span class="skCost">7</span></button>
+        <button class="skill skOff" type="button"><span class="skName">半かげんぬい</span><span class="skCost">12</span></button>
+        <button class="skill skOff" type="button"><span class="skName">糸ほぐし</span><span class="skCost">16</span></button>
+        <button class="skill skOff" type="button"><span class="skName">しあげる</span><span class="skCost">終了</span></button>
+      </div>
+    </section>
+  </main>
+
+  <div class="caption">設定画面モック v1.0 — 各設定は選択ボタンをタップで切替(Lv設定/コツ設定/数値の表現/基準値の表示)。Lv設定・コツ設定の選択値はlocalStorageに保存し、レシピ選択画面へ反映されます(「あり」時のみ該当領域を表示)/ 数値の表現・基準値の表示は保存のみ(反映先のプレイ画面は今回のモック対象外)/ 特技の配置は5行4列・全ボタン無効色から開始。1つ目タップで選択色→別ボタンをタップで位置を入れ替え(内容ごと交換)→選択済みボタンの再タップで未選択に戻る(「しあげる」も入れ替え対象)</div>
+</div>
+
+<script>
+  // ---- 設定4項目(選択ボタン+説明文言。選択値はLv設定/コツ設定のみlocalStorageへ保存) ----
+  const LV_ENABLED_KEY = 'saihou-mock-lvSetting';
+  const KOTSU_ENABLED_KEY = 'saihou-mock-kotsuSetting';
+  const NUM_DISPLAY_KEY = 'saihou-mock-numDisplay';
+  const BASE_DISPLAY_KEY = 'saihou-mock-baseDisplay';
+
+  const OPTIONS = [
+    { key: LV_ENABLED_KEY, label: 'Lv設定', choices: ['なし', 'あり'], def: 'なし',
+      desc: '職人レベルを変更するか設定します。変更しない場合はLv80前提となります。' },
+    { key: KOTSU_ENABLED_KEY, label: 'コツ設定', choices: ['なし', 'あり'], def: 'なし',
+      desc: 'コツの取得有無を切り替えられます。設定しない場合はコツあり前提となります。' },
+    { key: NUM_DISPLAY_KEY, label: '数値の表現', choices: ['残数値', '累積ダメージ'], def: '残数値',
+      desc: 'グリッドに表示する数値の意味合いを設定します。' },
+    { key: BASE_DISPLAY_KEY, label: '基準値の表示', choices: ['なし', 'あり'], def: 'なし',
+      desc: 'グリッドの数値の下に、基準値を表示するか設定します。' },
+  ];
+
+  const optPanel = document.getElementById('optPanel');
+  OPTIONS.forEach((opt) => {
+    const saved = localStorage.getItem(opt.key) || opt.def;
+    const row = document.createElement('div');
+    row.className = 'optRow';
+    const label = document.createElement('div');
+    label.className = 'rowLabel';
+    label.textContent = opt.label;
+    const choices = document.createElement('div');
+    choices.className = 'optChoices';
+    opt.choices.forEach((c) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'optChip' + (c === saved ? ' on' : '');
+      b.textContent = c;
+      b.addEventListener('click', () => {
+        choices.querySelectorAll('.on').forEach(x => x.classList.remove('on'));
+        b.classList.add('on');
+        localStorage.setItem(opt.key, c);
+      });
+      choices.appendChild(b);
+    });
+    const desc = document.createElement('div');
+    desc.className = 'optDesc';
+    desc.textContent = opt.desc;
+    row.appendChild(label);
+    row.appendChild(choices);
+    row.appendChild(desc);
+    optPanel.appendChild(row);
+  });
+
+  // ---- 特技の配置入れ替え(C2): 1つ目タップ=選択色 / 別ボタンタップ=内容を入れ替えて未選択に戻る /
+  //      選択済みボタンの再タップ=未選択に戻る。20個すべて(しあげる含む)が対象 ----
+  const swapContainer = document.getElementById('swapSkills');
+  let armedBtn = null;
+  swapContainer.addEventListener('click', (e) => {
+    const btn = e.target.closest('.skill');
+    if (!btn) return;
+    if (btn === armedBtn) {
+      armedBtn.classList.remove('selected');
+      armedBtn.classList.add('skOff');
+      armedBtn = null;
+      return;
+    }
+    if (armedBtn) {
+      // 内容(ラベル・コスト)を丸ごと入れ替える
+      const tmp = armedBtn.innerHTML;
+      armedBtn.innerHTML = btn.innerHTML;
+      btn.innerHTML = tmp;
+      armedBtn.classList.remove('selected');
+      armedBtn.classList.add('skOff');
+      armedBtn = null;
+      return;
+    }
+    btn.classList.remove('skOff');
+    btn.classList.add('selected');
+    armedBtn = btn;
+  });
+</script>
+</body>
+</html>

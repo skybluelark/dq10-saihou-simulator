@@ -119,6 +119,26 @@
   /* ---- さいほう針・できのよさ ---- */
   .needlePanel { padding: 8px; flex: 0 0 auto; display: flex; flex-direction: column; gap: 8px; }
   .rowLabel { font-size: 12px; font-weight: bold; color: #ffe9b8; }
+
+  /* ---- 設定画面(§5.12)で Lv設定/コツ設定を「あり」にした場合に表示する行。
+     さいほう針の上側に1行追加し、その分レシピ一覧が縦方向に短くなる(flexで自動吸収) ---- */
+  .settingRow { display: flex; gap: 12px; padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,.18); }
+  .settingCol { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  /* 職人レベル: 数字の左右に±1・±10ボタン(chip_off の9-sliceを流用。トグルではなく単発操作のため on 状態は使わない) */
+  .lvStepRow { display: flex; align-items: center; gap: 4px; }
+  .lvStepBtn { flex: 0 0 auto; width: 44px; height: 30px; padding: 0;
+    font-size: 12px; font-weight: bold; color: #cdd3ff; background: none;
+    border: solid transparent; border-width: 0 15px;
+    border-image: url('./assets/chip_off.png') 0 32 fill stretch; }
+  .lvStepBtn:disabled { opacity: .35; }
+  .lvVal { flex: 1 1 auto; text-align: center; font-size: 18px; font-weight: bold; color: #fff; }
+  /* コツ: できのよさ・さいほう針と同系統の選択チップ(なし/あり) */
+  .kotsuChips { display: flex; gap: 6px; }
+  .optChip { flex: 0 0 auto; height: 34px; padding: 0 4px;
+    font-size: 13px; font-weight: bold; color: #cdd3ff; background: none;
+    border: solid transparent; border-width: 0 17px;
+    border-image: url('./assets/chip_off.png') 0 32 fill stretch; }
+  .optChip.on { border-image-source: url('./assets/chip_on.png'); color: #fff; }
   .needleRow { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 2px; }
   .needleRow::-webkit-scrollbar { display: none; }
   .needleChip { flex: 0 0 auto; height: 34px; padding: 0 2px;
@@ -160,7 +180,7 @@
   <header>
     <button class="hdrBtn" type="button" title="トップへ(モックでは未遷移)"><span class="hdrArrow">◀</span>もどる</button>
     <div class="hdrTitle">レシピをえらぶ</div>
-    <div class="hdrSpacer"></div>
+    <button class="hdrBtn" type="button" onclick="location.href='./settings.html'">設定</button>
   </header>
 
   <main>
@@ -202,6 +222,25 @@
 
     <!-- さいほう針・できのよさ+開始集中力 -->
     <section class="needlePanel win">
+      <div class="settingRow" id="settingRow" style="display:none;">
+        <div class="settingCol" id="lvCol" style="display:none;">
+          <div class="rowLabel">職人レベル</div>
+          <div class="lvStepRow" id="lvStepRow">
+            <button class="lvStepBtn" type="button" data-delta="-10">-10</button>
+            <button class="lvStepBtn" type="button" data-delta="-1">-1</button>
+            <span class="lvVal" id="lvVal">80</span>
+            <button class="lvStepBtn" type="button" data-delta="1">+1</button>
+            <button class="lvStepBtn" type="button" data-delta="10">+10</button>
+          </div>
+        </div>
+        <div class="settingCol" id="kotsuCol" style="display:none;">
+          <div class="rowLabel">コツ</div>
+          <div class="kotsuChips" id="kotsuChips">
+            <button class="optChip" type="button" data-val="なし">なし</button>
+            <button class="optChip on" type="button" data-val="あり">あり</button>
+          </div>
+        </div>
+      </div>
       <div>
         <div class="rowLabel">さいほう針</div>
         <div class="needleRow" id="needleRow"></div>
@@ -226,7 +265,7 @@
     <button class="startBtn" type="button" onclick="location.href='./index.html'">はじめる</button>
   </main>
 
-  <div class="caption">レシピ選択画面モック v3.1(トーンB・画像AI実素材)— チップ=横3分割(両端曲率固定)/ 布特性バッジ=実装側描画 / 装備Lv・フィルター値はダミー / 針・できのよさの選択は保存されます</div>
+  <div class="caption">レシピ選択画面モック v3.2(トーンB・画像AI実素材)— チップ=横3分割(両端曲率固定)/ 布特性バッジ=実装側描画 / 装備Lv・フィルター値はダミー / 針・できのよさの選択は保存されます / ヘッダー右「設定」で設定画面へ遷移 / 設定画面でLv設定・コツ設定を「あり」にすると、さいほう針の上に職人レベル(±1/±10・1〜80)とコツ(なし/あり)の行が表示されます(該当設定が「なし」の側は非表示、両方「なし」なら行ごと非表示)</div>
 </div>
 
 <script>
@@ -338,6 +377,58 @@
       starRow.querySelectorAll('.on').forEach(x => x.classList.remove('on'));
       b.classList.add('on');
       localStorage.setItem(STAR_KEY, b.textContent);
+    });
+  });
+
+  // ---- 設定画面(§5.12)連携: Lv設定/コツ設定が「あり」の場合のみ、さいほう針の上に該当領域を表示 ----
+  const LV_ENABLED_KEY = 'saihou-mock-lvSetting';
+  const KOTSU_ENABLED_KEY = 'saihou-mock-kotsuSetting';
+  const LV_VALUE_KEY = 'saihou-mock-lvValue';
+  const KOTSU_VALUE_KEY = 'saihou-mock-kotsuValue';
+  const LV_MIN = 1, LV_MAX = 80;
+
+  const lvEnabled = (localStorage.getItem(LV_ENABLED_KEY) || 'なし') === 'あり';
+  const kotsuEnabled = (localStorage.getItem(KOTSU_ENABLED_KEY) || 'なし') === 'あり';
+  const settingRow = document.getElementById('settingRow');
+  const lvCol = document.getElementById('lvCol');
+  const kotsuCol = document.getElementById('kotsuCol');
+  if (lvEnabled || kotsuEnabled) {
+    settingRow.style.display = 'flex';
+    if (lvEnabled) lvCol.style.display = 'flex';
+    if (kotsuEnabled) kotsuCol.style.display = 'flex';
+  }
+
+  // 職人レベル: ±1・±10(デフォルト80、範囲1〜80)。範囲超過はクランプし、端にあるボタンは無効化
+  const lvVal = document.getElementById('lvVal');
+  const lvStepRow = document.getElementById('lvStepRow');
+  let lvValue = parseInt(localStorage.getItem(LV_VALUE_KEY), 10);
+  if (!Number.isFinite(lvValue) || lvValue < LV_MIN || lvValue > LV_MAX) lvValue = LV_MAX;
+  function renderLv() {
+    lvVal.textContent = String(lvValue);
+    lvStepRow.querySelectorAll('.lvStepBtn').forEach((b) => {
+      const d = parseInt(b.dataset.delta, 10);
+      b.disabled = (d > 0 && lvValue >= LV_MAX) || (d < 0 && lvValue <= LV_MIN);
+    });
+    localStorage.setItem(LV_VALUE_KEY, String(lvValue));
+  }
+  lvStepRow.addEventListener('click', (e) => {
+    const b = e.target.closest('.lvStepBtn');
+    if (!b || b.disabled) return;
+    const d = parseInt(b.dataset.delta, 10);
+    lvValue = Math.min(LV_MAX, Math.max(LV_MIN, lvValue + d));
+    renderLv();
+  });
+  renderLv();
+
+  // コツ: できのよさと同様の「あり」「なし」選択(デフォルト「あり」)
+  const kotsuChips = document.getElementById('kotsuChips');
+  const savedKotsu = localStorage.getItem(KOTSU_VALUE_KEY) || 'あり';
+  kotsuChips.querySelectorAll('.optChip').forEach((b) => {
+    b.classList.toggle('on', b.dataset.val === savedKotsu);
+    b.addEventListener('click', () => {
+      kotsuChips.querySelectorAll('.on').forEach(x => x.classList.remove('on'));
+      b.classList.add('on');
+      localStorage.setItem(KOTSU_VALUE_KEY, b.dataset.val);
     });
   });
 </script>
