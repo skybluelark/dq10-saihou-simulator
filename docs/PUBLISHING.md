@@ -97,6 +97,13 @@ npx wrangler pages deploy dist --project-name=dq10-saihou-sim --branch=master
 - [ ] fluoritedq10 リポジトリで Actions が緑、Cloudflare Pages のデプロイが Production として記録されること。
 - [ ] Secrets(`CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID`)がコード・ログに露出していないこと。
 
+### 7.1 デモアプリの検証UI (?verify)(§② 2026-07-12)
+
+- ブラウザ版は**デモアプリ**として、検証/開発向けUI(シード指定・リプレイ入出力・マス別誤差内訳・ログのロール表示)を通常画面から隠す。
+- これらは URL クエリ `?verify=1` を付けたときのみ表示される隠しフラグ(`App.tsx` の `devMode`)。公開デモの既定は非表示。開発・QA は `https://<host>/?verify=1` で従来機能を復帰できる。
+- アンドゥ/リドゥ(1手戻す・1手進む)は検証UIから独立した**通常操作**として常時表示。
+- UI層のみの変更で `src/core` は不変。上記はデモ挙動のため、主セッションのUI設計書へ相互参照を残すかは主セッション判断。
+
 ## 8. 未決事項(申し送り)
 
 1. **Cloudflare Pages プロジェクト名 / pages.dev サブドメイン**: 既定 `dq10-saihou-sim`。サブドメインは公開面に露出するため、ブランド文言(fluorite 等)の確定(§③のユーザー確認事項)に合わせて改名可否を決める。改名時は Cloudflare プロジェクト名・`wrangler.toml` の name・CI の一致を保つ。
@@ -107,4 +114,5 @@ npx wrangler pages deploy dist --project-name=dq10-saihou-sim --branch=master
 
 ## 9. 更新履歴
 
+- v0.2 (2026-07-12): §7.1 追加。デモアプリの検証UIを `?verify` 隠しフラグ化(§②のUI整理)。アンドゥ/リドゥは常時表示へ昇格した旨を記録。
 - v0.1 (2026-07-12): 初版。全体構成(2リポジトリ・ミラー方式 + GitHub Actions & wrangler / Direct Upload)、ユーザー実施事項、デプロイ手順、設定ファイル一覧、確認チェックリスト、未決事項を確定。`wrangler.toml`・`deploy-cloudflare.yml` 追加、`deploy.yml` をオーナーガード化。
