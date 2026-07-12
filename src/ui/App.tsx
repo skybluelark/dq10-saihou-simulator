@@ -181,6 +181,17 @@ function App() {
     setSettings((prev) => ({ ...prev, ...patch }));
   }, []);
 
+  // 検証(dev)モード: URL の ?verify で有効化する隠しフラグ(§②)。
+  // デモアプリでは既定 OFF。ON のときのみシード指定・リプレイ入出力・
+  // マス別誤差内訳・ログのロール表示を出す(通常のプレイ画面には出さない)。
+  const devMode = useMemo(() => {
+    try {
+      return new URLSearchParams(window.location.search).has('verify');
+    } catch {
+      return false;
+    }
+  }, []);
+
   const config: SimulatorConfig = useMemo(
     () => ({
       ...DEFAULT_CONFIG,
@@ -678,12 +689,12 @@ function App() {
     () =>
       ui.session
         ? ui.session.log.flatMap((e) =>
-            formatEvents(e.events, e.turn, skillName, { showRolls: settings.verifyMode }).map(
+            formatEvents(e.events, e.turn, skillName, { showRolls: devMode }).map(
               (text) => ({ text, turn: e.turn }),
             ),
           )
         : [],
-    [ui.session, skillName, settings.verifyMode],
+    [ui.session, skillName, devMode],
   );
 
   const needle = useMemo(
@@ -714,6 +725,7 @@ function App() {
         activeRecipeId={recipe.id}
         onChangeSettings={changeSettings}
         onNewSession={handleNewSession}
+        devMode={devMode}
         currentSeed={session?.seed ?? null}
         seedInput={seedInput}
         onSeedInputChange={setSeedInput}
@@ -741,7 +753,7 @@ function App() {
               result={currentResult}
               params={data.params}
               onNewSession={handleNewSession}
-              verifyMode={settings.verifyMode}
+              verifyMode={devMode}
               onUndo={handleUndo}
               onBuildReplayText={buildReplayText}
             />

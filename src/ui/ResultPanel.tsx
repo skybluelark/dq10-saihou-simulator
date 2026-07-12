@@ -13,7 +13,7 @@ interface ResultPanelProps {
   result: JudgeResult;
   params: GameParams;
   onNewSession: () => void;
-  verifyMode: boolean; // 検証モード時: 1手戻すボタンとマス別誤差内訳を表示(SPEC §4.3)
+  verifyMode: boolean; // devMode(検証)時: マス別誤差内訳・リプレイコピーを表示。1手戻すは常時表示(§②)
   onUndo: () => void;
   onBuildReplayText: () => string | null;
 }
@@ -86,14 +86,16 @@ export function ResultPanel({
         </table>
       )}
       <div className={styles.resultActions}>
+        {/* 1手戻すは通常操作として常時表示(§②) */}
+        <button type="button" className={styles.undoButton} onClick={onUndo}>
+          1手戻す
+        </button>
+        {/* リプレイコピーは devMode 時のみ。デモでは非表示(§②) */}
         {verifyMode && (
-          <button type="button" className={styles.undoButton} onClick={onUndo}>
-            1手戻す
+          <button type="button" className={styles.undoButton} onClick={handleCopyReplay}>
+            {copied ? 'コピーしました' : 'リプレイをコピー'}
           </button>
         )}
-        <button type="button" className={styles.undoButton} onClick={handleCopyReplay}>
-          {copied ? 'コピーしました' : 'リプレイをコピー'}
-        </button>
         <button type="button" className={styles.newButton} onClick={onNewSession}>
           新しく始める
         </button>

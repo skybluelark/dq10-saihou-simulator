@@ -14,6 +14,9 @@ interface HeaderProps {
   activeRecipeId: string | null;
   onChangeSettings: (patch: Partial<UiSettings>) => void;
   onNewSession: () => void;
+  // devMode(URL の ?verify で有効化): シード指定・リプレイ入出力の検証UIを表示する。
+  // デモアプリでは非表示(§②)。アンドゥ/リドゥは devMode によらず常時表示。
+  devMode: boolean;
   currentSeed: number | null;
   seedInput: string;
   onSeedInputChange: (value: string) => void;
@@ -32,6 +35,7 @@ export function Header({
   activeRecipeId,
   onChangeSettings,
   onNewSession,
+  devMode,
   currentSeed,
   seedInput,
   onSeedInputChange,
@@ -107,15 +111,25 @@ export function Header({
           />
           サイクル予告表示
         </label>
-        <label className={styles.toggle}>
-          <input
-            type="checkbox"
-            checked={settings.verifyMode}
-            onChange={(e) => onChangeSettings({ verifyMode: e.target.checked })}
-          />
-          検証モード
-        </label>
-        {settings.verifyMode && (
+        {/* アンドゥ/リドゥは通常操作として常時表示(§②) */}
+        <button
+          type="button"
+          className={styles.undoButton}
+          disabled={!canUndo}
+          onClick={onUndo}
+        >
+          1手戻す
+        </button>
+        <button
+          type="button"
+          className={styles.undoButton}
+          disabled={!canRedo}
+          onClick={onRedo}
+        >
+          1手進む
+        </button>
+        {/* 検証UI(シード指定・リプレイ入出力)は devMode 時のみ。デモでは非表示(§②) */}
+        {devMode && (
           <>
             <span className={styles.seedDisplay}>シード: {currentSeed ?? '-'}</span>
             <input
@@ -125,22 +139,6 @@ export function Header({
               placeholder="シード(空欄=自動)"
               onChange={(e) => onSeedInputChange(e.target.value)}
             />
-            <button
-              type="button"
-              className={styles.undoButton}
-              disabled={!canUndo}
-              onClick={onUndo}
-            >
-              1手戻す
-            </button>
-            <button
-              type="button"
-              className={styles.undoButton}
-              disabled={!canRedo}
-              onClick={onRedo}
-            >
-              1手進む
-            </button>
             <button type="button" className={styles.undoButton} onClick={handleCopyReplay}>
               {copied ? 'コピーしました' : 'リプレイコピー'}
             </button>
