@@ -107,14 +107,14 @@ npx wrangler pages deploy dist --project-name=fluonote --branch=master
 ### 7.2 仮公開ページ(ランディング)(§③ 2026-07-12)
 
 - デモアプリへのリンクを持つ**暫定公開ページ**。**デモとは別の小さな Cloudflare Pages プロジェクト**として Direct Upload する(静的HTML1枚・ビルド不要)。
-- ソースは別リポジトリ(このリポジトリ外)。ローカル作業フォルダは現状 `E:\dev\dq10-saihou-landing`(改名保留中: 別プロセスがロック。配信に影響しない)。詳細・デプロイ手順は同フォルダの `README.md`。
-- 名称は **`fluonote-landing`** で統一(GitHub リポジトリ=未作成・Cloudflare Pages プロジェクト・wrangler `name` すべて同じ)。Pages はアンダースコア不可のためハイフンに揃える(ユーザー決定 2026-07-12)。
+- ソースは別リポジトリ(このリポジトリ外)。ローカル作業フォルダは現状 `E:\dev\dq10-saihou-landing`(VS Code ロック中で改名保留・配信に無関係)。詳細・デプロイ手順は同フォルダの `README.md`。
+- 名称: **GitHub リポジトリ = `FluoNote-Landing`**(未作成・ブランド表記/大文字可)、**Cloudflare Pages プロジェクト / wrangler `name` = `fluonote-landing`**(小文字)。デモの `FluoNote`↔`fluonote` と同じ規則(ユーザー決定 2026-07-12)。
 - 権利方針(§③ 確定): **ゲーム名を記述的に言及+免責文**。『ドラゴンクエストX』を記述的に参照し、「スクウェア・エニックス社とは無関係の非公式ファンツール」「ゲーム内の画像・ロゴ・フォント・SS等の著作物は不使用」「『ドラゴンクエスト』は登録商標」を明記。§4.2 の流用不可を順守。
 - **公開前の差し替え必須**: サイト名/ブランド表記("FluoNote" 確定)。デモアプリの公開URLは `https://fluonote.pages.dev/` に確定済(CTAリンク反映済)。
 
 ## 8. 未決事項(申し送り)
 
-1. ~~**Cloudflare Pages プロジェクト名 / pages.dev サブドメイン**~~ → **確定(2026-07-12)**: ブランド "FluoNote" により デモ=`fluonote`(`fluonote.pages.dev`)、ランディング=`fluonote-landing`。pages.dev は英小文字化される。
+1. ~~**Cloudflare Pages プロジェクト名 / pages.dev サブドメイン**~~ → **確定(2026-07-12)**: ブランド "FluoNote"。**命名規則=GitHub リポジトリはブランド表記(大文字可): `FluoNote` / `FluoNote-Landing`、Cloudflare Pages プロジェクトは英小文字: `fluonote`(`fluonote.pages.dev`) / `fluonote-landing`。** 以降の別アプリも同規則で。
 2. ~~**仮公開ページ(§③)の配置**~~ → **解決(2026-07-12)**: デモとは別の小さな Pages プロジェクトで公開(§7.2)。ソースは `E:\dev\dq10-saihou-landing`。
 3. **カスタムドメイン**: 当面 `*.pages.dev`。独自ドメインは仮公開の反応を見て判断。
 4. **GitHub Pages(skybluelark)の廃止時期**: Cloudflare 仮公開の確認後に廃止を検討。それまでは開発用として維持。
@@ -122,6 +122,7 @@ npx wrangler pages deploy dist --project-name=fluonote --branch=master
 
 ## 9. 更新履歴
 
+- v0.6 (2026-07-12): 命名規則を明確化。GitHub リポジトリはブランド表記(大文字可、ランディング=`FluoNote-Landing`)、Cloudflare/wrangler は英小文字(`fluonote-landing`)。デモの `FluoNote`↔`fluonote` と同じ対応。§7.2/§8-1 を更新。
 - v0.5 (2026-07-12): デモ初回デプロイ確認済(`fluonote.pages.dev` 表示OK)。ランディング名称をユーザー決定によりGitHub/Cloudflare/wrangler すべて `fluonote-landing`(ハイフン)へ統一(アンダースコア案を撤回)。ローカル作業フォルダの改名は別プロセスのロックで保留。
 - v0.4 (2026-07-12): ブランド "FluoNote" 確定を反映。デモ Cloudflare プロジェクト名を `fluonote`(`fluonote.pages.dev`)、公開リポジトリを `fluoritedq10/FluoNote`(作成済)、ランディングを `fluonote-landing`(pages.dev はアンダースコア不可)に更新。§8-1/§8-5 を確定へ。`wrangler.toml` の name を fluonote に変更。
 - v0.3 (2026-07-12): §7.2 追加(仮公開ランディングページ=別 Pages プロジェクト・`E:\dev\dq10-saihou-landing`・権利方針=記述的言及+免責)。§8-2(配置)を解決に更新。
