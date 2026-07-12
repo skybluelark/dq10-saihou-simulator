@@ -107,8 +107,8 @@ npx wrangler pages deploy dist --project-name=fluonote --branch=master
 ### 7.2 仮公開ページ(ランディング)(§③ 2026-07-12)
 
 - デモアプリへのリンクを持つ**暫定公開ページ**。**デモとは別の小さな Cloudflare Pages プロジェクト**として Direct Upload する(静的HTML1枚・ビルド不要)。
-- ソースは別プロジェクト **`E:\dev\dq10-saihou-landing`**(このリポジトリ外・別リポジトリ)。詳細・デプロイ手順は同フォルダの `README.md`。GitHub リポジトリ名は `fluonote_landing` 予定。
-- Cloudflare Pages プロジェクト名は **`fluonote-landing`**(ハイフン)。※Pages のプロジェクト名は英小文字+数字+ハイフンのみでアンダースコア不可のため、リポジトリ名 `fluonote_landing` とはハイフン/アンダースコアの差が出る。
+- ソースは別リポジトリ(このリポジトリ外)。ローカル作業フォルダは現状 `E:\dev\dq10-saihou-landing`(改名保留中: 別プロセスがロック。配信に影響しない)。詳細・デプロイ手順は同フォルダの `README.md`。
+- 名称は **`fluonote-landing`** で統一(GitHub リポジトリ=未作成・Cloudflare Pages プロジェクト・wrangler `name` すべて同じ)。Pages はアンダースコア不可のためハイフンに揃える(ユーザー決定 2026-07-12)。
 - 権利方針(§③ 確定): **ゲーム名を記述的に言及+免責文**。『ドラゴンクエストX』を記述的に参照し、「スクウェア・エニックス社とは無関係の非公式ファンツール」「ゲーム内の画像・ロゴ・フォント・SS等の著作物は不使用」「『ドラゴンクエスト』は登録商標」を明記。§4.2 の流用不可を順守。
 - **公開前の差し替え必須**: サイト名/ブランド表記("FluoNote" 確定)。デモアプリの公開URLは `https://fluonote.pages.dev/` に確定済(CTAリンク反映済)。
 
@@ -122,6 +122,7 @@ npx wrangler pages deploy dist --project-name=fluonote --branch=master
 
 ## 9. 更新履歴
 
+- v0.5 (2026-07-12): デモ初回デプロイ確認済(`fluonote.pages.dev` 表示OK)。ランディング名称をユーザー決定によりGitHub/Cloudflare/wrangler すべて `fluonote-landing`(ハイフン)へ統一(アンダースコア案を撤回)。ローカル作業フォルダの改名は別プロセスのロックで保留。
 - v0.4 (2026-07-12): ブランド "FluoNote" 確定を反映。デモ Cloudflare プロジェクト名を `fluonote`(`fluonote.pages.dev`)、公開リポジトリを `fluoritedq10/FluoNote`(作成済)、ランディングを `fluonote-landing`(pages.dev はアンダースコア不可)に更新。§8-1/§8-5 を確定へ。`wrangler.toml` の name を fluonote に変更。
 - v0.3 (2026-07-12): §7.2 追加(仮公開ランディングページ=別 Pages プロジェクト・`E:\dev\dq10-saihou-landing`・権利方針=記述的言及+免責)。§8-2(配置)を解決に更新。
 - v0.2 (2026-07-12): §7.1 追加。デモアプリの検証UIを `?verify` 隠しフラグ化(§②のUI整理)。アンドゥ/リドゥは常時表示へ昇格した旨を記録。
