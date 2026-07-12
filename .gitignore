@@ -9,3 +9,6 @@ data/sample/
 
 # 生成素材の不採用・旧版置き場(リポジトリには含めない)
 assets-src/ng/
+
+# Python の実行キャッシュ(素材加工スクリプト)
+__pycache__/
