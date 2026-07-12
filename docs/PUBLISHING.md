@@ -123,9 +123,15 @@ npx wrangler pages deploy dist --project-name=fluonote --branch=master
 3. **カスタムドメイン**: 当面 `*.pages.dev`。独自ドメインは仮公開の反応を見て判断。
 4. **GitHub Pages(skybluelark)の廃止時期**: Cloudflare 仮公開の確認後に廃止を検討。それまでは開発用として維持。
 5. **権利・ブランド**: ブランドは **"FluoNote"** 確定。公開物の名称/素材は §4.2 の線引き(記述的言及+免責・素材流用不可)に従う。デモアプリ内タイトル "DQ10 さいほうシミュレータ" は §③方針(ゲーム名の記述的言及可)に基づき据え置き。ランディングの表示ブランドを "FluoNote" にするかは公開前の差し替えで最終確認。
+6. **配信構成の将来計画(方針決定 2026-07-12・実施は後日)**: `fluonote` プロジェクト内をサブパスで整理する。
+   - `/`(root)= **ランディング**(現行 `fluonote-landing` を統合するか別サブドメイン維持かは整理時に判断)。
+   - `/<サブパス>/` = **現行シンプルUI**(画像なし・軽量。最終採用は未定だが**別管理で保持**)。
+   - `/<別サブパス>/` = **最終公開デモ**(プレイ画面のみ・**スマホアプリUI寄せのリッチUI**。レシピ選択/ユーザー設定/リプレイ等は省く)。**リッチUIは MOBILE_UI_DESIGN 方向=主セッション管轄**、私はサブパス/配信の土台を担当。
+   - サブパス名・root への landing 配置方法(統合 or リダイレクト)は整理時に確定。**当面はシンプルUIの最小修正を継続**。`base:'./'`(相対)のためサブパス配置は容易(base変更不要)。
 
 ## 9. 更新履歴
 
+- v0.10 (2026-07-12): §8-6 追加 — 配信構成の将来計画(root=ランディング、シンプルUI/リッチUIをサブパス分離。実施は後日)。方針のみ記録、実装は未着手。
 - v0.9 (2026-07-12): デモUI調整 — 「サイクル予告表示」をON固定化(トグル・設定廃止、UI層のみ・`src/core` 不変)。§7.1 に記録。
 - v0.8 (2026-07-12): **仮公開ランディング公開完了**。表示ブランドを FluoNote に確定、ソースを `fluoritedq10/FluoNote-Landing`(非公開)へ push、Cloudflare `fluonote-landing` にデプロイ → `fluonote-landing.pages.dev` 稼働。これで ①環境/②デモUI/③仮公開ページ すべて公開まで到達。ランディングは CI 未設定(手動デプロイ)。
 - v0.7 (2026-07-12): **デモの自動デプロイ完成・稼働確認**。APIトークン(無期限)・Account ID・GitHub Secrets 登録済。`fluoritedq10/FluoNote` の本番ブランチを `master` に設定 → `git push fluorite master`(ミラー)→ Actions 緑 → Cloudflare `fluonote` に Production/master デプロイ → `fluonote.pages.dev` 稼働を確認。認証は skybluelark→fluoritedq10 の切替が必要(GCM 資格情報の入れ替え)。以降のリリースは `git push fluorite master` のみ。
