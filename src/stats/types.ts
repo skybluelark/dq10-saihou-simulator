@@ -1,7 +1,7 @@
 // ソルバー基盤の型定義 (候補列挙・1手の結果分布・仕上げテーブル・静的評価)
 // src/stats は純TS。core からのみ import する(依存方向: ui/data/stats → core)。
 
-import type { Action, Engine, EngineData, SimulatorConfig } from '../core';
+import type { Action, Engine, EngineData, Power, SimulatorConfig, Star } from '../core';
 
 /** 候補行動(列挙結果) */
 export interface Candidate {
@@ -70,4 +70,58 @@ export interface ScoredCandidate {
   score: number;       // E[V](大きいほど良い)
   expTotalErr: number; // 期待誤差評価値合計
   expConcNeed: number; // 仕上げ完了までの推定所要集中力(行動コスト込み)
+}
+
+// ---- モンテカルロ・ロールアウト / anytime集計 / 公称プラン / solve統括 (モジュール6〜9) ----
+
+/** 候補ごとのロールアウト集計(anytime合算可能)。 */
+export interface CandidateStats {
+  n: number;
+  wins: number;
+  sumErr: number;
+  sumConc: number;
+}
+
+/** ロールアウト集計つき候補(racing対象)。 */
+export interface RankedCandidate {
+  scored: ScoredCandidate; // 静的スコア(Stage A)
+  stats: CandidateStats;
+  rate: number; // ★3率点推定(n=0なら0)
+  ci: { lo: number; hi: number }; // Wilson 95%
+  eliminated: boolean; // racingで打ち切られたか
+}
+
+export interface SolveOptions {
+  timeBudgetMs?: number; // 既定1000。maxRollouts と併用可(先に達した方で停止)
+  maxRollouts?: number;  // 総ロールアウト数上限(テスト・再現用)。既定 Infinity
+  topK?: number;         // ロールアウト対象の候補数(既定8)
+  minSamples?: number;   // racing開始前の候補あたり最低試行数(既定30)
+  batchSize?: number;    // 1ラウンドの候補あたり追加試行数(既定25)
+  baseSeed?: number;     // 探索シード(既定 0x5EED)
+  prior?: SolveResult;   // 前回結果(stateKey一致時に合算)
+}
+
+export interface SolveResult {
+  stateKey: string;
+  ranked: RankedCandidate[]; // 推奨順ソート済み
+  totalRollouts: number;
+  elapsedMs: number;
+  certain: boolean; // finishで★3確定のため探索省略した場合 true
+}
+
+/** 公称プランの1手。 */
+export interface PlanStep {
+  turn: number;         // 実行ターン番号(1始まり)
+  power: Power;          // そのターンの実効パワー
+  action: Action;
+  skillId: string | null; // finish は null
+  concAfter: number;      // 実行後の残り集中力
+  cells: { r: number; c: number; remaining: number }[]; // 実行後の全マス残り
+}
+
+export interface NominalPlan {
+  steps: PlanStep[];
+  star: Star; // 最終判定
+  totalError: number;
+  reachedFinish: boolean; // 上限内に finish へ到達したか
 }
