@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>リプレイコード入力画面モック</title>
+<style>
+  @font-face {
+    font-family: 'GenEiLateMin';
+    src: url('./assets/fonts/GenEiLateMinP_v2_subset.woff2') format('woff2');
+    font-weight: normal; font-style: normal; font-display: swap;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  button, input, select, textarea { font-family: inherit; } /* フォーム部品はフォントを継承しないため明示 */
+  body {
+    font-family: 'GenEiLateMin', "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+    display: flex; flex-direction: column; align-items: center;
+    min-height: 100dvh;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    background-color: #cbb98f;
+    background-image: url('./assets/bg_main.png');
+    background-size: cover; background-position: center;
+    color: #fff;
+  }
+  .frame { width: 100%; max-width: 430px; min-height: 100dvh; display: flex; flex-direction: column; }
+
+  .adArea {
+    height: 50px; flex: 0 0 auto;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(60,40,10,.12);
+    border-bottom: 1px dashed rgba(60,40,10,.45); color: rgba(60,40,10,.55);
+    font-size: 12px; letter-spacing: .15em;
+  }
+
+  header { display: flex; align-items: center; gap: 6px; height: 50px; padding: 0 6px; flex: 0 0 auto; }
+  .hdrBtn {
+    width: 76px; height: 40px; flex: 0 0 auto;
+    display: flex; align-items: center; justify-content: center; gap: 2px;
+    border: none; font-size: 14px; font-weight: bold;
+    background: url('./assets/btn_header_normal.png') center / 100% 100% no-repeat; color: #ffe9b8;
+    filter: drop-shadow(0 2px 3px rgba(40,20,0,.4));
+  }
+  .hdrBtn:active { background-image: url('./assets/btn_header_pressed.png'); }
+  .hdrArrow { font-size: 10px; }
+  .hdrSpacer { width: 76px; flex: 0 0 auto; }
+  .hdrTitle { flex: 1 1 auto; text-align: center; font-size: 20px; font-weight: bold;
+    color: #3a2a10; text-shadow: 0 1px 0 rgba(255,255,255,.5);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  main { flex: 1 1 auto; display: flex; flex-direction: column; gap: 10px; padding: 6px 12px 10px; min-height: 0; }
+
+  .win {
+    color: #fff;
+    border: 8px solid transparent;
+    border-image: url('./assets/panel_window.png') 96 fill / 10px stretch;
+    box-shadow: 0 3px 6px rgba(40,20,0,.35);
+  }
+
+  .rowLabel { font-size: 12px; font-weight: bold; color: #ffe9b8; }
+
+  /* ---- リプレイコード入力欄 ---- */
+  .codePanel { padding: 10px 10px 12px; display: flex; flex-direction: column; gap: 10px; }
+  .codeArea { width: 100%; min-height: 180px; padding: 14px;
+    font-size: 17px; line-height: 1.8; letter-spacing: .04em; text-align: center;
+    color: #2a1c05; background: rgba(255,255,255,.92);
+    border: none; border-radius: 10px; resize: vertical;
+    box-shadow: inset 0 1px 4px rgba(0,0,0,.25); }
+  .codeArea::placeholder { color: rgba(40,28,8,.45); }
+
+  /* 「クリップボードから貼り付け」: btn_secondary 素材(結果オーバーレイの副次ボタンと同系統) */
+  .pasteBtn { align-self: center; height: 44px; padding: 0 22px;
+    font-size: 13px; font-weight: bold;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; background: none;
+    border: 20px solid transparent; border-left-width: 14px; border-right-width: 14px;
+    border-image: url('./assets/btn_secondary_normal.png') 45 fill / 20px 14px stretch;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,.35)); }
+  .pasteBtn:active { border-image-source: url('./assets/btn_secondary_pressed.png'); }
+
+  /* ---- はじめる: レシピ選択画面の startBtn と同型。画面下部に固定するため margin-top: auto ---- */
+  .startBtn { flex: 0 0 auto; height: 52px; margin: auto 24px 0;
+    font-size: 18px; font-weight: bold; letter-spacing: .3em; text-indent: .3em;
+    display: flex; align-items: center; justify-content: center;
+    color: #3a2604; background: none;
+    border: 20px solid transparent; border-left-width: 14px; border-right-width: 14px;
+    border-image: url('./assets/btn_primary_normal.png') 50 fill / 20px 14px stretch;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,.35)); }
+  .startBtn:active { border-image-source: url('./assets/btn_primary_pressed.png'); }
+
+  /* ---- エラーダイアログ(index.html の◀もどる確認ダイアログと同系統。OK1つのみ) ---- */
+  .resultScrim { position: fixed; inset: 0; z-index: 20;
+    background: rgba(10, 8, 2, .55);
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px; }
+  .resultScrim[hidden] { display: none; }
+  .dlgWin { width: 100%; max-width: 300px; padding: 10px 6px 6px;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    color: #fff; background: none;
+    border: 28px solid transparent;
+    border-image: url('./assets/panel_window.png') 96 fill / 28px stretch;
+    box-shadow: 0 8px 24px rgba(0,0,0,.5); }
+  .dlgText { font-size: 15px; font-weight: bold; text-align: center; line-height: 1.8; }
+  .dlgBtns { width: 100%; display: flex; gap: 8px; }
+  .resultBtn { flex: 1 1 0; height: 46px; font-size: 13px; font-weight: bold;
+    display: flex; align-items: center; justify-content: center;
+    color: #3a2604; background: none;
+    border: 20px solid transparent; border-left-width: 14px; border-right-width: 14px;
+    border-image: url('./assets/btn_primary_normal.png') 50 fill / 20px 14px stretch;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,.35)); }
+  .resultBtn:active { border-image-source: url('./assets/btn_primary_pressed.png'); }
+
+  /* ---- トースト(index.html の「コピーしました」と同様の一時表示。こちらはボタンではなく
+       画面中央下寄りに独立表示するため、パネル系素材ではなく簡易な暗色ピルで表現) ---- */
+  .toast { position: fixed; left: 50%; bottom: 84px; z-index: 30;
+    transform: translateX(-50%) translateY(8px); opacity: 0; pointer-events: none;
+    transition: opacity .2s ease, transform .2s ease;
+    padding: 11px 20px; max-width: 80%; text-align: center;
+    font-size: 13px; font-weight: bold; color: #fff;
+    background: rgba(20,14,4,.88); border-radius: 10px;
+    box-shadow: 0 4px 14px rgba(0,0,0,.4); }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .caption { text-align: center; font-size: 10px; color: rgba(60,40,10,.55); padding: 2px 0 6px; flex: 0 0 auto; }
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="adArea">アンカー広告(全幅・高さ50〜90dp可変)</div>
+
+  <header>
+    <button class="hdrBtn" type="button" title="メニューへ" onclick="location.href='./top.html#menu'"><span class="hdrArrow">◀</span>もどる</button>
+    <div class="hdrTitle">リプレイのじゅもん</div>
+    <div class="hdrSpacer"></div>
+  </header>
+
+  <main>
+    <section class="win codePanel">
+      <div class="rowLabel">リプレイコード</div>
+      <textarea class="codeArea" id="codeInput" placeholder="じゅもんを いれてください" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off"></textarea>
+      <button class="pasteBtn" id="pasteBtn" type="button">クリップボードから貼り付け</button>
+    </section>
+
+    <button class="startBtn" id="startBtn" type="button">はじめる</button>
+  </main>
+
+  <!-- エラーダイアログ: 「じゅもんが ちがいます」(OKのみ) -->
+  <div class="resultScrim" id="errorDlg" hidden>
+    <div class="dlgWin">
+      <div class="dlgText">じゅもんが ちがいます</div>
+      <div class="dlgBtns">
+        <button class="resultBtn" id="errorOk" type="button">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 成功時トースト(リプレイ画面モック未作成のためこの画面に留まる) -->
+  <div class="toast" id="toast"></div>
+
+  <div class="caption">リプレイのじゅもん入力画面モック v1.0 — §5.14準拠。テキスト欄にリプレイコード(D38圧縮フォーマット)を入力または「クリップボードから貼り付け」で貼り付け→「はじめる」で判定 / 本モックのバリデーションは簡易版(実際のD38復号は行わない): 空でないこと・空白/改行を除いた全文字がひらがな(U+3041〜U+3096、濁点・半濁点付きを含む)であること・長さ8文字以上であることのみを判定し、いずれか不成立なら「じゅもんが ちがいます」ダイアログを表示 / 判定成功時は §5.15 リプレイ画面モックが未作成のため遷移せず「リプレイ画面モックは未作成です」を1.5秒トースト表示するのみ / 入力内容はlocalStorageに保存し、他画面から戻っても保持される</div>
+</div>
+
+<script>
+  const STORAGE_KEY = 'saihou-mock-replayCode';
+  const codeInput = document.getElementById('codeInput');
+  const pasteBtn = document.getElementById('pasteBtn');
+  const startBtn = document.getElementById('startBtn');
+  const errorDlg = document.getElementById('errorDlg');
+  const errorOk = document.getElementById('errorOk');
+  const toast = document.getElementById('toast');
+
+  // ---- 入力保持(仕様: リプレイ画面から戻った場合も残る) ----
+  codeInput.value = localStorage.getItem(STORAGE_KEY) || '';
+  codeInput.addEventListener('input', () => {
+    localStorage.setItem(STORAGE_KEY, codeInput.value);
+  });
+
+  // ---- クリップボードから貼り付け(失敗時はコンソールログのみ) ----
+  pasteBtn.addEventListener('click', () => {
+    if (!navigator.clipboard || !navigator.clipboard.readText) {
+      console.log('クリップボード読み取り非対応環境のため何もしません');
+      return;
+    }
+    navigator.clipboard.readText().then((text) => {
+      codeInput.value = text;
+      localStorage.setItem(STORAGE_KEY, codeInput.value);
+    }).catch((e) => {
+      console.log('クリップボードからの貼り付けに失敗しました', e);
+    });
+  });
+
+  // ---- 簡易バリデーション(モックでは実際のD38復号はしない): 空でない・ひらがなのみ(空白/改行除く)・8文字以上 ----
+  const HIRAGANA_RE = /^[ぁ-ゖ]+$/;
+  function isValidReplayCode(raw) {
+    const compact = raw.replace(/\s/g, '');
+    if (compact.length === 0) return false;
+    if (compact.length < 8) return false;
+    return HIRAGANA_RE.test(compact);
+  }
+
+  function showToast(message) {
+    toast.textContent = message;
+    toast.classList.add('show');
+    setTimeout(() => { toast.classList.remove('show'); }, 1500);
+  }
+
+  startBtn.addEventListener('click', () => {
+    if (!isValidReplayCode(codeInput.value)) {
+      errorDlg.hidden = false;
+      return;
+    }
+    // §5.15 リプレイ画面モックは未作成のため遷移せずトーストのみ
+    showToast('リプレイ画面モックは未作成です');
+  });
+
+  errorOk.addEventListener('click', () => { errorDlg.hidden = true; });
+</script>
+</body>
+</html>
