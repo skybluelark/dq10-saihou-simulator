@@ -14,7 +14,8 @@
     "lint": "eslint src",
     "recipes:import": "vite-node scripts/recipes-import.ts",
     "recipes:export": "vite-node scripts/recipes-export.ts",
-    "solver:bench": "vite-node scripts/solver-bench.ts"
+    "solver:bench": "vite-node scripts/solver-bench.ts",
+    "solver:agreement": "vite-node scripts/solver-agreement.ts"
   },
   "dependencies": {
     "react": "^18.3.1",

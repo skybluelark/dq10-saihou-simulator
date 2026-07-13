@@ -93,9 +93,10 @@ export function enumerateCandidates(
     }
 
     if (skill.kind === 'support' && skill.effect !== 'cellCorrection') {
-      // 精神統一: ロック中の再ロックは合法だが実戦上無意味(連打の温床)なので除外
-      if (skill.effect === 'lockPower' && state.lockPowerRemaining > 0) continue;
-      // 精神統一・ぬいパワーシフト: 対象なし、常に候補
+      // 精神統一・ぬいパワーシフト: 対象なし、常に候補。
+      // ロック中の精神統一(再ロック)も候補に残す: 良パワーの固定窓を延長する実在の
+      // トップ技術(リプレイ実測 2026-07-13。SOLVER_POLICY §4)。手番の機会費用は
+      // 評価側(1ターン進め評価)が払うため、連打の抑止はスコアで行う。
       candidates.push({ action: { type: 'skill', skillId: skill.id }, skillId: skill.id, cost, targetCells: [] });
       continue;
     }

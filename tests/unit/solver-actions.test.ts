@@ -179,10 +179,10 @@ describe('enumerateCandidates: 除外規則', () => {
     expect(skillIds(enumerateCandidates(engine, usedAlready, config))).not.toContain('muga_no_kyochi');
   });
 
-  it('精神統一: ロック中(lockPowerRemaining>0)は再ロックが除外される。非ロック時は候補に含まれる', () => {
+  it('精神統一: ロック中(lockPowerRemaining>0)でも候補に含まれる(再ロックによる固定窓の延長は実在技術。SOLVER_POLICY §4)', () => {
     const engine = buildEngine();
     const locked = grid3x3(engine, { lockPowerRemaining: 2, lockedPower: 'strong' });
-    expect(skillIds(enumerateCandidates(engine, locked, config))).not.toContain('seishin_toitsu');
+    expect(skillIds(enumerateCandidates(engine, locked, config))).toContain('seishin_toitsu');
 
     const unlocked = grid3x3(engine, { lockPowerRemaining: 0, lockedPower: null });
     expect(skillIds(enumerateCandidates(engine, unlocked, config))).toContain('seishin_toitsu');
