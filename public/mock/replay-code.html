@@ -57,15 +57,16 @@
     box-shadow: 0 3px 6px rgba(40,20,0,.35);
   }
 
-  .rowLabel { font-size: 12px; font-weight: bold; color: #ffe9b8; }
-
   /* ---- リプレイコード入力欄 ---- */
   .codePanel { padding: 10px 10px 12px; display: flex; flex-direction: column; gap: 10px; }
+  /* 文字揃え(2026-07-13 実機レビュー): 入力がある間は左詰め、
+     未入力時(:placeholder-shown)はプレースホルダを中央寄せ。空に戻れば自動で中央に復帰する */
   .codeArea { width: 100%; min-height: 180px; padding: 14px;
-    font-size: 17px; line-height: 1.8; letter-spacing: .04em; text-align: center;
+    font-size: 17px; line-height: 1.8; letter-spacing: .04em; text-align: left;
     color: #2a1c05; background: rgba(255,255,255,.92);
     border: none; border-radius: 10px; resize: vertical;
     box-shadow: inset 0 1px 4px rgba(0,0,0,.25); }
+  .codeArea:placeholder-shown { text-align: center; }
   .codeArea::placeholder { color: rgba(40,28,8,.45); }
 
   /* 「クリップボードから貼り付け」: btn_secondary 素材(結果オーバーレイの副次ボタンと同系統) */
@@ -136,7 +137,6 @@
 
   <main>
     <section class="win codePanel">
-      <div class="rowLabel">リプレイコード</div>
       <textarea class="codeArea" id="codeInput" placeholder="じゅもんを いれてください" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off"></textarea>
       <button class="pasteBtn" id="pasteBtn" type="button">クリップボードから貼り付け</button>
     </section>
@@ -157,7 +157,7 @@
   <!-- 成功時トースト(リプレイ画面モック未作成のためこの画面に留まる) -->
   <div class="toast" id="toast"></div>
 
-  <div class="caption">リプレイのじゅもん入力画面モック v1.1 — §5.14準拠。テキスト欄にリプレイコード(D38圧縮フォーマット)を入力または「クリップボードから貼り付け」で貼り付け→「はじめる」で判定 / 本モックのバリデーションは簡易版(実際のD38復号は行わない): 空でないこと・空白/改行を除いた全文字がひらがな(U+3041〜U+3096、濁点・半濁点付きを含む)であること・長さ8文字以上であることのみを判定し、いずれか不成立なら「じゅもんが ちがいます」ダイアログを表示 / 判定成功時は §5.15 リプレイ画面モック(index.html?replay=1・リプレイモード)へ遷移 / 入力内容はlocalStorageに保存し、他画面から戻っても保持される</div>
+  <div class="caption">リプレイのじゅもん入力画面モック v1.2 — §5.14準拠。テキスト欄にリプレイコード(D38圧縮フォーマット)を入力または「クリップボードから貼り付け」で貼り付け→「はじめる」で判定 / 本モックのバリデーションは簡易版(実際のD38復号は行わない): 空でないこと・空白/改行を除いた全文字がひらがな(U+3041〜U+3096、濁点・半濁点付きを含む)であること・長さ8文字以上であることのみを判定し、いずれか不成立なら「じゅもんが ちがいます」ダイアログを表示 / 判定成功時は §5.15 リプレイ画面モック(index.html?replay=1・リプレイモード)へ遷移 / 入力内容はlocalStorageに保存し、他画面から戻っても保持される / v1.2: 入力欄上のラベル(「リプレイコード」)を削除(画面タイトルと重複のため)、文字揃えを入力あり=左詰め・未入力=プレースホルダ中央寄せに変更(実機レビュー)</div>
 </div>
 
 <script>
