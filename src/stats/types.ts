@@ -2,6 +2,7 @@
 // src/stats は純TS。core からのみ import する(依存方向: ui/data/stats → core)。
 
 import type { Action, Engine, EngineData, Power, SimulatorConfig, Star } from '../core';
+import type { AdjustDp } from './adjust-dp';
 
 /** 候補行動(列挙結果) */
 export interface Candidate {
@@ -66,6 +67,8 @@ export interface SolverContext {
   params: SolverParams;
   /** 事前計算済み仕上げテーブル。キー = `${correction}|${muga}`(correction∈{1,2}, muga∈{0,1})。 */
   tables: Map<string, FinishEntry[]>; // index = r - params.rMin
+  /** 調整厳密DP(弱パワー固定後の最終調整。finishing.ts の createSolverContext で構築。policy.ts §10.4で使用)。 */
+  adjustDp: AdjustDp;
 }
 
 /** スコア付き候補(1手グリーディ選択の出力単位)。 */
@@ -92,6 +95,11 @@ export interface PolicyParams {
   midareStopLoss: number; // みだれ許可条件: 「2倍打の最大値が当たっても残りがこれ以上」または carve 中
                             // (既定-16=ほぐし1回で戻せる範囲。C1/E2)
   zeroBonusTier: number;  // PMFに誤差0(確率≥1/7)を含む縫いへのティア加点(既定0.5。A1)
+  // ---- 再生布の再抽選ステアリング (§10.6/§5) ----
+  regenPushLo: number;     // 押し出し後の残数値の下限(既定-17)。回復+12〜16で誤差圏に戻る設計
+  regenPushHi: number;     // 同上限(既定-8)
+  regenSteerWindow: number; // 押し出し・保護が意味を持つ「次の再生までのターン数」上限(既定2。
+                            // 押してから回収までの空白ターンを最小化する — 烈風#31は2ターン前に押した)
 }
 
 export const DEFAULT_POLICY_PARAMS: PolicyParams = {
@@ -102,6 +110,9 @@ export const DEFAULT_POLICY_PARAMS: PolicyParams = {
   regenCarveFloor: -30,
   midareStopLoss: -16,
   zeroBonusTier: 0.5,
+  regenPushLo: -17,
+  regenPushHi: -8,
+  regenSteerWindow: 2,
 };
 
 /** 盤面分析結果(局面判定・マス分類)。 */
@@ -173,3 +184,28 @@ export interface NominalPlan {
   totalError: number;
   reachedFinish: boolean; // 上限内に finish へ到達したか
 }
+
+// ---- 調整厳密DP (SOLVER_POLICY.md §10.4 B2: 弱パワー固定後の最終調整は厳密計算の対象) ----
+
+/** 調整DPの1エントリ(数字r×予算b×しつけ有無の最適値)。 */
+export interface AdjustEntry {
+  expErr: number; // 期待最終誤差評価値
+  pZero: number; // P(最終誤差0)
+  pLe1: number; // P(最終誤差≤1)
+  firstOp: string | null; // 最適初手の特技id(null=打ち止めが最適)
+}
+
+/** 調整厳密DPの調整パラメータ(既定値は DEFAULT_ADJUST_DP_PARAMS)。 */
+export interface AdjustDpParams {
+  rMin: number; // DPドメイン下限(既定-30)
+  rMax: number; // DPドメイン上限(既定+30)
+  budgetMax: number; // DPドメインの集中力上限(既定60)
+  lockUpkeep: number; // 1手あたりのロック維持償却コスト(既定2 ≈ 精神統一7/3ターン。校正対象)
+}
+
+export const DEFAULT_ADJUST_DP_PARAMS: AdjustDpParams = {
+  rMin: -30,
+  rMax: 30,
+  budgetMax: 60,
+  lockUpkeep: 2,
+};

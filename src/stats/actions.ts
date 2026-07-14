@@ -32,9 +32,12 @@ function buildTargetedCandidate(
   if (existing.length === 0) return null; // 対象マスが1つも存在しない
 
   if (skill.kind === 'sew') {
-    // 縫い系: 対象の全マスが残り≤0なら縫う価値なし
+    // 縫い系: 対象の全マスが残り≤0なら縫う価値なし。
+    // ただし再生布は例外 — 黄色内の悪い値を押し出して回復の再抽選を当てる正当手が
+    // あるため候補に残す(§10.6/A1f。烈風#31実測: -2にぬう→-9→回復→+4→かげんで0)。
+    // 安全性はE2(赤マスゲート)とティア層(押し出し窓判定)が担保する。
     const allNonPositive = existing.every((t) => t.cell.base - t.cell.cumulative <= 0);
-    if (allNonPositive) return null;
+    if (allNonPositive && state.clothType !== 'regen') return null;
   } else if (skill.kind === 'recover') {
     // 糸ほぐし: 対象マスの cumulative===0 なら回復余地なし
     const cell = existing[0].cell;

@@ -7,7 +7,10 @@ import type { RankedCandidate, SolverParams } from './types';
 
 /** stateKeyOf に埋め込むソルバー版数(仕様・パラメータ解釈が変わったら上げる)。 */
 // v2: ロールアウト既定ポリシーを pickGreedy→pickExpert に変更(旧版priorと混在させないため)。
-export const SOLVER_VERSION = 2;
+// v3: エキスパートポリシーv2(調整フェーズを厳密DPスコアリングへ置換・精神統一ルール反転・
+//     個別ルール修正。SOLVER_POLICY.md §10)。同一盤面でも選択順位が変わるため旧版priorとは
+//     合算不可。
+export const SOLVER_VERSION = 3;
 
 /** Wilson score interval(95%既定)。n=0 は {lo:0, hi:1}。 */
 export function wilson(n: number, wins: number, z = 1.96): { lo: number; hi: number } {

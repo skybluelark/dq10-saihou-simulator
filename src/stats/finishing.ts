@@ -10,6 +10,7 @@
 
 import { sewDamage, hogushiDamage, computeCritRate, cellErrorScore } from '../core';
 import type { Engine, EngineData, Power, SimulatorConfig } from '../core';
+import { buildAdjustDp } from './adjust-dp';
 import { DEFAULT_SOLVER_PARAMS } from './types';
 import type { FinishEntry, SolverContext, SolverParams } from './types';
 
@@ -175,7 +176,9 @@ export function createSolverContext(
       tables.set(tableKey(correction, muga), buildFinishTable(data, config, params, correction, muga));
     }
   }
-  return { engine, data, config, params, tables };
+  // 調整厳密DP(§10.4 B2)。既定パラメータで構築する(finishing.ts変更範囲: この1呼び出しのみ)。
+  const adjustDp = buildAdjustDp(data, config);
+  return { engine, data, config, params, tables, adjustDp };
 }
 
 /** 仕上げテーブルの参照(域外はドメイン端にクランプ)。 */
