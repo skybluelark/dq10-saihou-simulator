@@ -1,17 +1,18 @@
 // ソルバー用ベンチマークスクリプト: 自己対局 + 損失分解 (SOLVER_DESIGN §S8-④a)。
-// 目的: 実機基準設定(奇跡針★3・Lv80・コツ/パッシブ有)でグリーディ自己対局を回し、
+// 目的: 実機基準設定(奇跡針★3・Lv80・コツ/パッシブ有)で自己対局を回し、
 //       レシピ別の★3率・平均誤差評価値・損失分解(縫いすぎ/未完/ゲージ内残し)を計測する。
 //       以後のソルバー改善の前後比較の基準値として使う。
 //
 // 実行: npm run solver:bench (= vite-node scripts/solver-bench.ts)
-//       npx vite-node scripts/solver-bench.ts -- --games 50 --seed 1 --recipe <id>
+//       npx vite-node scripts/solver-bench.ts -- --games 50 --seed 1 --recipe <id> --policy expert
 // 引数(すべて任意): --games N(レシピあたり試行数、既定50) / --seed S(基準シード、既定1、
-//       ゲームiのシード=S+i) / --recipe <id>(指定レシピのみ実行、省略時は全レシピ)
+//       ゲームiのシード=S+i) / --recipe <id>(指定レシピのみ実行、省略時は全レシピ) /
+//       --policy expert|greedy(自己対局の手選択ポリシー、既定 expert)
 //
-// 決定性: pickGreedy は決定的(乱数を消費しない静的スコアの先頭を選ぶだけ)で、各ゲームの
-//       乱数もシード固定のため、同一引数なら stdout は完全に同一になる。
-//       ただし実行時間は実行のたびに変動するため diff を壊さないよう stderr に出す
-//       (「判断に迷った点」参照)。
+// 決定性: pickExpert・pickGreedy はいずれも決定的(乱数を消費しない静的スコア/ルールの
+//       先頭を選ぶだけ)で、各ゲームの乱数もシード固定のため、同一引数なら stdout は
+//       完全に同一になる。ただし実行時間は実行のたびに変動するため diff を壊さないよう
+//       stderr に出す(「判断に迷った点」参照)。
 //
 // scripts/ は src 外のためテスト対象外。既存の scripts/recipes-import.ts と同様に
 // vite-node で src を直接 import する開発ツール。
@@ -26,8 +27,8 @@ import {
   loadRecipes,
 } from '../src/data';
 import type { RecipeDef } from '../src/data';
-import { createSolverContext, pickGreedy } from '../src/stats';
-import type { SolverContext } from '../src/stats';
+import { createSolverContext, pickGreedy, pickExpert } from '../src/stats';
+import type { SolverContext, ScoredCandidate } from '../src/stats';
 
 // マスの誤差評価値の境界(SOLVER_DESIGN §S8-④a 指定値。game-params.json の
 // gauge.yellowRange=4 / gauge.penaltyError=9 と同値だが、ベンチマークの損失分解の
@@ -49,16 +50,20 @@ const STAR_LABEL: Record<Star, string> = {
 
 // ---- CLI引数 ----
 
+type PolicyName = 'expert' | 'greedy';
+
 interface BenchArgs {
   games: number;
   seed: number;
   recipeId: string | null;
+  policy: PolicyName;
 }
 
 function parseArgs(argv: string[]): BenchArgs {
   let games = 50;
   let seed = 1;
   let recipeId: string | null = null;
+  let policy: PolicyName = 'expert';
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--games') {
@@ -67,6 +72,12 @@ function parseArgs(argv: string[]): BenchArgs {
       seed = Number(argv[++i]);
     } else if (a === '--recipe') {
       recipeId = argv[++i];
+    } else if (a === '--policy') {
+      const v = argv[++i];
+      if (v !== 'expert' && v !== 'greedy') {
+        throw new Error(`--policy が不正です(expert|greedyのいずれか): ${v}`);
+      }
+      policy = v;
     }
   }
   if (!Number.isFinite(games) || games <= 0) {
@@ -75,7 +86,12 @@ function parseArgs(argv: string[]): BenchArgs {
   if (!Number.isFinite(seed)) {
     throw new Error(`--seed が不正です: ${seed}`);
   }
-  return { games, seed, recipeId };
+  return { games, seed, recipeId, policy };
+}
+
+/** --policy 指定から候補選択関数を得る。 */
+function pickerFor(policy: PolicyName): (ctx: SolverContext, state: GameState) => ScoredCandidate {
+  return policy === 'expert' ? pickExpert : pickGreedy;
 }
 
 // ---- 集計 ----
@@ -124,13 +140,14 @@ interface GameResult {
   finished: boolean;
 }
 
-/** 1ゲームの自己対局(グリーディ)を実行し、終局盤面から各種指標を計算する。 */
+/** 1ゲームの自己対局(指定ポリシー)を実行し、終局盤面から各種指標を計算する。 */
 function playOneGame(
   engine: Engine,
   ctx: SolverContext,
   recipe: RecipeDef,
   config: SimulatorConfig,
   seed: number,
+  picker: (ctx: SolverContext, state: GameState) => ScoredCandidate,
 ): GameResult {
   const rng = createRng(seed);
   const opened = engine.createSession(recipe, config, rng);
@@ -139,7 +156,7 @@ function playOneGame(
   const skillCounts = new Map<string, number>();
 
   while (!st.finished && actions < ACTION_LIMIT) {
-    const pick = pickGreedy(ctx, st);
+    const pick = picker(ctx, st);
     const action: Action = pick.candidate.action;
     if (action.type === 'sew' || action.type === 'skill') {
       skillCounts.set(action.skillId, (skillCounts.get(action.skillId) ?? 0) + 1);
@@ -271,6 +288,50 @@ function printOverallSummary(allStats: RecipeStats[], totalGames: number): void 
   console.log('='.repeat(72));
 }
 
+// ---- セグメント別サマリ(布種別×マス数) ----
+
+interface SegmentStats {
+  clothType: string;
+  massCount: number;
+  games: number;
+  star3: number;
+  sumTotalError: number;
+}
+
+/** レシピ別集計を clothType×マス数(cells.length)で束ねる。 */
+function buildSegments(allStats: RecipeStats[]): SegmentStats[] {
+  const map = new Map<string, SegmentStats>();
+  for (const s of allStats) {
+    const key = `${s.recipe.clothType}|${s.recipe.cells.length}`;
+    let seg = map.get(key);
+    if (!seg) {
+      seg = { clothType: s.recipe.clothType, massCount: s.recipe.cells.length, games: 0, star3: 0, sumTotalError: 0 };
+      map.set(key, seg);
+    }
+    seg.games += s.games;
+    seg.star3 += s.starCounts.star3;
+    seg.sumTotalError += s.sumTotalError;
+  }
+  return [...map.values()].sort((a, b) => a.clothType.localeCompare(b.clothType) || a.massCount - b.massCount);
+}
+
+function printSegmentSummary(segments: SegmentStats[]): void {
+  const rule = '-'.repeat(72);
+  console.log('='.repeat(72));
+  console.log('[セグメント別サマリ] 布種別 × マス数');
+  console.log(rule);
+  console.log(
+    `${padR('布', 8)} ${padL('マス数', 6)} ${padL('ゲーム数', 8)} ${padL('★3率', 8)} ${padL('平均誤差', 8)}`,
+  );
+  console.log(rule);
+  for (const seg of segments) {
+    console.log(
+      `${padR(seg.clothType, 8)} ${padL(String(seg.massCount), 6)} ${padL(String(seg.games), 8)} ${padL(formatPercent(seg.star3, seg.games), 8)} ${padL(fmtNum(seg.sumTotalError / seg.games), 8)}`,
+    );
+  }
+  console.log('='.repeat(72));
+}
+
 // ---- main ----
 
 function main(): void {
@@ -303,8 +364,10 @@ function main(): void {
     targetRecipes = allRecipes;
   }
 
+  const picker = pickerFor(args.policy);
+
   console.log(
-    `ソルバー自己対局ベンチマーク: レシピ数=${targetRecipes.length} games/レシピ=${args.games} 基準シード=${args.seed}`,
+    `ソルバー自己対局ベンチマーク: レシピ数=${targetRecipes.length} games/レシピ=${args.games} 基準シード=${args.seed} ポリシー=${args.policy}`,
   );
   console.log(
     `設定: 針=${config.needle.type}★${config.needle.stars} Lv=${config.level} コツ=${config.kotsu} 会心アップ=${config.passives.critUp} 必殺アップ=${config.passives.hissatsuUp}`,
@@ -318,7 +381,7 @@ function main(): void {
     const stats = newRecipeStats(recipe);
     for (let g = 0; g < args.games; g++) {
       const seed = args.seed + g;
-      const result = playOneGame(engine, ctx, recipe, config, seed);
+      const result = playOneGame(engine, ctx, recipe, config, seed, picker);
       stats.games++;
       stats.starCounts[result.star]++;
       stats.sumTotalError += result.totalError;
@@ -340,6 +403,7 @@ function main(): void {
 
   const totalGames = allStats.reduce((sum, s) => sum + s.games, 0);
   printOverallSummary(allStats, totalGames);
+  printSegmentSummary(buildSegments(allStats));
 
   // 実行時間は実行のたびに変動するため、決定的であるべき stdout ではなく stderr に出す
   // (「同一引数なら stdout が完全一致」という動作確認要件を壊さないため)。

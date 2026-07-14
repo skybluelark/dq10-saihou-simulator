@@ -77,6 +77,49 @@ export interface ScoredCandidate {
   expConcNeed: number; // 仕上げ完了までの推定所要集中力(行動コスト込み)
 }
 
+// ---- エキスパートポリシーv1 (トップ勢の判断基準のルールベース実装。SOLVER_POLICY.md) ----
+
+/** 盤面の進行局面。carve=削り、approach=パワー→レンジ対応、adjust=最終調整。 */
+export type Phase = 'carve' | 'approach' | 'adjust';
+
+/** エキスパートポリシーの調整パラメータ(既定値は DEFAULT_POLICY_PARAMS)。 */
+export interface PolicyParams {
+  carveMin: number;    // 削り対象の残り値下限(既定28)。これ以上のマスがあれば carve
+  approachMin: number; // アプローチ対象の下限(既定14)。carveMin未満でこれ以上があれば approach
+  overshootFloor: number;      // 非会心最大ダメージで残りがこれ未満になる縫いは禁止(既定-4。E2)
+  regenOvershootFloor: number; // 再生布の許容下限(既定-16。carve中は regenCarveFloor)
+  regenCarveFloor: number;     // 既定-30(C1)
+  midareStopLoss: number; // みだれ許可条件: 「2倍打の最大値が当たっても残りがこれ以上」または carve 中
+                            // (既定-16=ほぐし1回で戻せる範囲。C1/E2)
+  zeroBonusTier: number;  // PMFに誤差0(確率≥1/7)を含む縫いへのティア加点(既定0.5。A1)
+}
+
+export const DEFAULT_POLICY_PARAMS: PolicyParams = {
+  carveMin: 28,
+  approachMin: 14,
+  overshootFloor: -4,
+  regenOvershootFloor: -16,
+  regenCarveFloor: -30,
+  midareStopLoss: -16,
+  zeroBonusTier: 0.5,
+};
+
+/** 盤面分析結果(局面判定・マス分類)。 */
+export interface BoardAnalysis {
+  phase: Phase;
+  bigCount: number;  // 残り ≥ carveMin
+  midCount: number;  // approachMin ≤ 残り < carveMin
+  fineCount: number; // 3 ≤ 残り < approachMin(誤差3以上は放置しない: E3)
+  overCount: number; // 残り ≤ -3(要ほぐし)
+  weakLocked: boolean; // 弱パワーで固定中(着地済み)
+}
+
+/** ティア付き候補(エキスパートポリシーの出力単位)。tier昇順が優先度高。 */
+export interface ExpertChoice {
+  scored: ScoredCandidate;
+  tier: number;
+}
+
 // ---- モンテカルロ・ロールアウト / anytime集計 / 公称プラン / solve統括 (モジュール6〜9) ----
 
 /** 候補ごとのロールアウト集計(anytime合算可能)。 */

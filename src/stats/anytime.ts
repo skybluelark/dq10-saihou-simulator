@@ -6,7 +6,8 @@ import type { GameState, SimulatorConfig } from '../core';
 import type { RankedCandidate, SolverParams } from './types';
 
 /** stateKeyOf に埋め込むソルバー版数(仕様・パラメータ解釈が変わったら上げる)。 */
-export const SOLVER_VERSION = 1;
+// v2: ロールアウト既定ポリシーを pickGreedy→pickExpert に変更(旧版priorと混在させないため)。
+export const SOLVER_VERSION = 2;
 
 /** Wilson score interval(95%既定)。n=0 は {lo:0, hi:1}。 */
 export function wilson(n: number, wins: number, z = 1.96): { lo: number; hi: number } {

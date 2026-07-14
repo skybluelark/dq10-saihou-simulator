@@ -1,8 +1,9 @@
 // リプレイ一致率計測ツール (SOLVER_DESIGN §S8-④b)。
-// 目的: ユーザーの実プレイのリプレイを教師データとして、各行動時点でソルバーが提示する
-//       候補ランキングに対しユーザーの実際の選択が何位だったかを計測し、
-//       ソルバーのポリシーとの一致率(@1/@3)・候補外(除外規則が実プレイの手を弾いたケース)
-//       を集計する。以後のソルバー改善(スコア式・除外規則の調整)の判断材料に使う。
+// 目的: ユーザーの実プレイのリプレイを教師データとして、各行動時点でエキスパートポリシー
+//       (rankExpert)が提示する候補ランキングに対しユーザーの実際の選択が何位だったかを
+//       計測し、一致率(@1/@3)・ルール外(rankExpertのルールが実プレイの手を禁止したケース。
+//       ルールの過剰プルーンを示すシグナル)を集計する。以後のソルバー改善(ルール・スコア式
+//       の調整)の判断材料に使う。
 //
 // 実行: npm run solver:agreement (= vite-node scripts/solver-agreement.ts)
 //       npx vite-node scripts/solver-agreement.ts -- data/replays/foo.json data/replays/bar.json
@@ -13,8 +14,9 @@
 //   1. 検証: src/core/replay.ts の runReplay(createSession→applyAction×N)でそのまま再実行し、
 //      check があれば matchesReplayCheck で照合する(NGでも解析自体は続行)。
 //   2. ステップ解析: createRng(replay.seed) から自前でセッションを再構築し、各行動について
-//      [beginTurn(ターン開始処理。冪等・？抽選等を含む) → scoreCandidates(乱数を消費しない
-//      静的スコアリング) → 順位判定 → applyAction] の順に処理する。
+//      [beginTurn(ターン開始処理。冪等・？抽選等を含む) → rankExpert(乱数を消費しない
+//      ティア付き順位付け。ユーザー行動が禁止候補ならルール外扱いとし、参考として
+//      scoreCandidates 側の素の順位も求める) → 順位判定 → applyAction] の順に処理する。
 //      src/core/replay.ts 冒頭のコメントの通り、beginTurn は turnStarted ガードにより
 //      1ターンにつき1度しか実処理を行わない(2回目以降は乱数を消費しないno-op)ため、
 //      「各行動の直前に beginTurn を挟んでから applyAction する」手順は
@@ -23,9 +25,10 @@
 //      (例: beginTurnを挟まない、複数回挟む等)乱数消費がずれて盤面が実プレイと一致しなくなる
 //      ため、必ずこの順序を守ること。
 //
-// 決定性: scoreCandidates は乱数を消費しない純粋な静的評価のため、上記のステップ解析ループに
-//        差し込んでも乱数消費列(=盤面の再現)には一切影響しない。同一入力なら stdout は
-//        完全に同一になる(実行時間のみ stderr に出す。solver-bench.ts と同じ方針)。
+// 決定性: rankExpert・scoreCandidates はいずれも乱数を消費しない純粋な静的評価のため、
+//        上記のステップ解析ループに差し込んでも乱数消費列(=盤面の再現)には一切影響しない。
+//        同一入力なら stdout は完全に同一になる(実行時間のみ stderr に出す。
+//        solver-bench.ts と同じ方針)。
 
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -40,8 +43,8 @@ import {
 import type { Action, EngineData, GameState, SkillDef } from '../src/core';
 import { loadGameParams, loadNeedles, loadSkills, loadConcentration, loadRecipes } from '../src/data';
 import type { RecipeDef } from '../src/data';
-import { createSolverContext, scoreCandidates } from '../src/stats';
-import type { Candidate, ScoredCandidate, SolverContext } from '../src/stats';
+import { createSolverContext, scoreCandidates, rankExpert } from '../src/stats';
+import type { Candidate, ExpertChoice, ScoredCandidate, SolverContext } from '../src/stats';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '..');
@@ -166,9 +169,20 @@ function findRank(scored: ScoredCandidate[], userKey: string): number | null {
   return null;
 }
 
-/** 一致マーク: 1位=◎ / 2〜3位=○ / 4位以下=数値 / 候補外=✗候補外。 */
-function agreementMark(rank: number | null): string {
-  if (rank === null) return '✗候補外';
+/** rankExpert の出力(tier昇順→score降順ソート済み)の中からユーザー行動の順位(1始まり)を探す。見つからなければ null(ルール外)。 */
+function findExpertRank(choices: ExpertChoice[], userKey: string): number | null {
+  for (let i = 0; i < choices.length; i++) {
+    if (candidateKey(choices[i].scored.candidate) === userKey) return i + 1;
+  }
+  return null;
+}
+
+/**
+ * 一致マーク: 1位=◎ / 2〜3位=○ / 4位以下=数値 / ルール外(rankExpertの禁止候補)=✗ルール外
+ * (括弧内に従来のscoreCandidates順位=「素」順位を併記。ルールの過剰プルーンを示すシグナル)。
+ */
+function agreementMark(rank: number | null, fallbackRank: number | null): string {
+  if (rank === null) return `✗ルール外${fallbackRank !== null ? `(素${fallbackRank}位)` : ''}`;
   if (rank === 1) return '◎';
   if (rank <= 3) return '○';
   return String(rank);
@@ -182,7 +196,9 @@ interface Row {
   power: string;
   conc: number;
   userText: string;
+  userTier: string; // ルール外の場合は '-'
   topText: string;
+  topTier: number;
   mark: string;
   rank: number | null;
   board: string;
@@ -192,7 +208,9 @@ interface ReplayAgreementSummary {
   total: number;
   top1: number;
   top3: number;
-  outOfList: number;
+  ruleExcluded: number;
+  clothType: string;
+  massCount: number;
 }
 
 function processReplay(
@@ -256,7 +274,8 @@ function processReplay(
   }
 
   // --- ステップ解析: createRng(seed) から独立に再構築し、各行動の直前(beginTurn済み時点)で
-  //     scoreCandidates を実行してユーザーの手の順位を求める ---
+  //     rankExpert を実行してユーザーの手の順位を求める(ルール外の場合のみ、参考として
+  //     scoreCandidates の素の順位も求める) ---
   const rng = createRng(replay.seed);
   let state = engine.createSession(recipe, replay.config, rng).state;
 
@@ -267,10 +286,11 @@ function processReplay(
 
     state = engine.beginTurn(state, rng).state;
 
-    const scored = scoreCandidates(ctx, state);
+    const choices = rankExpert(ctx, state);
     const userKey = userActionKey(engine, state, skillMap, action);
-    const rank = findRank(scored, userKey);
-    const top = scored[0];
+    const rank = findExpertRank(choices, userKey);
+    const fallbackRank = rank === null ? findRank(scoreCandidates(ctx, state), userKey) : null;
+    const top = choices[0];
 
     rows.push({
       idx: i + 1,
@@ -278,8 +298,10 @@ function processReplay(
       power: state.currentPower,
       conc: state.concentration,
       userText: formatAction(action),
-      topText: formatAction(top.candidate.action),
-      mark: agreementMark(rank),
+      userTier: rank !== null ? String(choices[rank - 1].tier) : '-',
+      topText: formatAction(top.scored.candidate.action),
+      topTier: top.tier,
+      mark: agreementMark(rank, fallbackRank),
       rank,
       board: formatBoard(state),
     });
@@ -290,11 +312,11 @@ function processReplay(
   // --- 出力: 行動テーブル ---
   console.log(rule);
   console.log(
-    `${padL('#', 3)} ${padL('ﾀｰﾝ', 4)} ${padR('パワー', 10)} ${padL('集中力', 6)} ${padR('ユーザーの手', 22)} ${padR('ポリシー1位', 22)} 一致`,
+    `${padL('#', 3)} ${padL('ﾀｰﾝ', 4)} ${padR('パワー', 10)} ${padL('集中力', 6)} ${padR('ユーザーの手', 22)} ${padL('Uティア', 7)} ${padR('ポリシー1位', 22)} ${padL('Pティア', 7)} 一致`,
   );
   for (const row of rows) {
     console.log(
-      `${padL(String(row.idx), 3)} ${padL(String(row.turn), 4)} ${padR(row.power, 10)} ${padL(String(row.conc), 6)} ${padR(row.userText, 22)} ${padR(row.topText, 22)} ${row.mark}`,
+      `${padL(String(row.idx), 3)} ${padL(String(row.turn), 4)} ${padR(row.power, 10)} ${padL(String(row.conc), 6)} ${padR(row.userText, 22)} ${padL(row.userTier, 7)} ${padR(row.topText, 22)} ${padL(String(row.topTier), 7)} ${row.mark}`,
     );
     if (row.rank === null || row.rank >= 4) {
       console.log(`     -> 盤面: ${row.board}  /  ポリシー1位: ${row.topText}`);
@@ -305,14 +327,59 @@ function processReplay(
   const total = rows.length;
   const top1 = rows.filter((r) => r.rank === 1).length;
   const top3 = rows.filter((r) => r.rank !== null && r.rank <= 3).length;
-  const outOfList = rows.filter((r) => r.rank === null).length;
+  const ruleExcluded = rows.filter((r) => r.rank === null).length;
 
   console.log(rule);
   console.log(
-    `一致率@1: ${formatPercent(top1, total)}  一致率@3: ${formatPercent(top3, total)}  候補外: ${outOfList}件  行動数: ${total}`,
+    `一致率@1: ${formatPercent(top1, total)}  一致率@3: ${formatPercent(top3, total)}  ルール外: ${ruleExcluded}件  行動数: ${total}`,
   );
 
-  return { total, top1, top3, outOfList };
+  return { total, top1, top3, ruleExcluded, clothType: recipe.clothType, massCount: recipe.cells.length };
+}
+
+// ---- セグメント別サマリ(布種別×マス数) ----
+
+interface AgreementSegment {
+  clothType: string;
+  massCount: number;
+  total: number;
+  top1: number;
+  top3: number;
+  ruleExcluded: number;
+}
+
+/** リプレイ別集計を clothType×マス数で束ねる。 */
+function buildSegments(results: ReplayAgreementSummary[]): AgreementSegment[] {
+  const map = new Map<string, AgreementSegment>();
+  for (const r of results) {
+    const key = `${r.clothType}|${r.massCount}`;
+    let seg = map.get(key);
+    if (!seg) {
+      seg = { clothType: r.clothType, massCount: r.massCount, total: 0, top1: 0, top3: 0, ruleExcluded: 0 };
+      map.set(key, seg);
+    }
+    seg.total += r.total;
+    seg.top1 += r.top1;
+    seg.top3 += r.top3;
+    seg.ruleExcluded += r.ruleExcluded;
+  }
+  return [...map.values()].sort((a, b) => a.clothType.localeCompare(b.clothType) || a.massCount - b.massCount);
+}
+
+function printSegmentSummary(segments: AgreementSegment[]): void {
+  const rule = '-'.repeat(78);
+  console.log('[セグメント別サマリ] 布種別 × マス数');
+  console.log(rule);
+  console.log(
+    `${padR('布', 8)} ${padL('マス数', 6)} ${padL('行動数', 6)} ${padL('一致率@1', 8)} ${padL('一致率@3', 8)} ${padL('ルール外', 8)}`,
+  );
+  console.log(rule);
+  for (const seg of segments) {
+    console.log(
+      `${padR(seg.clothType, 8)} ${padL(String(seg.massCount), 6)} ${padL(String(seg.total), 6)} ${padL(formatPercent(seg.top1, seg.total), 8)} ${padL(formatPercent(seg.top3, seg.total), 8)} ${padL(`${seg.ruleExcluded}件`, 8)}`,
+    );
+  }
+  console.log('='.repeat(78));
 }
 
 // ---- main ----
@@ -345,23 +412,26 @@ function main(): void {
   let sumTop1 = 0;
   let sumTop3 = 0;
   let sumOut = 0;
+  const results: ReplayAgreementSummary[] = [];
 
   for (const file of files) {
     const result = processReplay(file, engine, skillMap, recipes, engineData, ctxCache);
     if (!result) continue;
     processed++;
+    results.push(result);
     sumTotal += result.total;
     sumTop1 += result.top1;
     sumTop3 += result.top3;
-    sumOut += result.outOfList;
+    sumOut += result.ruleExcluded;
   }
 
   console.log('='.repeat(78));
   console.log(`[全リプレイ合算] 処理件数=${processed}/${files.length}`);
   console.log(
-    `一致率@1: ${formatPercent(sumTop1, sumTotal)}  一致率@3: ${formatPercent(sumTop3, sumTotal)}  候補外計: ${sumOut}件  行動数計: ${sumTotal}`,
+    `一致率@1: ${formatPercent(sumTop1, sumTotal)}  一致率@3: ${formatPercent(sumTop3, sumTotal)}  ルール外計: ${sumOut}件  行動数計: ${sumTotal}`,
   );
   console.log('='.repeat(78));
+  printSegmentSummary(buildSegments(results));
 
   if (processed < files.length) process.exitCode = 1;
 

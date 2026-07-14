@@ -1,12 +1,12 @@
 // モンテカルロ・ロールアウト (ソルバー基盤モジュール6)
 //
-// 1試行: firstAction を適用後、グリーディ(pickGreedy)で終局までプレイし結果を得る。
-// 探索用乱数はセッション乱数と完全分離(呼び出し側が createRng で都度払い出す)。
+// 1試行: firstAction を適用後、ロールアウトポリシー(既定 pickExpert)で終局までプレイし
+// 結果を得る。探索用乱数はセッション乱数と完全分離(呼び出し側が createRng で都度払い出す)。
 // state は beginTurn 済み(turnStarted=true)を前提とする。
 
 import type { Action, GameState, Rng, TurnEvent } from '../core';
-import { pickGreedy } from './greedy';
-import type { SolverContext } from './types';
+import { pickExpert } from './policy';
+import type { ScoredCandidate, SolverContext } from './types';
 
 /** 保険用の行動数上限(通常は列挙の性質上、この上限に達する前に finish が選ばれる想定)。 */
 const MAX_ACTIONS = 100;
@@ -20,13 +20,15 @@ export interface RolloutResult {
 
 /**
  * 1試行分のロールアウトを実行する(ソルバー基盤モジュール6)。
- * firstAction 適用 → (未終了なら) beginTurn → pickGreedy → applyAction を終局まで繰り返す。
+ * firstAction 適用 → (未終了なら) beginTurn → policy(既定 pickExpert) → applyAction を
+ * 終局まで繰り返す。
  */
 export function runRollout(
   ctx: SolverContext,
   state: GameState,
   firstAction: Action,
   rng: Rng,
+  policy: (ctx: SolverContext, state: GameState) => ScoredCandidate = pickExpert,
 ): RolloutResult {
   const { engine, config } = ctx;
   let current = state;
@@ -55,7 +57,7 @@ export function runRollout(
 
     const begun = engine.beginTurn(current, rng);
     current = begun.state;
-    const picked = pickGreedy(ctx, current);
+    const picked = policy(ctx, current);
     apply(picked.candidate.action);
   }
 

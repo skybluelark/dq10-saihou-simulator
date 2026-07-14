@@ -9,3 +9,4 @@ export * from './rollout';
 export * from './anytime';
 export * from './nominal';
 export * from './solve';
+export * from './policy';

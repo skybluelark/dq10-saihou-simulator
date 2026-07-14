@@ -8,6 +8,7 @@ import { createRng } from '../core';
 import type { Action, GameState } from '../core';
 import { activeCandidates, stateKeyOf, wilson } from './anytime';
 import { scoreCandidates } from './evaluate';
+import { pickExpert } from './policy';
 import { rolloutSeed, runRollout } from './rollout';
 import type { CandidateStats, RankedCandidate, SolveOptions, SolveResult, SolverContext } from './types';
 
@@ -116,6 +117,18 @@ export function solve(ctx: SolverContext, state: GameState, options: SolveOption
   }
 
   const topScored = scored.slice(0, topK);
+
+  // Stage A の topK にエキスパートポリシーの推奨候補が含まれない場合は、
+  // ロールアウトが確実にそれを評価できるよう topK 末尾と差し替える(actionKey比較)。
+  const expertScored = pickExpert(ctx, state);
+  const expertKey = actionKey(expertScored.candidate.action);
+  if (!topScored.some((s) => actionKey(s.candidate.action) === expertKey)) {
+    if (topScored.length > 0) {
+      topScored[topScored.length - 1] = expertScored;
+    } else {
+      topScored.push(expertScored);
+    }
+  }
 
   const priorMap = new Map<string, RankedCandidate>();
   if (prior && prior.stateKey === stateKey) {
