@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>メニュー画面ワイヤー比較モック</title>
+<style>
+  /* ワイヤーフレーム専用モック: 配置・サイズ・余白だけを判断するため、
+     色・素材・フォント装飾は使わない(全てグレーの箱+文字)。トーンB適用は案の選定後。 */
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+    display: flex; flex-direction: column; align-items: center;
+    min-height: 100dvh;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    background: #e9e6e0; color: #444;
+  }
+  .frame { position: relative; width: 100%; max-width: 430px; min-height: 100dvh;
+    display: flex; flex-direction: column; background: #f4f2ee;
+    box-shadow: 0 0 12px rgba(0,0,0,.15); overflow: hidden; }
+
+  /* ---- モック専用: 案の切替ストリップ(実装対象外) ---- */
+  .switchBar { flex: 0 0 auto; height: 28px; display: flex; align-items: center; gap: 6px;
+    padding: 0 8px; background: #333; color: #ddd; font-size: 11px; }
+  .switchBar button { height: 20px; padding: 0 10px; font-size: 11px; border: 1px solid #888;
+    background: #555; color: #ddd; border-radius: 4px; }
+  .switchBar button.active { background: #ddd; color: #222; font-weight: bold; }
+
+  .adArea { height: 50px; flex: 0 0 auto;
+    display: flex; align-items: center; justify-content: center;
+    background: #ddd8cf; border-bottom: 1px dashed #a99;
+    color: #887; font-size: 12px; letter-spacing: .15em; }
+
+  [hidden] { display: none !important; }
+  .view { flex: 1 1 auto; display: flex; flex-direction: column; position: relative; }
+
+  /* ---- 共通ワイヤー部品 ---- */
+  .gfx { display: flex; align-items: center; justify-content: center; text-align: center;
+    border: 2px dashed #a89f90; background: repeating-linear-gradient(45deg, #e7e2d8, #e7e2d8 12px, #efeae0 12px, #efeae0 24px);
+    color: #93887a; font-size: 12px; line-height: 1.7; }
+  .wbtn { display: flex; align-items: center; justify-content: center; text-align: center;
+    background: #cfc9bd; border: 2px solid #9a9184; border-radius: 10px;
+    color: #3d382f; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,.18); }
+  .wbtn.sub { background: #ddd8ce; font-weight: normal; }
+  .wbtn.dis { background: #e6e3dc; border-style: dashed; border-color: #b9b2a6; color: #a49b8d;
+    box-shadow: none; }
+  .circ { border-radius: 50%; flex-direction: column; gap: 2px; font-size: 11px; }
+  .note { font-size: 10px; color: #989082; text-align: center; }
+
+  /* ================= A案: カードレイアウト(ポケポケ型) =================
+     上部に大きなグラフィック領域、その下端に主ボタンを重ねて非直線の重なりを作る。
+     下段は機能カード2枚(サイズ差)+右下フローティングの小円。 */
+  .vA .gfxHero { margin: 10px 12px 0; height: 300px; border-radius: 16px; }
+  .vA .mainCard { position: relative; z-index: 1; margin: -30px 32px 0; height: 68px;
+    border-radius: 14px; font-size: 19px; letter-spacing: .25em; text-indent: .25em; }
+  .vA .cardRow { display: flex; gap: 10px; margin: 14px 12px 0; }
+  .vA .cardRow .wbtn { border-radius: 14px; flex-direction: column; gap: 4px; }
+  .vA .cardL { flex: 6 1 0; height: 104px; font-size: 15px; }
+  .vA .cardR { flex: 5 1 0; height: 104px; font-size: 14px; }
+  .vA .float { position: absolute; right: 14px; bottom: 46px; width: 64px; height: 64px; font-size: 10px; }
+  .vA .vnote { margin: auto 0 34px; }
+
+  /* ================= B案: ヒーロー+中央大ボタン(学マス型) =================
+     背景全面がグラフィック。最優先「シミュレーター」を中央下に特大で据え、
+     左右に円形サブボタンを線対称(サイズ差)で配置。最下部は弧状のナビ帯。 */
+  .vB .gfxFull { position: absolute; inset: 0; z-index: 0; border: none; }
+  .vB .layer { position: relative; z-index: 1; flex: 1 1 auto; display: flex; flex-direction: column; }
+  .vB .mainBtn { position: absolute; left: 50%; bottom: 150px; transform: translateX(-50%);
+    width: 240px; height: 66px; border-radius: 33px; font-size: 20px; letter-spacing: .25em; text-indent: .25em; }
+  /* 左右の円はメインボタンと重ならないよう斜め上に配置(参考=学マスのイベント/ショップ) */
+  .vB .circL { position: absolute; left: 26px; bottom: 232px; width: 74px; height: 74px; }
+  .vB .circR { position: absolute; right: 30px; bottom: 238px; width: 64px; height: 64px; }
+  .vB .arcNav { position: absolute; left: -24px; right: -24px; bottom: -66px; height: 150px;
+    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+    background: #d8d2c6; border: 2px solid #9a9184; border-bottom: none;
+    display: flex; justify-content: center; gap: 34px; padding-top: 16px; }
+  .vB .arcNav .wbtn { width: 74px; height: 46px; font-size: 11px; flex-direction: column; gap: 1px; }
+  .vB .bnote { position: absolute; left: 0; right: 0; bottom: 8px; z-index: 2; }
+
+  /* ================= C案: 装飾ボタンのジグザグ配置(グラブル型) =================
+     横長のビジュアルバナー+菱形(45度回転)ボタンを斜めに流れる配置。
+     ボタン自体の非矩形さ(装飾枠を想定)で見た目を作る案。 */
+  .vC .gfxBanner { margin: 10px 12px 0; height: 150px; border-radius: 12px; }
+  .vC .field { position: relative; flex: 1 1 auto; }
+  .vC .dia { position: absolute; transform: rotate(45deg); border-radius: 14px; }
+  .vC .dia > span { transform: rotate(-45deg); display: flex; flex-direction: column;
+    align-items: center; gap: 2px; }
+  .vC .diaMain { left: 50%; top: 34px; margin-left: -62px; width: 124px; height: 124px; font-size: 16px; }
+  .vC .diaL { left: 34px; top: 178px; width: 88px; height: 88px; font-size: 13px; }
+  .vC .diaR { right: 34px; top: 196px; width: 84px; height: 84px; font-size: 12px; }
+  .vC .diaS { left: 50%; top: 320px; margin-left: -34px; width: 68px; height: 68px; font-size: 11px; }
+  .vC .cnote { position: absolute; left: 0; right: 0; bottom: 34px; }
+
+  .caption { position: relative; z-index: 3; text-align: center; font-size: 10px; color: #989082;
+    padding: 2px 8px 6px; flex: 0 0 auto; background: rgba(244,242,238,.9); }
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="switchBar">ワイヤー切替(モック専用):
+    <button id="tabA" type="button">A案</button>
+    <button id="tabB" type="button">B案</button>
+    <button id="tabC" type="button">C案</button>
+  </div>
+  <div class="adArea">アンカー広告(全幅・高さ50〜90dp可変)</div>
+
+  <!-- ================= A案: カードレイアウト ================= -->
+  <div class="view vA" id="viewA">
+    <div class="gfx gfxHero">グラフィック領域<br>(キービジュアル / ロゴ+装飾画 想定)</div>
+    <div class="wbtn mainCard">シミュレーター</div>
+    <div class="cardRow">
+      <div class="wbtn sub cardL">リプレイ<span class="note">じゅもんで再生</span></div>
+      <div class="wbtn dis cardR">計算機<span class="note">(開発中)</span></div>
+    </div>
+    <div class="wbtn dis circ float">設定<span>(検討中)</span></div>
+    <div class="note vnote">A案: グラフィック大+主ボタンを重ね配置+機能カード2枚(サイズ差)+右下小円</div>
+  </div>
+
+  <!-- ================= B案: ヒーロー+中央大ボタン ================= -->
+  <div class="view vB" id="viewB" hidden>
+    <div class="gfx gfxFull">背景=グラフィック全面(キービジュアル想定)</div>
+    <div class="layer">
+      <div class="wbtn circ circL">リプレイ<span class="note">じゅもん</span></div>
+      <div class="wbtn mainBtn">シミュレーター</div>
+      <div class="wbtn dis circ circR">計算機<span>(開発中)</span></div>
+      <div class="arcNav">
+        <div class="wbtn dis">設定<span class="note">(検討中)</span></div>
+        <div class="wbtn dis">じょうほう<span class="note">(将来枠)</span></div>
+      </div>
+      <div class="note bnote">B案: 中央特大+左右円形(線対称・サイズ差)+弧状の下部ナビ</div>
+    </div>
+  </div>
+
+  <!-- ================= C案: 菱形ジグザグ ================= -->
+  <div class="view vC" id="viewC" hidden>
+    <div class="gfx gfxBanner">グラフィックバナー(横長ビジュアル / ロゴ 想定)</div>
+    <div class="field">
+      <div class="wbtn dia diaMain"><span>シミュレーター</span></div>
+      <div class="wbtn sub dia diaL"><span>リプレイ<span class="note">じゅもん</span></span></div>
+      <div class="wbtn dis dia diaR"><span>計算機<span class="note">(開発中)</span></span></div>
+      <div class="wbtn dis dia diaS"><span>設定<span class="note">(検討中)</span></span></div>
+      <div class="note cnote">C案: 装飾枠ボタン(菱形想定)を斜めに流すジグザグ配置+横長バナー</div>
+    </div>
+  </div>
+
+  <div class="caption">メニュー画面ワイヤー比較モック v1.0(§5.11 再設計検討)— 箱と文字のみで配置・サイズ・余白を比較する段階(トーンB素材・配色は選定後に適用)/ 上部の切替ストリップはモック専用 / A=ポケポケ型(グラフィック大+カード)・B=学マス型(中央特大+線対称+弧状ナビ)・C=グラブル型(装飾ボタンのジグザグ)/ ハッシュ #a #b #c で直接表示可 / 無効(開発中・検討中)は破線表現</div>
+</div>
+
+<script>
+  var views = { a: document.getElementById('viewA'), b: document.getElementById('viewB'), c: document.getElementById('viewC') };
+  var tabs = { a: document.getElementById('tabA'), b: document.getElementById('tabB'), c: document.getElementById('tabC') };
+  function show(key) {
+    Object.keys(views).forEach(function (k) {
+      views[k].hidden = k !== key;
+      tabs[k].classList.toggle('active', k === key);
+    });
+    if (location.hash !== '#' + key) history.replaceState(null, '', '#' + key);
+  }
+  Object.keys(tabs).forEach(function (k) {
+    tabs[k].addEventListener('click', function () { show(k); });
+  });
+  var initial = (location.hash || '#a').slice(1);
+  show(views[initial] ? initial : 'a');
+</script>
+</body>
+</html>
