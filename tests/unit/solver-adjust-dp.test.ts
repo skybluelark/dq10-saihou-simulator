@@ -281,6 +281,33 @@ describe('objective=pLe1の決定表(§10.8。検証済み事実5点)', () => {
   });
 });
 
+// §10.8 確定パターン(読み切り。エキスパート確認済み 2026-07-15):
+// 「しつけ→(半)かげん→(−3が出たら)ほぐし」で誤差1以内が確定する(pLe1=1)。
+// 残7: しつけ13+かげん10+ほぐし16=39(実戦は精神統一+7を含め集中46で判断)。
+// 残11: しつけ13+半かげん12+ほぐし16=41(同48)。しつけ×2補正でかげん出目は{6,8,8,8,8,10,10}、
+// 半かげん出目は{10,10,12,12,12,14,14}になり、外れの−3を糸ほぐし{+3,+3,+4,+4}が確実に0/1へ戻す。
+describe('objective=pLe1の確定パターン(§10.8。エキスパート確認済み)', () => {
+  const adjParams = { ...DEFAULT_ADJUST_DP_PARAMS, lockUpkeep: 0 };
+
+  it('r=+7: b=39以降firstOp=しつけがけ(しつけ→かげん→(−3)ほぐしの読み切り。pLe1=1)', () => {
+    const data = buildEngineData();
+    const dp = buildAdjustDp(data, config, adjParams, 'pLe1');
+    expect(adjustLookup(dp, 7, 38, false).firstOp).not.toBe('shitsuke_gake');
+    const entry = adjustLookup(dp, 7, 39, false);
+    expect(entry.firstOp).toBe('shitsuke_gake');
+    expect(entry.pLe1).toBeCloseTo(1, 6);
+  });
+
+  it('r=+11: b=41以降firstOp=しつけがけ(しつけ→半かげん→(−3)ほぐしの読み切り。pLe1=1)', () => {
+    const data = buildEngineData();
+    const dp = buildAdjustDp(data, config, adjParams, 'pLe1');
+    expect(adjustLookup(dp, 11, 40, false).firstOp).not.toBe('shitsuke_gake');
+    const entry = adjustLookup(dp, 11, 41, false);
+    expect(entry.firstOp).toBe('shitsuke_gake');
+    expect(entry.pLe1).toBeCloseTo(1, 6);
+  });
+});
+
 // §10.8「objective省略時(既定'expErr')は従来挙動と完全一致(既存テストが担保。壊さないこと)」の
 // 明示的な回帰確認: 3つの目的関数(expErr/pZero/pLe1)を同一パラメータで構築しても、既定
 // (objective省略)がexpErr指定と完全一致することを確認する。
