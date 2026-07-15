@@ -20,7 +20,8 @@ export interface CritContext {
 }
 
 /**
- * 会心率(0〜1)を算出する。critx2 パワー(会心確定)の扱いは呼び出し側。
+ * 会心率(0〜1)を算出する。critx2 パワーの扱い(シフト会心=率×2 / ランダム会心=補正なし。
+ * SPEC §3.4)は呼び出し側(engine.critRate)が shiftCrit フラグとして渡す。会心確定ではない。
  */
 export function computeCritRate(params: GameParams, ctx: CritContext): number {
   const c = params.crit;
