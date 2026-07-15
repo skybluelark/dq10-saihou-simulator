@@ -36,7 +36,7 @@ const pNormal = computeCritRate(params, { ...critBase, aim: false });
 const pAim = computeCritRate(params, { ...critBase, aim: true });
 
 const OBJECTIVES: AdjustObjective[] = ['expErr', 'pZero', 'pLe1'];
-const UPKEEPS = [2, 0];
+const UPKEEPS = [3.5, 0]; // 3.5 = 既定(統一7÷純増2手。§10.8②)、0 = 素の集中(定石照合用)
 
 const dps = new Map<string, AdjustDp>();
 for (const upkeep of UPKEEPS) {
@@ -173,7 +173,7 @@ function treeSection(title: string, key: string, r: number, b: number, depth: nu
 // r=+2: ほぐし→(+3/+4)→かげん/半かげんの分岐(ユーザー質問の検証)
 treeSection('r=+2, b=28(=ほぐし16+半かげん12。定石値)', '0|expErr', 2, 28, 3);
 treeSection('r=+2, b=28', '0|pLe1', 2, 28, 3);
-treeSection('r=+2, b=32(償却+2/手込みの等価予算)', '2|expErr', 2, 32, 3);
+treeSection('r=+2, b=35(償却+3.5/手込みの等価予算)', '3.5|expErr', 2, 35, 3);
 // r=7/8: ねらい vs ぬう→ほぐし連鎖(目的関数で最適が入れ替わるか)
 treeSection('r=+7, b=40(予算潤沢)', '0|pZero', 7, 40, 2);
 treeSection('r=+7, b=40(予算潤沢)', '0|pLe1', 7, 40, 2);

@@ -10,6 +10,10 @@
 // 厳密に計算できる(反復不要。V(r,b,s) = min(V(r,b-1,s), 各特技候補, 打ち止め))。
 // 「打ち止め」は b=0 の値(=cellErrorScore(r))が V(r,b-1,s) の連鎖を通じて常に候補に
 // 含まれるため、b>=1 側で改めて比較する必要はない(Vはbについて単調非増加)。
+//
+// 内部の予算格子は 0.5集中刻み(half単位): lockUpkeep=3.5(精神統一7÷純増2手。§10.8②)の
+// ような半端な償却を正確に扱うため、配列インデックスは bh = 集中×2 で持つ。
+// 外部API(adjustLookup / AdjustDpParams)は従来どおり集中単位のまま。
 
 import { sewDamage, hogushiDamage, computeCritRate, cellErrorScore } from '../core';
 import type { EngineData, SimulatorConfig, SkillDef } from '../core';
@@ -95,13 +99,17 @@ export function buildAdjustDp(
     return Math.abs(primary - curPrimary) <= EPS && expE < cur.expErr - EPS;
   };
 
+  // 予算格子はhalf単位(bh = 集中×2)。詳細はファイル冒頭コメント参照。
+  const bhMax = budgetMax * 2;
+  const toHalf = (c: number): number => Math.round(c * 2);
+
   const entries: [AdjustEntry[], AdjustEntry[]] = [
-    new Array(size * (budgetMax + 1)),
-    new Array(size * (budgetMax + 1)),
+    new Array(size * (bhMax + 1)),
+    new Array(size * (bhMax + 1)),
   ];
-  const at = (s: 0 | 1, rIdx: number, b: number): AdjustEntry => entries[s][b * size + rIdx];
-  const set = (s: 0 | 1, rIdx: number, b: number, e: AdjustEntry): void => {
-    entries[s][b * size + rIdx] = e;
+  const at = (s: 0 | 1, rIdx: number, bh: number): AdjustEntry => entries[s][bh * size + rIdx];
+  const set = (s: 0 | 1, rIdx: number, bh: number, e: AdjustEntry): void => {
+    entries[s][bh * size + rIdx] = e;
   };
 
   // b=0: 全特技のコストは正なので打てる手がない(=「そのまま」のみ)。
@@ -121,7 +129,7 @@ export function buildAdjustDp(
    * 縫い1回の実行結果を s'=0 側の既計算テーブルへ加重集計する。
    * 会心は残り>0のマスのみ判定し、2倍後は残りちょうどで頭打ち。非会心は頭打ちなし(縫いすぎ許容)。
    */
-  function evalSew(skill: SkillDef, r: number, correction: 1 | 2, budgetLeft: number): EvalResult {
+  function evalSew(skill: SkillDef, r: number, correction: 1 | 2, bhLeft: number): EvalResult {
     const mult = skill.multiplier ?? 1;
     const aim = skill.aim === true;
     const p = critRateFor(aim);
@@ -132,19 +140,19 @@ export function buildAdjustDp(
       const d0 = sewDamage(bv, mult, 'weak', correction);
       if (r > 0) {
         const dCrit = Math.min(d0 * 2, r);
-        const entryC = at(0, clampIdx(r - dCrit), budgetLeft);
+        const entryC = at(0, clampIdx(r - dCrit), bhLeft);
         const wC = (1 / 7) * p;
         expE += wC * entryC.expErr;
         pZero += wC * entryC.pZero;
         pLe1 += wC * entryC.pLe1;
 
-        const entryN = at(0, clampIdx(r - d0), budgetLeft);
+        const entryN = at(0, clampIdx(r - d0), bhLeft);
         const wN = (1 / 7) * (1 - p);
         expE += wN * entryN.expErr;
         pZero += wN * entryN.pZero;
         pLe1 += wN * entryN.pLe1;
       } else {
-        const entryN = at(0, clampIdx(r - d0), budgetLeft);
+        const entryN = at(0, clampIdx(r - d0), bhLeft);
         const w = 1 / 7;
         expE += w * entryN.expErr;
         pZero += w * entryN.pZero;
@@ -155,13 +163,13 @@ export function buildAdjustDp(
   }
 
   /** 糸ほぐし1回(出目6〜9・会心なし・初期状態頭打ちはfinishing.tsと同じく無視)。 */
-  function evalHogushi(r: number, correction: 1 | 2, budgetLeft: number): EvalResult {
+  function evalHogushi(r: number, correction: 1 | 2, bhLeft: number): EvalResult {
     let expE = 0;
     let pZero = 0;
     let pLe1 = 0;
     for (let roll = 6; roll <= 9; roll++) {
       const d = hogushiDamage(-roll, 'weak', correction); // 負値(回復)
-      const entry = at(0, clampIdx(r - d), budgetLeft);
+      const entry = at(0, clampIdx(r - d), bhLeft);
       const w = 1 / 4;
       expE += w * entry.expErr;
       pZero += w * entry.pZero;
@@ -170,30 +178,30 @@ export function buildAdjustDp(
     return { expE, pZero, pLe1 };
   }
 
-  for (let b = 1; b <= budgetMax; b++) {
+  for (let bh = 1; bh <= bhMax; bh++) {
     for (const s of [0, 1] as const) {
       const correction: 1 | 2 = s === 1 ? 2 : 1;
       for (let rIdx = 0; rIdx < size; rIdx++) {
         const r = rMin + rIdx;
 
-        // 予算単調性(B2): まず「この1集中を使わない」= V(r,b-1,s) を基準候補にする。
-        // これにより b が増えても expErr は非増加になり、tie(改善なし)のときは
-        // firstOp/pZero/pLe1 も b-1 の解をそのまま継承する。
-        let best: AdjustEntry = at(s, rIdx, b - 1);
+        // 予算単調性(B2): まず「この0.5集中を使わない」= V(r,bh-1,s) を基準候補にする。
+        // これにより bh が増えても expErr は非増加になり、tie(改善なし)のときは
+        // firstOp/pZero/pLe1 も bh-1 の解をそのまま継承する。
+        let best: AdjustEntry = at(s, rIdx, bh - 1);
 
         for (const skill of sewOps) {
-          const realCost = (skill.cost ?? 0) + lockUpkeep;
-          if (realCost > b) continue;
-          const { expE, pZero, pLe1 } = evalSew(skill, r, correction, b - realCost);
+          const realCostH = toHalf((skill.cost ?? 0) + lockUpkeep);
+          if (realCostH > bh) continue;
+          const { expE, pZero, pLe1 } = evalSew(skill, r, correction, bh - realCostH);
           if (improves(expE, pZero, pLe1, best)) {
             best = { expErr: expE, pZero, pLe1, firstOp: skill.id };
           }
         }
 
         if (hogushiOp) {
-          const realCost = (hogushiOp.cost ?? 0) + lockUpkeep;
-          if (realCost <= b) {
-            const { expE, pZero, pLe1 } = evalHogushi(r, correction, b - realCost);
+          const realCostH = toHalf((hogushiOp.cost ?? 0) + lockUpkeep);
+          if (realCostH <= bh) {
+            const { expE, pZero, pLe1 } = evalHogushi(r, correction, bh - realCostH);
             if (improves(expE, pZero, pLe1, best)) {
               best = { expErr: expE, pZero, pLe1, firstOp: hogushiOp.id };
             }
@@ -202,16 +210,16 @@ export function buildAdjustDp(
 
         // しつけがけ: s=0でのみ許可(s=1中の再しつけは無意味なので候補から除く)。r不変・s'=1。
         if (shitsukeOp && s === 0) {
-          const realCost = (shitsukeOp.cost ?? 0) + lockUpkeep;
-          if (realCost <= b) {
-            const entry = at(1, rIdx, b - realCost);
+          const realCostH = toHalf((shitsukeOp.cost ?? 0) + lockUpkeep);
+          if (realCostH <= bh) {
+            const entry = at(1, rIdx, bh - realCostH);
             if (improves(entry.expErr, entry.pZero, entry.pLe1, best)) {
               best = { expErr: entry.expErr, pZero: entry.pZero, pLe1: entry.pLe1, firstOp: shitsukeOp.id };
             }
           }
         }
 
-        set(s, rIdx, b, best);
+        set(s, rIdx, bh, best);
       }
     }
   }
@@ -219,11 +227,11 @@ export function buildAdjustDp(
   return { params, objective, size, entries };
 }
 
-/** 調整DPテーブルの参照(rMin/rMax・0〜budgetMax の域外はドメイン端にクランプ)。 */
+/** 調整DPテーブルの参照(rMin/rMax・0〜budgetMax の域外はドメイン端にクランプ)。budgetは集中単位(0.5刻み対応)。 */
 export function adjustLookup(dp: AdjustDp, r: number, budget: number, shitsuke: boolean): AdjustEntry {
   const { rMin, rMax, budgetMax } = dp.params;
   const rClamped = Math.max(rMin, Math.min(rMax, Math.round(r)));
-  const bClamped = Math.max(0, Math.min(budgetMax, Math.round(budget)));
+  const bClamped = Math.max(0, Math.min(budgetMax * 2, Math.round(budget * 2)));
   const s: 0 | 1 = shitsuke ? 1 : 0;
   return dp.entries[s][bClamped * dp.size + (rClamped - rMin)];
 }

@@ -210,12 +210,14 @@ export interface AdjustDpParams {
   rMin: number; // DPドメイン下限(既定-30)
   rMax: number; // DPドメイン上限(既定+30)
   budgetMax: number; // DPドメインの集中力上限(既定60)
-  lockUpkeep: number; // 1手あたりのロック維持償却コスト(既定2 ≈ 精神統一7/3ターン。校正対象)
+  lockUpkeep: number; // 1手あたりのロック維持償却コスト(既定3.5 = 精神統一7÷純増2手。
+                      // 統一は「残り1手」を「3手」に増やすので純増は2手分(§10.8②。
+                      // 2026-07-15エキスパート回答による校正。0.5刻み対応)
 }
 
 export const DEFAULT_ADJUST_DP_PARAMS: AdjustDpParams = {
   rMin: -30,
   rMax: 30,
   budgetMax: 60,
-  lockUpkeep: 2,
+  lockUpkeep: 3.5,
 };

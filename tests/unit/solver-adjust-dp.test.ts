@@ -56,12 +56,12 @@ describe('E1定石一致(十分な予算 b=30)', () => {
     }
   });
 
-  // r=10: b=30の厳密最適はnuuでもnerai_nuiでもなくkagen_nui(expErr=0.660)。
-  // nuu(b=7〜17,expErr=2.162)・nerai_nui(b=18のみ一時的にexpErr=1.422)・
-  // han_kagen_nui(b=26〜29,expErr=0.676)より僅差で上回る。E1「10=ぬう」との明確な乖離。
-  it('r=10 → kagen_nui(b=30の厳密最適。E1「ぬう」からの乖離を記録)', () => {
+  // r=10: b=30の厳密最適(償却3.5校正後)はhan_kagen_nui(b=29〜32帯。b=33〜43はkagen_nui)。
+  // E1「10=ぬう」との乖離は§10.8で解決済み: 乖離はexpErr目的関数と償却の問題であり、
+  // pLe1表・素の集中では定石(かげんスタート)と一致する(scripts/solver-dp-dump.ts 参照)。
+  it('r=10 → han_kagen_nui(b=30の厳密最適。償却3.5校正後の記録)', () => {
     const dp = makeDp();
-    expect(adjustLookup(dp, 10, 30, false).firstOp).toBe('kagen_nui');
+    expect(adjustLookup(dp, 10, 30, false).firstOp).toBe('han_kagen_nui');
   });
 });
 
@@ -78,53 +78,53 @@ describe('刻み: r=11〜13(集中余剰時の2手刻み)', () => {
 });
 
 describe('+2ルート: r=2', () => {
-  // タスク仕様は「b≥28でito_hogushiが最適」と想定するが、実測の閾値はb=32。
-  // b=30〜31はkagen_nui(直接打ち。expErr=1.081)がito_hogushi(未着手)より優れ、
-  // b=32以降でようやくito_hogushi(expErr=0.676)が上回る。3段階(打ち止め/kagen_nui/
-  // ito_hogushi)であり、タスク仕様の二値(打ち止め or ito_hogushi)より1段階多い。
-  it('小予算(b<30)では打ち止めが最適(悪化させない)', () => {
+  // 実測の閾値(償却3.5): b=33〜34はkagen_nui(直接打ち)がito_hogushi(未着手)より優れ、
+  // b=35以降でito_hogushi(expErr=0.676)が上回る。35 = 素の集中28(ほぐし16+半かげん12。
+  // §10.8で定石と一致確認済み)+ 償却3.5×2手。3段階(打ち止め/kagen_nui/ito_hogushi)。
+  it('小予算(b<33)では打ち止めが最適(悪化させない)', () => {
     const dp = makeDp();
-    for (const b of [0, 10, 20, 27, 29]) {
+    for (const b of [0, 10, 20, 27, 29, 32]) {
       expect(adjustLookup(dp, 2, b, false).firstOp).toBeNull();
     }
   });
 
-  it('b=30〜31はkagen_nuiが最適(タスク仕様が想定しない中間段階)', () => {
+  it('b=33〜34はkagen_nuiが最適(中間段階)', () => {
     const dp = makeDp();
-    expect(adjustLookup(dp, 2, 30, false).firstOp).toBe('kagen_nui');
-    expect(adjustLookup(dp, 2, 31, false).firstOp).toBe('kagen_nui');
+    expect(adjustLookup(dp, 2, 33, false).firstOp).toBe('kagen_nui');
+    expect(adjustLookup(dp, 2, 34, false).firstOp).toBe('kagen_nui');
   });
 
-  it('b≥32でito_hogushiが最適', () => {
+  it('b≥35でito_hogushiが最適(素28+償却3.5×2手)', () => {
     const dp = makeDp();
-    expect(adjustLookup(dp, 2, 32, false).firstOp).toBe('ito_hogushi');
+    expect(adjustLookup(dp, 2, 35, false).firstOp).toBe('ito_hogushi');
     expect(adjustLookup(dp, 2, 40, false).firstOp).toBe('ito_hogushi');
   });
 });
 
 describe('−3/−2(残り値の非対称性 A1/C5/E3)', () => {
-  it('r=−3: b=17は打ち止め、b≥18でito_hogushiが最適(タスク仕様の閾値と一致)', () => {
+  it('r=−3: b=19は打ち止め、b≥19.5(=ほぐし16+償却3.5)でito_hogushiが最適(0.5刻み格子の境界)', () => {
     const dp = makeDp();
-    expect(adjustLookup(dp, -3, 17, false).firstOp).toBeNull();
-    expect(adjustLookup(dp, -3, 18, false).firstOp).toBe('ito_hogushi');
+    expect(adjustLookup(dp, -3, 19, false).firstOp).toBeNull();
+    expect(adjustLookup(dp, -3, 19.5, false).firstOp).toBe('ito_hogushi');
+    expect(adjustLookup(dp, -3, 20, false).firstOp).toBe('ito_hogushi');
     expect(adjustLookup(dp, -3, 30, false).firstOp).toBe('ito_hogushi');
   });
 
-  // 実用的な予算(b<=17)ではr=−2は放置(C5「−2は放置可」と一致)。
-  // ただしb>=18の単セルDPはito_hogushiで2.0→1.5へ改善できてしまう(C5は
+  // 実用的な予算(b<19.5)ではr=−2は放置(C5「−2は放置可」と一致)。
+  // ただしb>=19.5の単セルDPはito_hogushiで2.0→1.5へ改善できてしまう(C5は
   // 「複数マスへ予算を配る中で−2の優先度は低い」という機会費用の話であり、
   // 単セルを孤立させて予算を無制限に与えれば改善余地はある、という整理になる。
-  it('r=−2: 実用的な予算(b<=17)では打ち止め', () => {
+  it('r=−2: 実用的な予算(b<19.5)では打ち止め', () => {
     const dp = makeDp();
-    for (const b of [0, 5, 10, 17]) {
+    for (const b of [0, 5, 10, 17, 19]) {
       expect(adjustLookup(dp, -2, b, false).firstOp).toBeNull();
     }
   });
 
-  it('r=−2: b>=18では単セルDP上はito_hogushiが改善する(C5「放置可」の機会費用前提からの乖離を記録)', () => {
+  it('r=−2: b>=19.5では単セルDP上はito_hogushiが改善する(C5「放置可」の機会費用前提からの乖離を記録)', () => {
     const dp = makeDp();
-    expect(adjustLookup(dp, -2, 18, false).firstOp).toBe('ito_hogushi');
-    expect(adjustLookup(dp, -2, 18, false).expErr).toBeCloseTo(1.5, 9);
+    expect(adjustLookup(dp, -2, 20, false).firstOp).toBe('ito_hogushi');
+    expect(adjustLookup(dp, -2, 20, false).expErr).toBeCloseTo(1.5, 9);
   });
 });
 
@@ -157,19 +157,19 @@ describe('予算単調性', () => {
 });
 
 describe('pZero手計算照合', () => {
-  // r=7・b=7: 実コスト7(=5+upkeep2)のnuuのみ実行可(かげん以上は実コスト>=11で不可)。
-  // budgetLeft=0なので後続はcellErrorScoreそのもの(=|r'|が4以下ならその値)。
+  // r=7・b=9: 実コスト8.5(=5+償却3.5)のnuuのみ実行可(かげん以上は実コスト>=13.5で不可)。
+  // 残り予算0.5では何も打てないので後続はcellErrorScoreそのもの(=|r'|が4以下ならその値)。
   // nuuのダメージ(弱・倍率1・補正1): 基礎値12〜18 → d0=[6,7,7,8,8,9,9]。
   // r=7>0なので会心判定あり。会心後は2*d0が常に7以上のため必ず頭打ちでr'=0。
   // 非会心はr'=7-d0=[1,0,0,-1,-1,-2,-2] → 0になるのはbv=13,14の2/7のみ。
   // pZero = p(会心, 常に0) + (2/7)(1-p)(非会心でd0=7が出る2/7)。
-  it('r=7・b=7(ぬうのみ) → pZero = p + (2/7)(1-p)', () => {
+  it('r=7・b=9(ぬうのみ) → pZero = p + (2/7)(1-p)', () => {
     const dp = makeDp();
     const needleCritRate = 0.043; // miracle★3
     const p = needleCritRate + 0.01 /* kotsuBonus */ + 0.001; /* passiveEffective(aim=falseなのでaimMultiplier適用なし) */
     const expectedPZero = p + (2 / 7) * (1 - p);
 
-    const entry = adjustLookup(dp, 7, 7, false);
+    const entry = adjustLookup(dp, 7, 9, false);
     expect(entry.firstOp).toBe('nuu');
     expect(entry.pZero).toBeCloseTo(expectedPZero, 9);
     // 独立した手計算(非会心7ロールのcellErrorScore平均)でexpErrも突き合わせる。
@@ -198,8 +198,8 @@ describe('allocateAdjustBudget', () => {
     // 到達可能な最良値もr=13の方が下がり幅が大きい)ため、より多く配分される。
     expect(perCell[1]).toBeGreaterThan(perCell[0]);
 
-    // 実測: perCell=[7,13](conc全量を消費)。
-    expect(perCell).toEqual([7, 13]);
+    // 実測(償却3.5): perCell=[9,11](conc全量を消費。r=7はぬう実コスト8.5が乗る9)。
+    expect(perCell).toEqual([9, 11]);
   });
 
   it('割当を増やしても悪化しない(conc=0では何も配分しない)', () => {

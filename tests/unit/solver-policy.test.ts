@@ -380,15 +380,12 @@ describe('調整フェーズ★3確率合成スコアリング(§10.8/v3a)', () 
     expect(adjustLookup(ctx.adjustDp, 3, 30, false).firstOp).toBe('kagen_nui');
   });
 
-  // v3a回帰(旧v2アサーションからの変更。判断に迷った点として報告参照):
-  // 旧v2はexpErr最小化のタイブレークで「ライン系(11,9をまとめて処置)が単マス(片方のみ)より
-  // 上位」と判定していたが、pStar3(★3確率合成)ベースでは逆転する。massCount=4の★3誤差上限は
-  // 2(evaluation."4".star3=2)と非常にタイトなため、費用の大きい2マスライン(yoko_nui)より、
-  // 安価かつ会心率37.8%のねらいぬい(単マス)で1マスを高確率处理し、残りマスへ多くの集中力を
-  // 残す方が盤面全体の★3確率を上げる(§10.8「誤差0狙いと誤差1以内狙いで最適初手が分岐する」
-  // 一般化: 単発の的中期待値が高い手を優先する構造が、多マス同時処理より★3確率の観点で有利に
-  // なりうることを示す)。adjustScoreForCandidate の pStar3 を直接比較して検証する。
-  it('盤面[11,9,7,5]・弱(集中60)では単マス(ねらい@(1,1))のpStar3がライン系(yoko_nui@(1,1)(1,2))を上回り、順位も上位に来る', () => {
+  // v3a+償却校正(3.5。§10.8②)後の関係: ライン系(yoko_nui: 11,9を1手で処置)が単マス(ねらい)を
+  // pStar3で上回る。ロック維持償却は「1手あたり」に乗るため、1手で2マス進むライン系は維持費を
+  // 折半でき、残りマスへ回せる集中も増える(§10.5「1手で2マス進む」の利点が償却に比例して増す。
+  // 償却2時代は単マス優位に反転していたが、統一7÷純増2手=3.5への校正でライン優位に戻った)。
+  // pStar3の直接比較と、rankExpertの順位がその大小と整合することを検証する。
+  it('盤面[11,9,7,5]・弱(集中60)ではライン系(yoko_nui@(1,1)(1,2))のpStar3が単マス(ねらい@(1,1))を上回り、順位も上位に来る', () => {
     const ctx = makeCtx();
     const state = makeState(ctx, [11, 9, 7, 5], 2, { currentPower: 'weak', concentration: 60 });
     const choices = rankExpert(ctx, state);
@@ -412,11 +409,11 @@ describe('調整フェーズ★3確率合成スコアリング(§10.8/v3a)', () 
 
     const lineScore = adjustScoreForCandidate(ctx, state, lineChoice.scored.candidate);
     const singleScore = adjustScoreForCandidate(ctx, state, singleChoice.scored.candidate);
-    expect(singleScore.pStar3).toBeGreaterThan(lineScore.pStar3);
+    expect(lineScore.pStar3).toBeGreaterThan(singleScore.pStar3);
 
     const lineIdx = choices.indexOf(lineChoice);
     const singleIdx = choices.indexOf(singleChoice);
-    expect(singleIdx).toBeLessThan(lineIdx);
+    expect(lineIdx).toBeLessThan(singleIdx);
   });
 });
 
