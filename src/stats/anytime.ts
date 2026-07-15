@@ -10,7 +10,10 @@ import type { RankedCandidate, SolverParams } from './types';
 // v3: エキスパートポリシーv2(調整フェーズを厳密DPスコアリングへ置換・精神統一ルール反転・
 //     個別ルール修正。SOLVER_POLICY.md §10)。同一盤面でも選択順位が変わるため旧版priorとは
 //     合算不可。
-export const SOLVER_VERSION = 3;
+// v4: エキスパートポリシーv3a(調整フェーズの同tier内タイブレークをexpErr最小化から
+//     ★3確率合成スコア(pStar3降順→expErr昇順)へ置換。SOLVER_POLICY.md §10.8)。ランキングが
+//     変わるため旧版priorとは合算不可。
+export const SOLVER_VERSION = 4;
 
 /** Wilson score interval(95%既定)。n=0 は {lo:0, hi:1}。 */
 export function wilson(n: number, wins: number, z = 1.96): { lo: number; hi: number } {

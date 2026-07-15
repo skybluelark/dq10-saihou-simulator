@@ -4,7 +4,13 @@
 
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_CONFIG, type SimulatorConfig } from '../../src/core';
-import { buildAdjustDp, adjustLookup, allocateAdjustBudget, type AdjustDp } from '../../src/stats';
+import {
+  buildAdjustDp,
+  adjustLookup,
+  allocateAdjustBudget,
+  DEFAULT_ADJUST_DP_PARAMS,
+  type AdjustDp,
+} from '../../src/stats';
 import { buildEngineData } from '../fixtures/engine-helpers';
 
 // 奇跡のさいほう針★3(needleCritRate=0.043)。SOLVER_POLICY.md の「37.8%(奇跡針)」記述と
@@ -218,5 +224,71 @@ describe('決定論', () => {
     const { rMin, rMax, budgetMax } = dp.params;
     expect(adjustLookup(dp, rMin - 100, budgetMax + 100, false)).toEqual(adjustLookup(dp, rMin, budgetMax, false));
     expect(adjustLookup(dp, rMax + 100, -100, false)).toEqual(adjustLookup(dp, rMax, 0, false));
+  });
+});
+
+// §10.8(A1回答=Q1解決。2026-07-15): objective='pLe1'の決定表を検証する。
+// タスク仕様に記載の「検証済み事実」5点(2026-07-15、scripts/solver-dp-dump.ts相当の実測値)。
+// AdjustDpParams={rMin:-30,rMax:30,budgetMax:60,lockUpkeep:0}を明示する(§10.8「+2ほぐしルート
+// の損益分岐: 素の集中ではb=28」の「素の集中」= lockUpkeep=0 に対応)。
+describe('objective=pLe1の決定表(§10.8。検証済み事実5点)', () => {
+  const adjParams = { ...DEFAULT_ADJUST_DP_PARAMS, rMin: -30, rMax: 30, budgetMax: 60, lockUpkeep: 0 };
+
+  function makePLe1Dp(): AdjustDp {
+    const data = buildEngineData();
+    return buildAdjustDp(data, config, adjParams, 'pLe1');
+  }
+
+  it('r=+2: firstOpが\'ito_hogushi\'になる最小予算はb=28', () => {
+    const dp = makePLe1Dp();
+    expect(adjustLookup(dp, 2, 27, false).firstOp).not.toBe('ito_hogushi');
+    expect(adjustLookup(dp, 2, 28, false).firstOp).toBe('ito_hogushi');
+  });
+
+  it('r=+8, b=40: firstOp=\'nuu\'(pLe1≈0.991)', () => {
+    const dp = makePLe1Dp();
+    const entry = adjustLookup(dp, 8, 40, false);
+    expect(entry.firstOp).toBe('nuu');
+    expect(entry.pLe1).toBeCloseTo(0.991, 3);
+  });
+
+  it('r=+6: b=12以降firstOpが\'han_kagen_nui\'(pLe1=1.0近傍)', () => {
+    const dp = makePLe1Dp();
+    for (const b of [12, 13, 20, 40]) {
+      const entry = adjustLookup(dp, 6, b, false);
+      expect(entry.firstOp).toBe('han_kagen_nui');
+      expect(entry.pLe1).toBeCloseTo(1, 6);
+    }
+    // b=11以前はhan_kagen_nui(実コスト12=cost12+upkeep0)がまだ打てない。
+    expect(adjustLookup(dp, 6, 11, false).firstOp).not.toBe('han_kagen_nui');
+  });
+
+  it('r=+7: b=16〜20は\'nerai_nui\'、b=21〜31は\'nuu\'', () => {
+    const dp = makePLe1Dp();
+    for (const b of [16, 17, 18, 19, 20]) {
+      expect(adjustLookup(dp, 7, b, false).firstOp).toBe('nerai_nui');
+    }
+    for (const b of [21, 22, 25, 28, 31]) {
+      expect(adjustLookup(dp, 7, b, false).firstOp).toBe('nuu');
+    }
+  });
+
+  it('r=-3: b=16以降\'ito_hogushi\'', () => {
+    const dp = makePLe1Dp();
+    for (const b of [16, 17, 20, 30]) {
+      expect(adjustLookup(dp, -3, b, false).firstOp).toBe('ito_hogushi');
+    }
+  });
+});
+
+// §10.8「objective省略時(既定'expErr')は従来挙動と完全一致(既存テストが担保。壊さないこと)」の
+// 明示的な回帰確認: 3つの目的関数(expErr/pZero/pLe1)を同一パラメータで構築しても、既定
+// (objective省略)がexpErr指定と完全一致することを確認する。
+describe('objective省略時はexpErrと完全一致(§10.8。既存挙動の保護)', () => {
+  it('全rMin〜rMaxで既定引数とexpErr明示引数のテーブルが一致', () => {
+    const data = buildEngineData();
+    const dpDefault = buildAdjustDp(data, config);
+    const dpExplicit = buildAdjustDp(data, config, DEFAULT_ADJUST_DP_PARAMS, 'expErr');
+    expect(dpDefault).toEqual(dpExplicit);
   });
 });

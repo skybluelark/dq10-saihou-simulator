@@ -67,8 +67,13 @@ export interface SolverContext {
   params: SolverParams;
   /** 事前計算済み仕上げテーブル。キー = `${correction}|${muga}`(correction∈{1,2}, muga∈{0,1})。 */
   tables: Map<string, FinishEntry[]>; // index = r - params.rMin
-  /** 調整厳密DP(弱パワー固定後の最終調整。finishing.ts の createSolverContext で構築。policy.ts §10.4で使用)。 */
+  /** 調整厳密DP(弱パワー固定後の最終調整。finishing.ts の createSolverContext で構築。policy.ts §10.4で使用)。
+   *  目的関数=expErr(期待誤差最小化)。既定の期待値ベーススコアリングに使う。 */
   adjustDp: AdjustDp;
+  /** 調整厳密DP・目的関数=pZero(誤差0率最大化)。policy.ts §10.8/v3a の★3確率合成スコアで使用。 */
+  adjustDpPZero: AdjustDp;
+  /** 調整厳密DP・目的関数=pLe1(誤差1以内率最大化)。policy.ts §10.8/v3a の★3確率合成スコアで使用。 */
+  adjustDpPLe1: AdjustDp;
 }
 
 /** スコア付き候補(1手グリーディ選択の出力単位)。 */
@@ -100,6 +105,9 @@ export interface PolicyParams {
   regenPushHi: number;     // 同上限(既定-8)
   regenSteerWindow: number; // 押し出し・保護が意味を持つ「次の再生までのターン数」上限(既定2。
                             // 押してから回収までの空白ターンを最小化する — 烈風#31は2ターン前に押した)
+  // ---- 再生布の回復影響スコアリング (§10.10/v3b。regenImpactDelta) ----
+  regenImpactBad: number;  // 実害(仕上げ帯5/7/8/9が回復対象)のtier加点(既定+1。悪化)
+  regenImpactGood: number; // 利得(悪い黄色値の再抽選・保険オーバーの回収)のtier加点(既定-0.5。改善)
 }
 
 export const DEFAULT_POLICY_PARAMS: PolicyParams = {
@@ -113,6 +121,8 @@ export const DEFAULT_POLICY_PARAMS: PolicyParams = {
   regenPushLo: -17,
   regenPushHi: -8,
   regenSteerWindow: 2,
+  regenImpactBad: 1,
+  regenImpactGood: -0.5,
 };
 
 /** 盤面分析結果(局面判定・マス分類)。 */

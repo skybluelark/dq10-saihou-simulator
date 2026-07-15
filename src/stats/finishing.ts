@@ -176,9 +176,13 @@ export function createSolverContext(
       tables.set(tableKey(correction, muga), buildFinishTable(data, config, params, correction, muga));
     }
   }
-  // 調整厳密DP(§10.4 B2)。既定パラメータで構築する(finishing.ts変更範囲: この1呼び出しのみ)。
-  const adjustDp = buildAdjustDp(data, config);
-  return { engine, data, config, params, tables, adjustDp };
+  // 調整厳密DP(§10.4 B2 / §10.8 v3a)。既定パラメータで目的関数3種(expErr/pZero/pLe1)を
+  // それぞれ構築する(policy.ts の★3確率合成スコアで pZero表・pLe1表を使う。finishing.ts
+  // 変更範囲: この3呼び出しのみ)。
+  const adjustDp = buildAdjustDp(data, config, undefined, 'expErr');
+  const adjustDpPZero = buildAdjustDp(data, config, undefined, 'pZero');
+  const adjustDpPLe1 = buildAdjustDp(data, config, undefined, 'pLe1');
+  return { engine, data, config, params, tables, adjustDp, adjustDpPZero, adjustDpPLe1 };
 }
 
 /** 仕上げテーブルの参照(域外はドメイン端にクランプ)。 */

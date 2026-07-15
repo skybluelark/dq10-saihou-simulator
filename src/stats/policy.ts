@@ -8,9 +8,9 @@
 //
 // 前提: state は beginTurn 済み(currentPower 確定)。乱数・Date は使用しない(決定的)。
 
-import { isTraitTurn, rainbowMode } from '../core';
+import { isTraitTurn, rainbowMode, starForError } from '../core';
 import type { Engine, GameParams, GameState, Power, SkillDef } from '../core';
-import { allocateAdjustBudget } from './adjust-dp';
+import { adjustLookup, allocateAdjustBudget } from './adjust-dp';
 import { actionDistribution } from './distribution';
 import { scoreCandidates } from './evaluate';
 import type {
@@ -158,16 +158,29 @@ function redCellCount(state: GameState): number {
 }
 
 /**
+ * PMFで |remaining| ≤ 1(誤差0または誤差1以内)の確率質量合計(§10.10/v3b)。
+ * E2の再生緩和(非carve)は「保険で悪い数字リスクを抑えつつ有利な乱数を取りに行く」ためのもの
+ * なので、上振れ(誤差0/1以内)チャンスが無いマスにまで緩和を適用しない(結合条件)。
+ */
+function pmfUpsideMass(pmf: CellPmf): number {
+  return pmf.filter((pt) => Math.abs(pt.remaining) <= 1).reduce((sum, pt) => sum + pt.prob, 0);
+}
+
+/**
  * E2縫いすぎ禁止: 対象マスの非会心最大ダメージ後の残りが overshootFloor 未満なら禁止。
  * 再生布は regenOvershootFloor(carve中は regenCarveFloor)まで緩和するが、
  * **既に赤マス(残り≤−3)が2つ以上あるときは緩和しない**(D2「1マス赤、2マスでもだいたい可」。
  * 回復は4ターンに1マス+12〜16なので、無制限に赤を作ると回復能力を超えた借金になる)。
  * 残り≤0のマスを対象に含む縫いも、再生布(緩和有効時)以外は禁止(D2: 赤マス作りが正当手)。
  * みだれぬいは対象外(呼び出し側で除く)。
+ *
+ * §10.10/v3b: carve以外(approach/adjust)の再生緩和には、対象マス自身のPMFに
+ * 上振れ(|remaining|≤1の確率質量 ≥ 1/7 − 1e-9)があることを結合条件として追加する。
+ * 満たさないマスは通常床(overshootFloor)で判定する(マスごとに個別判定。carveフェーズの
+ * regenCarveFloor経路は一切変更しない)。
  */
 function passesE2(ctx: SolverContext, state: GameState, phase: Phase, candidate: Candidate, dist: ActionDistribution): boolean {
   const regenRelaxed = state.clothType === 'regen' && redCellCount(state) <= 1;
-  let floor = regenRelaxed ? (phase === 'carve' ? P.regenCarveFloor : P.regenOvershootFloor) : P.overshootFloor;
 
   // E2会心ターン緩和(§10.3簡易版): 虹布の会心ターン(消費増だが会心率+24%)は複数マス同時の
   // 誤差0上振れを狙う価値があるため、多マス候補に限り床を CRIT_TURN_FLOOR_BONUS だけ緩める。
@@ -176,15 +189,32 @@ function passesE2(ctx: SolverContext, state: GameState, phase: Phase, candidate:
     state.clothType === 'rainbow' &&
     isTraitTurn(state.turn + 1, ctx.data.params) &&
     rainbowMode(state.turn + 1, ctx.data.params) === 'up';
-  if (isRainbowCritTurn && candidate.targetCells.length >= 2) {
-    floor -= CRIT_TURN_FLOOR_BONUS;
-  }
+  const critBonus = isRainbowCritTurn && candidate.targetCells.length >= 2 ? CRIT_TURN_FLOOR_BONUS : 0;
 
   for (const t of candidate.targetCells) {
     const cell = ctx.engine.cellAt(state, t.r, t.c);
     if (!cell) continue;
     const remainingBefore = cell.base - cell.cumulative;
     if (remainingBefore <= 0 && !regenRelaxed) return false;
+
+    let floor: number;
+    if (!regenRelaxed) {
+      floor = P.overshootFloor;
+    } else if (phase === 'carve') {
+      floor = P.regenCarveFloor; // carve経路は§10.10/v3bで一切変更しない
+    } else {
+      const pmf = pmfAt(dist, t.r, t.c);
+      const hasUpside = pmf !== undefined && pmfUpsideMass(pmf) >= 1 / 7 - 1e-9;
+      if (!hasUpside && pmf !== undefined && allWithinPushRange(pmf, P.regenPushLo, P.regenPushHi)) {
+        // 押し出し設計(§10.6)の例外: 全出目が押し出し帯に収まる縫いは「悪い値を回復の
+        // 再抽選圏へ意図的に深く送り込む」手であり、上振れ条件の対象外。帯は regenPushLo(−17)
+        // まで届くため床も帯下限で判定する(上振れ条件で押し出しを封殺しない。§10.10)。
+        floor = P.regenPushLo;
+      } else {
+        floor = hasUpside ? P.regenOvershootFloor : P.overshootFloor;
+      }
+    }
+    floor -= critBonus;
 
     const worst = worstRemaining(dist, t.r, t.c);
     if (worst !== undefined && worst < floor) return false;
@@ -223,6 +253,29 @@ function nextTraitTurnStrictlyAfter(turn: number, params: GameParams): number {
 }
 
 /**
+ * 再生対象の選定規則(比最大・同率タイは全て・黄色枠内除外)を「マス配列」に対して適用する
+ * 内部共通ロジック(engine.ts の applyRegen と同じ規則)。predictRegenTarget(現盤面)と
+ * regenImpactDelta(行動後の公称盤面。§10.10/v3b)の両方から呼ばれるため、規則実装を
+ * ここに一本化する(重複実装しない)。
+ */
+function regenTargetsFromCells(
+  cells: { r: number; c: number; base: number; cumulative: number }[],
+  yellow: number,
+): { r: number; c: number; remaining: number }[] {
+  const eligible = cells.filter((cell) => Math.abs(cell.base - cell.cumulative) > yellow);
+  if (eligible.length === 0) return [];
+
+  let bestRatio = -Infinity;
+  for (const cell of eligible) {
+    const ratio = cell.cumulative / cell.base;
+    if (ratio > bestRatio) bestRatio = ratio;
+  }
+  return eligible
+    .filter((cell) => cell.cumulative / cell.base === bestRatio)
+    .map((cell) => ({ r: cell.r, c: cell.c, remaining: cell.base - cell.cumulative }));
+}
+
+/**
  * 再生布の次回回復先を予測する(exportはテスト用)。
  * 現在ターンは state.turn+1(policy.ts共通規約)。当ターンが再生ターンの場合、
  * 回復は beginTurn 内で既に適用済みのため、予測対象は「次の再生ターン」
@@ -238,17 +291,7 @@ export function predictRegenTarget(ctx: SolverContext, state: GameState): RegenP
   const turnsUntil = nextRegenTurn - currentTurn;
 
   const yellow = ctx.data.params.gauge.yellowRange;
-  const eligible = state.cells.filter((cell) => Math.abs(cell.base - cell.cumulative) > yellow);
-  if (eligible.length === 0) return { targets: [], turnsUntil };
-
-  let bestRatio = -Infinity;
-  for (const cell of eligible) {
-    const ratio = cell.cumulative / cell.base;
-    if (ratio > bestRatio) bestRatio = ratio;
-  }
-  const targets = eligible
-    .filter((cell) => cell.cumulative / cell.base === bestRatio)
-    .map((cell) => ({ r: cell.r, c: cell.c, remaining: cell.base - cell.cumulative }));
+  const targets = regenTargetsFromCells(state.cells, yellow);
 
   return { targets, turnsUntil };
 }
@@ -321,38 +364,71 @@ export function tierForRegenPush(
   return 2; // r === 3
 }
 
+/** PMFの期待値(四捨五入)。§10.10/v3b: 「行動後盤面」の対象マス残りをこの値で置換する。 */
+function pmfExpectedRemaining(pmf: CellPmf): number {
+  const expected = pmf.reduce((sum, pt) => sum + pt.remaining * pt.prob, 0);
+  return Math.round(expected);
+}
+
 /**
- * 再生布・回復先保護(§10.6)。次の再生ターンが1手後(turnsUntil===1)で、予測回復対象に
- * 「安い仕上げ値」(r∈{5,7,8,9}。6・10〜13は再抽選許容のため対象外)のマスが含まれる場合、
- * そのマスを黄色内(全出目|残り|≤4)または誤差0圏に入れる単マス縫い候補のティアを1引き下げる
- * (優先度アップ)。黄色内に収める、または誤差0を取れば eligible から外れ回復に巻き込まれない
- * (engine.ts applyRegen と同じ黄色枠除外規則)。
+ * 候補の「行動後盤面」(§10.10/v3b)。dist にエントリのあるマス(=候補の対象マス)は
+ * PMFの期待値(四捨五入)で残りを置換し、それ以外は現盤面のまま返す。対象を持たない候補
+ * (精神統一・シフト・無我等の支援/必殺)は dist.cells が空のため全マス現盤面のままになる。
+ * しつけがけ(support。r不変)も dist.cells が空(actionDistributionがsupport/hissatsuを
+ * 対象なしとして扱うため)なので、結果的に同じ経路で「r不変」が実現される(仕様どおり)。
  */
-function regenProtectionDelta(
+function boardAfterAction(
+  state: GameState,
+  dist: ActionDistribution,
+): { r: number; c: number; base: number; cumulative: number }[] {
+  return state.cells.map((cell) => {
+    const target = dist.cells.find((d) => d.r === cell.r && d.c === cell.c);
+    if (!target) return { r: cell.r, c: cell.c, base: cell.base, cumulative: cell.cumulative };
+    const remaining = pmfExpectedRemaining(target.pmf);
+    return { r: cell.r, c: cell.c, base: cell.base, cumulative: cell.base - remaining };
+  });
+}
+
+/**
+ * 再生布の回復影響スコアリング(§10.10/v3b。regenProtectionDeltaの一般化)。
+ * 「回復を受けるマスをあえて用意する」のではなく「再生前提で悪い数字リスクを保険で抑えつつ
+ * 有利な乱数(誤差0・4など)を取りに行く」が本質(§10.10)。回復の害は勾配で扱う:
+ *   実害(regenImpactBad。既定+1): 予測対象の残りが仕上げ帯 r∈{5,7,8,9}
+ *     (+12〜16戻され実質2手+10集中の損失)
+ *   利得(regenImpactGood。既定-0.5): r∈{+2,-2,+3}(§10.6の再抽選価値がある値。ただし
+ *     |r|≤yellowRangeの値は下のeligibleフィルタで対象になり得ないため、既定パラメータ
+ *     [yellowRange=4]の下では現状到達しない分岐 — 判断に迷った点として報告参照)、
+ *     または regenPushLo≤r≤regenPushHi(押し出し後の深いオーバーの回収)
+ *   中立(0): それ以外(eligibleなし・削り中の大きいマス・6/10〜13など)
+ * 対象が複数(比タイ)で実害・利得が両方存在する場合は実害を優先する(§10.10「対象が複数なら
+ * 実害があれば実害を優先」)。利得/中立側の優先順は明記されていないため、実害>利得>中立の
+ * 対称な優先順(いずれかの対象が該当すれば採用)とした(判断に迷った点)。
+ *
+ * 適用条件: clothType==='regen' かつ 次の再生が1手後(turnsUntil===1)。回復は次ターンの
+ * beginTurn内でapplyAction(=次の行動)より先に発動する(engine.ts startTurn: isTraitTurn→
+ * applyRegenの後にactionが実行される)ため、turnsUntil===1のとき「行動後盤面」がそのまま
+ * 次ターンの回復対象選定に使われる。
+ */
+export function regenImpactDelta(
   ctx: SolverContext,
   state: GameState,
-  candidate: Candidate,
-  skill: SkillDef,
   dist: ActionDistribution,
   prediction: RegenPrediction | null,
 ): number {
   if (state.clothType !== 'regen') return 0;
   if (!prediction || prediction.turnsUntil !== 1) return 0;
-  if (skill.target !== 'single') return 0;
-
-  const t = candidate.targetCells[0];
-  const isProtectedTarget = prediction.targets.some(
-    (tg) => tg.r === t.r && tg.c === t.c && REGEN_PROTECT_VALUES.has(tg.remaining),
-  );
-  if (!isProtectedTarget) return 0;
-
-  const pmf = pmfAt(dist, t.r, t.c);
-  if (!pmf) return 0;
 
   const yellow = ctx.data.params.gauge.yellowRange;
-  const allWithinYellow = pmf.every((pt) => Math.abs(pt.remaining) <= yellow);
-  const hasZero = pmf.some((pt) => pt.remaining === 0);
-  return allWithinYellow || hasZero ? -1 : 0;
+  const board = boardAfterAction(state, dist);
+  const targets = regenTargetsFromCells(board, yellow);
+  if (targets.length === 0) return 0;
+
+  const isBad = (r: number): boolean => REGEN_PROTECT_VALUES.has(r);
+  const isGood = (r: number): boolean => r === 2 || r === -2 || r === 3 || (r >= P.regenPushLo && r <= P.regenPushHi);
+
+  if (targets.some((t) => isBad(t.remaining))) return P.regenImpactBad;
+  if (targets.some((t) => isGood(t.remaining))) return P.regenImpactGood;
+  return 0;
 }
 
 /** 糸ほぐし(C5/A1)。 */
@@ -659,7 +735,14 @@ function tierForSewOrRecover(
   skill: SkillDef,
   prediction: RegenPrediction | null,
 ): number | null {
-  if (skill.kind === 'recover') return tierForHogushi(ctx, state, analysis, candidate);
+  if (skill.kind === 'recover') {
+    let tier = tierForHogushi(ctx, state, analysis, candidate);
+    if (tier === null) return null;
+    // §10.10/v3b: 回復影響スコアリングはほぐしにも適用する(旧「単マス縫いのみ」制限を撤廃)。
+    const dist = actionDistribution(ctx.engine, state, ctx.config, candidate);
+    tier += regenImpactDelta(ctx, state, dist, prediction);
+    return tier;
+  }
 
   // skill.kind === 'sew'
   const dist = actionDistribution(ctx.engine, state, ctx.config, candidate);
@@ -687,14 +770,14 @@ function tierForSewOrRecover(
 
   if (targetsGlowCell(state, candidate)) tier -= 1; // D1: 発光ターンの有効活用
   if (hasZeroBonus(dist)) tier -= P.zeroBonusTier; // A1: 誤差0ボーナス
-  // 再生布の回復先保護(§10.6)。押し出し・保護は既存ルールより優先(§4)なので、
-  // 押し出しティアの上からもさらに-1する(両立時は保護を優先して重ねる)。
-  tier += regenProtectionDelta(ctx, state, candidate, skill, dist, prediction);
+  // 再生布の回復影響スコアリング(§10.10/v3b)。押し出し・保護は既存ルールより優先(§4)なので、
+  // 押し出しティアの上からもさらに加算する(実害/利得は両立時も重ねて適用する)。
+  tier += regenImpactDelta(ctx, state, dist, prediction);
 
   return tier;
 }
 
-// ---- 調整フェーズDPスコアリング(§10.4/2) ----
+// ---- 調整フェーズ★3確率合成スコアリング(§10.8/v3a) ----
 
 /** state全マスの (r, shitsuke) を複製する(「行動後盤面」構築の土台)。 */
 function currentAdjustCells(state: GameState): { r: number; shitsuke: boolean }[] {
@@ -705,22 +788,118 @@ function currentAdjustCells(state: GameState): { r: number; shitsuke: boolean }[
 const JOINT_CELL_LIMIT = 3;
 
 /**
- * 対象マスの真の同時分布(PMFの直積)で allocateAdjustBudget の期待値を計算する。
+ * 盤面のできのよさ判定で star3 を維持できる最大の合計誤差評価値(engine.judge と同じ規則)。
+ * src/core の starForError を t=0..60(誤差評価値のドメイン上限。評価境界は最大でも一桁台
+ * なので十分な走査範囲)で走査し、star3 になる最大の t を返す(§10.8/v3a)。
+ */
+export function star3ErrorLimit(ctx: SolverContext, state: GameState): number {
+  let limit = -1;
+  for (let t = 0; t <= 60; t++) {
+    if (starForError(t, state.massCount, state.errorLimit, ctx.data.params) === 'star3') {
+      limit = t;
+    }
+  }
+  return limit;
+}
+
+/** composeStar3Prob の入力1マス分(AdjustEntryのサブセット)。 */
+export interface Star3Triple {
+  expErr: number;
+  pZero: number;
+  pLe1: number;
+}
+
+/**
+ * マス別 {expErr, pZero, pLe1} の集合から、全マス独立近似で P(合計誤差評価値 ≤ limit) を
+ * 畳み込みDPで計算する(§10.8/v3a)。各マスの誤差分布を3点近似で表す:
+ *   P(0)=pZero, P(1)=pLe1-pZero, P(bust)=1-pLe1
+ *   bust値 = max(2, round((expErr - (pLe1-pZero)) / max(1e-9, 1-pLe1)))  … 期待値を保存する等価な1点
+ * 1-pLe1 < 1e-9 のマスは bust 項を省略する(ほぼ確実に誤差1以内)。
+ * 累積誤差は limit+1 のバケットへ飽和させる(それ以上の内訳はstar3判定に無関係なため)。
+ */
+export function composeStar3Prob(triples: Star3Triple[], limit: number): number {
+  const cap = Math.max(0, Math.floor(limit));
+  let dist = new Array<number>(cap + 2).fill(0);
+  dist[0] = 1;
+
+  for (const t of triples) {
+    const p0 = t.pZero;
+    const p1 = Math.max(0, t.pLe1 - t.pZero);
+    const pBust = 1 - t.pLe1;
+    const outcomes: { value: number; prob: number }[] = [
+      { value: 0, prob: p0 },
+      { value: 1, prob: p1 },
+    ];
+    if (pBust >= 1e-9) {
+      const bustValue = Math.max(2, Math.round((t.expErr - p1) / Math.max(1e-9, pBust)));
+      outcomes.push({ value: bustValue, prob: pBust });
+    }
+
+    const next = new Array<number>(cap + 2).fill(0);
+    for (let s = 0; s <= cap + 1; s++) {
+      const prob = dist[s];
+      if (prob === 0) continue;
+      for (const o of outcomes) {
+        const ns = Math.min(cap + 1, s + o.value);
+        next[ns] += prob * o.prob;
+      }
+    }
+    dist = next;
+  }
+
+  let total = 0;
+  for (let s = 0; s <= cap; s++) total += dist[s];
+  return total;
+}
+
+/**
+ * 「行動後盤面」(cells)を allocateAdjustBudget(ctx.adjustDp)で予算配分したうえで、
+ * 同じ per-cell 予算を pLe1表・pZero表それぞれに当てはめて★3確率を合成する(§10.8/v3a)。
+ * 予算配分そのものは expErr 表の貪欲割当(既存 allocateAdjustBudget)を流用する近似
+ * (「判断に迷った点」参照: 目的別に予算配分をやり直すのが理想だが、DPの割当ロジックは
+ * expErr の限界改善にのみ対応しているため)。
+ */
+function boardStarScore(
+  ctx: SolverContext,
+  cells: { r: number; shitsuke: boolean }[],
+  budget: number,
+  limit: number,
+): { pStar3: number; expErr: number } {
+  const { perCell, totalExpErr } = allocateAdjustBudget(ctx.adjustDp, cells, budget);
+
+  const triplesFor = (dp: typeof ctx.adjustDpPLe1): Star3Triple[] =>
+    cells.map((c, i) => {
+      const e = adjustLookup(dp, c.r, perCell[i], c.shitsuke);
+      return { expErr: e.expErr, pZero: e.pZero, pLe1: e.pLe1 };
+    });
+
+  const pStar3PLe1 = composeStar3Prob(triplesFor(ctx.adjustDpPLe1), limit);
+  const pStar3PZero = composeStar3Prob(triplesFor(ctx.adjustDpPZero), limit);
+
+  return { pStar3: Math.max(pStar3PLe1, pStar3PZero), expErr: totalExpErr };
+}
+
+/**
+ * 対象マスの真の同時分布(PMFの直積)で boardStarScore の期待値(pStar3・expErr とも)を計算する。
  * 対象マス数が JOINT_CELL_LIMIT 以下(たすき/ヨコ/滝=2、3マス系=最大3)の候補向け。
  */
-function jointExpectedScore(
+function jointStarScore(
   ctx: SolverContext,
   baseCells: { r: number; shitsuke: boolean }[],
   idxs: number[],
   pmfs: CellPmf[],
   budget: number,
-): number {
-  let total = 0;
+  limit: number,
+): { pStar3: number; expErr: number } {
+  let pStar3Total = 0;
+  let expErrTotal = 0;
   const k = idxs.length;
 
   function recurse(depth: number, prob: number, cells: { r: number; shitsuke: boolean }[]): void {
     if (depth === k) {
-      total += prob * allocateAdjustBudget(ctx.adjustDp, cells, budget).totalExpErr;
+      const { pStar3, expErr } = boardStarScore(ctx, cells, budget, limit);
+      pStar3Total += prob * pStar3;
+      expErrTotal += prob * expErr;
       return;
     }
     for (const pt of pmfs[depth]) {
@@ -729,61 +908,73 @@ function jointExpectedScore(
     }
   }
   recurse(0, 1, baseCells);
-  return total;
+  return { pStar3: pStar3Total, expErr: expErrTotal };
 }
 
 /**
- * 調整フェーズDPスコア(§10.4/2。小さいほど良い)。候補cの「行動後盤面」
- * (対象マスをPMFの出目で置換。縫い/ほぐし後はshitsuke=false)を allocateAdjustBudget に渡し、
- * その totalExpErr を返す。
+ * 調整フェーズ★3確率合成スコア(§10.8/v3a。pStar3は大きいほど良い・expErrは小さいほど良い)。
+ * 候補cの「行動後盤面」(対象マスをPMFの出目で置換。縫い/ほぐし後はshitsuke=false)を
+ * boardStarScore に渡し、その盤面のP(★3)(=pLe1表とpZero表それぞれの合成値の大きい方)と
+ * 期待誤差評価値合計を返す。
  *
  * 対象マスが JOINT_CELL_LIMIT 以下の候補は真の同時分布(直積)で厳密に計算する
  * (たすき/ヨコ/滝=2マス、3マス系=最大3マスなら直積は49〜343通りで許容範囲)。
  * 直積が大きい候補(巻きこみ=5マス)のみ、対象マスごとに「そのマス1つだけを出目で置換した
- * 盤面」の期待値を独立に計算し対象マス間で平均する近似を用いる(対話メモの単純化案)。
+ * 盤面」の値を独立に計算し対象マス間で平均する近似を用いる(旧dpScoreForCandidateと同じ方針)。
  * 対象マスが1つの候補(単マス系縫い・糸ほぐし)ではどちらの経路でも恒等になり厳密一致する。
  */
-function dpScoreForCandidate(ctx: SolverContext, state: GameState, candidate: Candidate): number {
+export function adjustScoreForCandidate(
+  ctx: SolverContext,
+  state: GameState,
+  candidate: Candidate,
+): { pStar3: number; expErr: number } {
   const budget = state.concentration - candidate.cost;
   const baseCells = currentAdjustCells(state);
+  const limit = star3ErrorLimit(ctx, state);
 
   if (candidate.skillId === 'shitsuke_gake') {
     // しつけがけ候補は対象の shitsuke=true(出目なし1通り)。r は不変。
     const t = candidate.targetCells[0];
     const idx = state.cells.findIndex((c) => c.r === t.r && c.c === t.c);
     const cells = baseCells.map((c, i) => (i === idx ? { r: c.r, shitsuke: true } : c));
-    return allocateAdjustBudget(ctx.adjustDp, cells, budget).totalExpErr;
+    return boardStarScore(ctx, cells, budget, limit);
   }
 
   const dist = actionDistribution(ctx.engine, state, ctx.config, candidate);
   if (dist.cells.length === 0) {
     // 対象マスを持たない候補(精神統一・シフト・無我等の支援/必殺): 盤面は不変。
-    return allocateAdjustBudget(ctx.adjustDp, baseCells, budget).totalExpErr;
+    return boardStarScore(ctx, baseCells, budget, limit);
   }
 
   const idxs = dist.cells.map((d) => state.cells.findIndex((c) => c.r === d.r && c.c === d.c));
 
   if (dist.cells.length <= JOINT_CELL_LIMIT) {
-    return jointExpectedScore(
+    return jointStarScore(
       ctx,
       baseCells,
       idxs,
       dist.cells.map((d) => d.pmf),
       budget,
+      limit,
     );
   }
 
-  let sum = 0;
+  let pStar3Sum = 0;
+  let expErrSum = 0;
   for (let k = 0; k < dist.cells.length; k++) {
     const idx = idxs[k];
-    let expForCell = 0;
+    let pStar3ForCell = 0;
+    let expErrForCell = 0;
     for (const { remaining, prob } of dist.cells[k].pmf) {
       const cells = baseCells.map((c, i) => (i === idx ? { r: remaining, shitsuke: false } : c));
-      expForCell += prob * allocateAdjustBudget(ctx.adjustDp, cells, budget).totalExpErr;
+      const { pStar3, expErr } = boardStarScore(ctx, cells, budget, limit);
+      pStar3ForCell += prob * pStar3;
+      expErrForCell += prob * expErr;
     }
-    sum += expForCell;
+    pStar3Sum += pStar3ForCell;
+    expErrSum += expErrForCell;
   }
-  return sum / dist.cells.length;
+  return { pStar3: pStar3Sum / dist.cells.length, expErr: expErrSum / dist.cells.length };
 }
 
 /**
@@ -835,7 +1026,14 @@ export function rankExpert(
       // C8: adjust かつ縫い系・ほぐしの許可候補が0件のときのみ(v1簡易)
       tier = analysis.phase === 'adjust' && sewOrRecoverPermitted === 0 ? 3 : null;
     }
-    if (tier !== null) tierByIndex.set(s.index, tier);
+    if (tier !== null) {
+      // §10.10/v3b: 支援・必殺にも回復影響スコアリングを適用する(待機手が実害対象を
+      // 放置するケースを正しく不利にする)。しつけがけ・支援・必殺はいずれも対象マスの
+      // r を変えない(または対象を持たない)ため dist は空になり、行動後盤面=現盤面になる。
+      const dist = actionDistribution(ctx.engine, state, ctx.config, s.candidate);
+      tier += regenImpactDelta(ctx, state, dist, regenPrediction);
+      tierByIndex.set(s.index, tier);
+    }
   }
 
   // finish: star3ならtier0、それ以外はtier98(フォールバック用の暫定値)
@@ -853,14 +1051,14 @@ export function rankExpert(
     result = scored.filter((s) => tierByIndex.has(s.index)).map((s) => ({ scored: s, tier: tierByIndex.get(s.index)! }));
   }
 
-  // adjustフェーズ: finish以外の許可候補(tierを持つ候補)のみDPスコアを事前計算する
-  // (許可候補に限定して計算量を抑える。§10.4/2)。
-  const dpScoreByIndex = new Map<number, number>();
+  // adjustフェーズ: finish以外の許可候補(tierを持つ候補)のみ★3確率合成スコアを事前計算する
+  // (許可候補に限定して計算量を抑える。§10.8/v3a)。
+  const adjustScoreByIndex = new Map<number, { pStar3: number; expErr: number }>();
   if (analysis.phase === 'adjust') {
     for (const s of scored) {
       if (s.index === finishScored.index) continue;
       if (!tierByIndex.has(s.index)) continue;
-      dpScoreByIndex.set(s.index, dpScoreForCandidate(ctx, state, s.candidate));
+      adjustScoreByIndex.set(s.index, adjustScoreForCandidate(ctx, state, s.candidate));
     }
   }
 
@@ -869,9 +1067,13 @@ export function rankExpert(
     const aIsFinish = a.scored.index === finishScored.index;
     const bIsFinish = b.scored.index === finishScored.index;
     if (analysis.phase === 'adjust' && !aIsFinish && !bIsFinish) {
-      const da = dpScoreByIndex.get(a.scored.index);
-      const db = dpScoreByIndex.get(b.scored.index);
-      if (da !== undefined && db !== undefined && da !== db) return da - db; // 小さいほど良い
+      const sa = adjustScoreByIndex.get(a.scored.index);
+      const sb = adjustScoreByIndex.get(b.scored.index);
+      if (sa !== undefined && sb !== undefined) {
+        // §10.8/v3a: pStar3降順 → expErr昇順 → (静的スコア降順・indexへフォールスルー)
+        if (sa.pStar3 !== sb.pStar3) return sb.pStar3 - sa.pStar3;
+        if (sa.expErr !== sb.expErr) return sa.expErr - sb.expErr;
+      }
     }
     if (b.scored.score !== a.scored.score) return b.scored.score - a.scored.score;
     return a.scored.index - b.scored.index;
