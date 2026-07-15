@@ -16,9 +16,17 @@ import type { EngineData, SimulatorConfig, SkillDef } from '../core';
 import { DEFAULT_ADJUST_DP_PARAMS } from './types';
 import type { AdjustDpParams, AdjustEntry } from './types';
 
+/**
+ * DPの目的関数(§10.10 A1)。目標が誤差0か誤差1以内かで最適手が分岐する
+ * (例: r=7はpZeroならねらい、pLe1ならぬう→ほぐし連鎖)ため、目的を選べるようにする。
+ * 既定は従来どおり expErr(期待誤差評価値の最小化)。
+ */
+export type AdjustObjective = 'expErr' | 'pZero' | 'pLe1';
+
 /** 調整DPテーブル本体(build結果)。 */
 export interface AdjustDp {
   params: AdjustDpParams;
+  objective: AdjustObjective;
   size: number; // rMax - rMin + 1
   /** entries[しつけ有無(0|1)][b*size + (r-rMin)] */
   entries: [AdjustEntry[], AdjustEntry[]];
@@ -31,6 +39,7 @@ export function buildAdjustDp(
   data: EngineData,
   config: SimulatorConfig,
   params: AdjustDpParams = DEFAULT_ADJUST_DP_PARAMS,
+  objective: AdjustObjective = 'expErr',
 ): AdjustDp {
   const { rMin, rMax, budgetMax, lockUpkeep } = params;
   const size = rMax - rMin + 1;
@@ -73,6 +82,18 @@ export function buildAdjustDp(
   };
 
   const clampIdx = (r: number): number => Math.max(rMin, Math.min(rMax, r)) - rMin;
+
+  // 目的別の改善判定。expErr は従来判定(厳密<)を維持。確率最大化系は浮動小数の
+  // 加算順差で同値が僅かにぶれるため ε 比較とし、同値なら expErr を副次基準にする
+  // (「同じ誤差1以内率なら期待誤差が小さい方」= 打ち止め継承を不当に上書きしない)。
+  const EPS = 1e-9;
+  const improves = (expE: number, pZero: number, pLe1: number, cur: AdjustEntry): boolean => {
+    if (objective === 'expErr') return expE < cur.expErr;
+    const primary = objective === 'pZero' ? pZero : pLe1;
+    const curPrimary = objective === 'pZero' ? cur.pZero : cur.pLe1;
+    if (primary > curPrimary + EPS) return true;
+    return Math.abs(primary - curPrimary) <= EPS && expE < cur.expErr - EPS;
+  };
 
   const entries: [AdjustEntry[], AdjustEntry[]] = [
     new Array(size * (budgetMax + 1)),
@@ -164,7 +185,7 @@ export function buildAdjustDp(
           const realCost = (skill.cost ?? 0) + lockUpkeep;
           if (realCost > b) continue;
           const { expE, pZero, pLe1 } = evalSew(skill, r, correction, b - realCost);
-          if (expE < best.expErr) {
+          if (improves(expE, pZero, pLe1, best)) {
             best = { expErr: expE, pZero, pLe1, firstOp: skill.id };
           }
         }
@@ -173,7 +194,7 @@ export function buildAdjustDp(
           const realCost = (hogushiOp.cost ?? 0) + lockUpkeep;
           if (realCost <= b) {
             const { expE, pZero, pLe1 } = evalHogushi(r, correction, b - realCost);
-            if (expE < best.expErr) {
+            if (improves(expE, pZero, pLe1, best)) {
               best = { expErr: expE, pZero, pLe1, firstOp: hogushiOp.id };
             }
           }
@@ -184,7 +205,7 @@ export function buildAdjustDp(
           const realCost = (shitsukeOp.cost ?? 0) + lockUpkeep;
           if (realCost <= b) {
             const entry = at(1, rIdx, b - realCost);
-            if (entry.expErr < best.expErr) {
+            if (improves(entry.expErr, entry.pZero, entry.pLe1, best)) {
               best = { expErr: entry.expErr, pZero: entry.pZero, pLe1: entry.pLe1, firstOp: shitsukeOp.id };
             }
           }
@@ -195,7 +216,7 @@ export function buildAdjustDp(
     }
   }
 
-  return { params, size, entries };
+  return { params, objective, size, entries };
 }
 
 /** 調整DPテーブルの参照(rMin/rMax・0〜budgetMax の域外はドメイン端にクランプ)。 */
