@@ -8,7 +8,7 @@
 //
 // 前提: state は beginTurn 済み(currentPower 確定)。乱数・Date は使用しない(決定的)。
 
-import { isTraitTurn, rainbowMode, starForError } from '../core';
+import { isTraitTurn, rainbowMode, sewDamage, starForError } from '../core';
 import type { Engine, GameParams, GameState, Power, SkillDef } from '../core';
 import { adjustLookup, allocateAdjustBudget } from './adjust-dp';
 import { actionDistribution } from './distribution';
@@ -71,6 +71,21 @@ export function analyzeBoard(_ctx: SolverContext, state: GameState): BoardAnalys
   if (weakLocked) phase = 'adjust'; // 弱パワー固定中は常に着地(調整)局面(A1)
 
   return { phase, bigCount, midCount, fineCount, overCount, weakLocked };
+}
+
+/**
+ * ターン単位のフェーズ判定(§10.16確認済み知見: フェーズは盤面全体ではなくターン単位
+ * (そのターンのパワー)で切り替わる。弱ターン=調整品質の作業、最強ターン=削り)。
+ * 実効パワー(effPower(state.currentPower))が'weak'かつ盤面に仕上げ対象
+ * (analysis.fineCount>0またはanalysis.overCount>0)があれば、盤面全体はまだcarve/approachでも
+ * 当該ターンはadjust品質で扱う。それ以外はanalysis.phase(盤面全体の局面)をそのまま返す。
+ * ロック計画系(tierForSeishin等)には使わない — ロックは盤面全体を見た計画レベルの判断のため
+ * (§10.16)。
+ */
+function turnPhase(state: GameState, analysis: BoardAnalysis): Phase {
+  const eff = effPower(state.currentPower);
+  if (eff === 'weak' && (analysis.fineCount > 0 || analysis.overCount > 0)) return 'adjust';
+  return analysis.phase;
 }
 
 // ---- パワースケジュール先読み(evaluate.ts の avgCoeff と同じ規則の小ヘルパ) ----
@@ -178,8 +193,19 @@ function pmfUpsideMass(pmf: CellPmf): number {
  * 上振れ(|remaining|≤1の確率質量 ≥ 1/7 − 1e-9)があることを結合条件として追加する。
  * 満たさないマスは通常床(overshootFloor)で判定する(マスごとに個別判定。carveフェーズの
  * regenCarveFloor経路は一切変更しない)。
+ *
+ * §10.17/v3c E2深置き保険: 非carveフェーズ分岐において、対象マスの行動前残り
+ * r ≥ approachMin(14)なら上振れ条件なしで regenOvershootFloor(−16)を適用する(床−16=
+ * 最悪でも再生1回で回収可能な深さ、の保険削り)。実例: しつけ×2の残201へ3倍@最強
+ * (出目{144..216}→残り{+57..−15})。「最大値216が出ても再生1回で回収可能(+204でも悪くない)」
+ * — 深置きの合法性は残り再生回数の予算で判定する、が実際の判断基準(§10.17訂正)。
+ * r<14 のマスは現行どおり(上振れ≥1/7 または押し出し帯の例外)。
+ * exportはテスト用(直接呼び出し): 行動前残り r≥carveMin(28)のマスを対象に含む候補は
+ * analyzeBoard 経由では常に盤面全体がcarveフェーズになり(bigCount≥1)、非carveフェーズ分岐を
+ * 通常の候補列挙経路では再現できない。ブーツ#13再現形(残201)はphase='approach'を明示して
+ * 直接呼び出すテストで検証する。
  */
-function passesE2(ctx: SolverContext, state: GameState, phase: Phase, candidate: Candidate, dist: ActionDistribution): boolean {
+export function passesE2(ctx: SolverContext, state: GameState, phase: Phase, candidate: Candidate, dist: ActionDistribution): boolean {
   const regenRelaxed = state.clothType === 'regen' && redCellCount(state) <= 1;
 
   // E2会心ターン緩和(§10.3簡易版): 虹布の会心ターン(消費増だが会心率+24%)は複数マス同時の
@@ -202,17 +228,25 @@ function passesE2(ctx: SolverContext, state: GameState, phase: Phase, candidate:
       floor = P.overshootFloor;
     } else if (phase === 'carve') {
       floor = P.regenCarveFloor; // carve経路は§10.10/v3bで一切変更しない
+    } else if (
+      (remainingBefore === 2 || remainingBefore === -2 || remainingBefore === 3) &&
+      pmfAt(dist, t.r, t.c) !== undefined &&
+      allWithinPushRange(pmfAt(dist, t.r, t.c)!, P.regenPushLo, P.regenPushShallowHi)
+    ) {
+      // 押し出し設計(§10.6)の例外: 押し出し対象値(+2/−2/+3)への縫いで全出目が押し出し帯
+      // (§10.18/v3cで浅押しまで拡張: [regenPushLo, regenPushShallowHi])に収まるものは
+      // 「悪い値を回復の再抽選圏へ意図的に深く送り込む」手であり、上振れ条件の対象外。
+      // 帯は regenPushLo(−17)まで届くため床も帯下限で判定する(§10.10)。
+      // 対象値の限定は v3cレビューL6(帯拡張をr不問にすると+1等への深縫いまで通る)への対処。
+      floor = P.regenPushLo;
+    } else if (remainingBefore >= P.approachMin) {
+      // §10.17/v3c E2深置き保険: 行動前残りがapproachMin以上のマスは上振れ条件なしで
+      // regenOvershootFloorまで許容する(残り再生回数の予算で深置きの合法性を判定)。
+      floor = P.regenOvershootFloor;
     } else {
       const pmf = pmfAt(dist, t.r, t.c);
       const hasUpside = pmf !== undefined && pmfUpsideMass(pmf) >= 1 / 7 - 1e-9;
-      if (!hasUpside && pmf !== undefined && allWithinPushRange(pmf, P.regenPushLo, P.regenPushHi)) {
-        // 押し出し設計(§10.6)の例外: 全出目が押し出し帯に収まる縫いは「悪い値を回復の
-        // 再抽選圏へ意図的に深く送り込む」手であり、上振れ条件の対象外。帯は regenPushLo(−17)
-        // まで届くため床も帯下限で判定する(上振れ条件で押し出しを封殺しない。§10.10)。
-        floor = P.regenPushLo;
-      } else {
-        floor = hasUpside ? P.regenOvershootFloor : P.overshootFloor;
-      }
+      floor = hasUpside ? P.regenOvershootFloor : P.overshootFloor;
     }
     floor -= critBonus;
 
@@ -323,12 +357,47 @@ function allWithinPushRange(pmf: CellPmf, lo: number, hi: number): boolean {
   return pmf.every((pt) => pt.remaining === 0 || (pt.remaining >= lo && pt.remaining <= hi));
 }
 
+// ライン複合押し出し(§10.18/#26)の対象になり得る「2マス系ライン」特技のtargetPattern集合。
+// たすき(diag_up2/diag_down2)・ヨコ/滝(row2/col2)がすべて該当する。
+const LINE2_TARGET_PATTERNS = new Set(['row2', 'col2', 'diag_up2', 'diag_down2']);
+
 /**
- * 再生布・押し出し(re-roll setup)ティア(§10.6/A1f)。
+ * 押し出しマス単体のティア判定(§10.6/B6の基本ティア + §10.18/v3cの浅押し加点)。
+ * 対象マスの行動前残りが +2/−2/+3 のいずれでもない、またはPMFが押し出し帯
+ * [regenPushLo, regenPushShallowHi] に収まらないなら null。
+ * 全出目が従来帯 [regenPushLo, regenPushHi] に収まれば加点なし(従来ティア: +2→1, −2→1.5, +3→2)。
+ * 一部が浅い側 (regenPushHi, regenPushShallowHi] に掛かる場合はティア+0.5(浅押し=回収後に
+ * 再処理が要る/対象化に失敗し得るため弱い。既定 regenPushShallowHi=−4)。
+ */
+function pushCellTier(r: number, pmf: CellPmf | undefined): number | null {
+  if (r !== 2 && r !== -2 && r !== 3) return null;
+  if (!pmf) return null;
+
+  let bonus: number;
+  if (allWithinPushRange(pmf, P.regenPushLo, P.regenPushHi)) {
+    bonus = 0;
+  } else if (allWithinPushRange(pmf, P.regenPushLo, P.regenPushShallowHi)) {
+    bonus = 0.5;
+  } else {
+    return null;
+  }
+
+  const base = r === 2 ? 1 : r === -2 ? 1.5 : 2; // r === 3
+  return base + bonus;
+}
+
+/**
+ * 再生布・押し出し(re-roll setup)ティア(§10.6/A1f。§10.18/v3cで浅押し・ライン複合を拡張)。
  * clothType==='regen' かつ 次の再生まで regenSteerWindow ターン以内のとき、単マス縫い候補で
- * 対象マスの行動前残りが +2/−2/+3 のいずれかで、かつ結果PMFが押し出し打点域に収まるものへ
- * 優先ティアを与える(+2が最優先≫−2>+3。B6)。−3以下は糸ほぐしで直す対象なので除外(B6)。
- * 既存のティア表より優先して適用する(§4: 押し出し・保護のtierを優先)。
+ * 対象マスの行動前残りが +2/−2/+3 のいずれかで、かつ結果PMFが押し出し打点域(浅押し込み)に
+ * 収まるものへ優先ティアを与える(+2が最優先≫−2>+3。B6)。−3以下は糸ほぐしで直す対象なので
+ * 除外(B6)。既存のティア表より優先して適用する(§4: 押し出し・保護のtierを優先)。
+ *
+ * §10.18/v3c ライン複合押し出し(#26。「同じ1手で押し出し+仕上げの複合」): skill.target が
+ * 2マス系ライン(row2/col2/diag_up2/diag_down2)の候補も対象にする。条件: 対象マスのうち
+ * ちょうど1マスが押し出しマス(上記の単マス判定を満たす)で、残りの対象マスは全出目が黄色内
+ * (|remaining|≤yellowRange。=仕上げ寄与)。ティアは押し出しマスの値に応じた基本ティア
+ * (浅押しなら+0.5)。
  *
  * exportはテスト用: 対象マスの行動前残りが≤0の単マス縫いは enumerateCandidates
  * (src/stats/actions.ts)側で「縫う価値なし」として候補自体が生成されないため(仕様上正しい
@@ -345,23 +414,37 @@ export function tierForRegenPush(
 ): number | null {
   if (state.clothType !== 'regen') return null;
   if (!prediction || prediction.turnsUntil > P.regenSteerWindow) return null;
-  if (skill.target !== 'single') return null;
 
   // 押し出しは既存の赤マスが0のときのみ(§10.6)。回復は4ターンに1マスしか再抽選できない
   // ため、赤の同時多発は回収不能の借金になる(v2ベンチ実測: 押し出し2連発で再生★3率が悪化)。
   // エキスパートの実手も「1つ押して直後の再生で回収」(烈風#31)。
   if (redCellCount(state) > 0) return null;
 
-  const t = candidate.targetCells[0];
-  const r = remainingAt(ctx.engine, state, t.r, t.c);
-  if (r !== 2 && r !== -2 && r !== 3) return null;
+  if (skill.target === 'single') {
+    const t = candidate.targetCells[0];
+    const r = remainingAt(ctx.engine, state, t.r, t.c);
+    return pushCellTier(r, pmfAt(dist, t.r, t.c));
+  }
 
-  const pmf = pmfAt(dist, t.r, t.c);
-  if (!pmf || !allWithinPushRange(pmf, P.regenPushLo, P.regenPushHi)) return null;
+  if (skill.target !== undefined && LINE2_TARGET_PATTERNS.has(skill.target) && candidate.targetCells.length === 2) {
+    const yellow = ctx.data.params.gauge.yellowRange;
+    let pushTier: number | null = null;
+    let pushCount = 0;
+    for (const t of candidate.targetCells) {
+      const r = remainingAt(ctx.engine, state, t.r, t.c);
+      const pmf = pmfAt(dist, t.r, t.c);
+      const tier = pushCellTier(r, pmf);
+      if (tier !== null) {
+        pushCount++;
+        pushTier = tier;
+      } else if (!pmf || !pmf.every((pt) => Math.abs(pt.remaining) <= yellow)) {
+        return null; // 押し出しマスでない対象は全出目が黄色内(仕上げ寄与)である必要がある
+      }
+    }
+    return pushCount === 1 ? pushTier : null; // ちょうど1マスが押し出しマスのときのみ許可
+  }
 
-  if (r === 2) return 1;
-  if (r === -2) return 1.5;
-  return 2; // r === 3
+  return null;
 }
 
 /** PMFの期待値(四捨五入)。§10.10/v3b: 「行動後盤面」の対象マス残りをこの値で置換する。 */
@@ -435,7 +518,8 @@ export function regenImpactDelta(
 function tierForHogushi(ctx: SolverContext, state: GameState, analysis: BoardAnalysis, candidate: Candidate): number | null {
   // adjust: 単マス系(ぬう/かげん/半かげん/2倍/3倍/ねらい/糸ほぐし)は一律tier1に単純化し、
   // 同tier内の順位付けはDPスコアに委ねる(§10.4/2)。r値によるティア分岐は不要。
-  if (analysis.phase === 'adjust') return 1;
+  // §10.16確認済み: フェーズはターン単位(そのターンの実効パワー)で切り替わる。
+  if (turnPhase(state, analysis) === 'adjust') return 1;
 
   const t = candidate.targetCells[0];
   const r = remainingAt(ctx.engine, state, t.r, t.c);
@@ -451,8 +535,12 @@ function tierForShitsuke(ctx: SolverContext, state: GameState, analysis: BoardAn
   const r = remainingAt(ctx.engine, state, t.r, t.c);
   const eff = effPower(state.currentPower);
 
-  // ① 最強化の仕込み
-  if (state.massCount === 4 && analysis.phase !== 'adjust' && r >= P.carveMin && (eff === 'weak' || eff === 'normal')) {
+  // しつけは(統一と同様)将来パワーへの仕込み=計画レベルの行動なので、ターン単位フェーズ
+  // (turnPhase)ではなく盤面全体フェーズ(analysis.phase)で判定する。弱ターンのtp=adjust昇格で
+  // ①が封じられ②のr≥5一律tier1がcarve盤面の中マスへ大量発動する誤動作の修正(v3cレビューM2)。
+  // ① 最強化の仕込み。§10.16確認済み: 「massCount===4限定」は誤り —
+  // マス数でなく巨大マス(shitsukeBigCellMin。既定200)の存在が条件。
+  if (analysis.phase !== 'adjust' && r >= P.shitsukeBigCellMin && (eff === 'weak' || eff === 'normal')) {
     return 2;
   }
   // ② adjust: ダメージなしなので常にE2安全。r≥5なら一律tier1(旧: r===7のみ廃止。
@@ -465,13 +553,22 @@ function tierForShitsuke(ctx: SolverContext, state: GameState, analysis: BoardAn
 }
 
 /**
- * ねらいぬい(C3。v1簡易判定)。E2は縫い系として別途適用済みの前提。
+ * ねらいぬい(C3)。E2は縫い系として別途適用済みの前提。
  * adjust局面は呼び出し側(tierForSewOrRecover)で単マス系の一律tier1に合流するため、
- * ここではcarve/approach向けの旧ゲート(4マス限定)のみを扱う(§10.4/2: 旧「4マス/光限定」は
- * adjustでは撤廃)。
+ * ここではcarve/approach向けのゲートのみを扱う。
+ * §10.16確認済み: 旧「massCount===4限定」を撤廃。対象マスの行動前残り r が
+ * minD ≤ r ≤ 2×minD(minD = sewDamage(12, 1, 実効パワー, マス補正))を満たせば tier2。
+ * この範囲では会心(発生率≈37.8%=ねらい倍率7)が発生しさえすれば2倍打が基準値頭打ちになり
+ * 誤差0にちょうど着地する(会心確定ではない。E1「16〜27」の隙間の実処理例)。
  */
-function tierForNerai(state: GameState): number | null {
-  if (state.massCount === 4) return 2;
+function tierForNerai(ctx: SolverContext, state: GameState, candidate: Candidate): number | null {
+  const t = candidate.targetCells[0];
+  const r = remainingAt(ctx.engine, state, t.r, t.c);
+  const cell = ctx.engine.cellAt(state, t.r, t.c);
+  const correction = cell ? ctx.engine.cellCorrection(state, cell) : 1;
+  const eff = effPower(state.currentPower);
+  const minD = sewDamage(12, 1, eff, correction);
+  if (r >= minD && r <= 2 * minD) return 2;
   return null;
 }
 
@@ -563,8 +660,10 @@ function tierForGeneralSew(
   const rs = (): number[] => candidate.targetCells.map((t) => remainingAt(engine, state, t.r, t.c));
   const r0 = (): number => remainingAt(engine, state, candidate.targetCells[0].r, candidate.targetCells[0].c);
   const atLeast2 = (min: number): boolean => rs().filter((r) => r >= min).length >= 2;
+  // §10.16確認済み: フェーズはターン単位(そのターンの実効パワー)で切り替わる。
+  const phase = turnPhase(state, analysis);
 
-  if (analysis.phase === 'adjust') {
+  if (phase === 'adjust') {
     // ティアは合法性ゲートに単純化(§10.4/2)。E2プルーンは呼び出し側で通過済みの前提。
     if (skill.target === 'single') {
       // 単マス系(ぬう/かげん/半かげん/2倍/3倍/ねらい)は一律tier1。同tier内はDPスコアで順位付け。
@@ -580,9 +679,12 @@ function tierForGeneralSew(
     return null;
   }
 
+  // phase!=='adjust' のときは turnPhase(state, analysis)===analysis.phase が常に成立する
+  // (turnPhaseは非adjust板面局面をそのまま通す)ため、tierForYokoTaki内部のanalysis.phase判定は
+  // ここで確定したphaseと一致する。
   if (YOKOTAKI_IDS.has(skill.id)) return tierForYokoTaki(engine, state, analysis, candidate, dist);
 
-  if (analysis.phase === 'carve') {
+  if (phase === 'carve') {
     switch (eff) {
       case 'strongest': {
         if ((LINE3_IDS.has(skill.id) || skill.id === 'makikomi_nui') && atLeast2(P.approachMin)) return 1;
@@ -608,7 +710,7 @@ function tierForGeneralSew(
     }
   }
 
-  if (analysis.phase === 'approach') {
+  if (phase === 'approach') {
     switch (eff) {
       case 'weak': {
         const r = r0();
@@ -760,9 +862,10 @@ function tierForSewOrRecover(
     } else {
       // ねらいぬいはcarve/approachでは専用ゲート(tierForNerai)、adjustではtierForGeneralSewの
       // 単マス系一律tier1(skill.target==='single')ルートに合流させる(旧「4マス/光限定」撤廃。§10.4/2)。
+      // §10.16確認済み: フェーズはターン単位(そのターンの実効パワー)で切り替わる。
       tier =
-        skill.id === 'nerai_nui' && analysis.phase !== 'adjust'
-          ? tierForNerai(state)
+        skill.id === 'nerai_nui' && turnPhase(state, analysis) !== 'adjust'
+          ? tierForNerai(ctx, state, candidate)
           : tierForGeneralSew(ctx, state, analysis, candidate, skill, dist);
     }
   }
@@ -978,6 +1081,70 @@ export function adjustScoreForCandidate(
 }
 
 /**
+ * §10.13 詰み盤面の宝くじモード: 呼び出し側(rankExpert)が「非finish許可候補のpStar3最大値が
+ * P.lotteryThreshold未満」(安全手が存在せず、以後はP(★3)のみを最大化する宝くじ工程になる盤面。
+ * 実例=光4#30〜34: 盤面{0,+1,−1,+2}・集中15で★3には+2マスを誤差0ちょうどにするしかない)
+ * と判定した場合にのみ呼ばれる。power_shift・nerai_nui のティアを次のとおり上書きする
+ * (他候補のティアには一切触れない=相対的に下がるのみ。通常時=この関数を呼ばない経路の
+ * 挙動は完全不変)。コストは engine.effectiveCost で取得する(虹布補正等をハードコードしない)。
+ *
+ * - power_shift: tier0。条件は「state.concentration ≥ シフト実効コスト」かつ
+ *   「(集中−シフトコスト) ≥ ねらい実効コスト(予算死守: シフト後もねらい1発が残る)
+ *   または 集中 < ねらい実効コスト(そもそも撃てない→自動回復釣り。集中≤10のターン開始時
+ *   10%で+30。SPEC§3.5)」。
+ * - nerai_nui: 使用可能(state.concentration ≥ ねらい実効コスト)なら、pStar3最大の単マス
+ *   ねらい候補にtier0.5(シフトが合法な間はシフトが上、シフトが予算死守で不可になったら
+ *   ねらいが先頭に来る)。
+ */
+function applyLotteryTiers(
+  ctx: SolverContext,
+  state: GameState,
+  scored: ScoredCandidate[],
+  skillMap: Map<string, SkillDef>,
+  tierByIndex: Map<number, number>,
+  adjustScoreByIndex: Map<number, { pStar3: number; expErr: number }>,
+): void {
+  const shiftSkill = skillMap.get('power_shift');
+  const neraiSkill = skillMap.get('nerai_nui');
+  const shiftCost = shiftSkill ? ctx.engine.effectiveCost(state, shiftSkill) : Infinity;
+  const neraiCost = neraiSkill ? ctx.engine.effectiveCost(state, neraiSkill) : Infinity;
+
+  // adjustScoreByIndexに無い候補(元々untieredだったpower_shift等)は必要になった時点で計算し、
+  // 以後のタイブレーク(rankExpert末尾のsort)でも使えるようキャッシュへ書き戻す。
+  const scoreOf = (s: ScoredCandidate): { pStar3: number; expErr: number } => {
+    let score = adjustScoreByIndex.get(s.index);
+    if (!score) {
+      score = adjustScoreForCandidate(ctx, state, s.candidate);
+      adjustScoreByIndex.set(s.index, score);
+    }
+    return score;
+  };
+
+  if (shiftSkill && state.concentration >= shiftCost) {
+    const shiftCandidate = scored.find((s) => s.candidate.skillId === 'power_shift');
+    const budgetOk = state.concentration - shiftCost >= neraiCost || state.concentration < neraiCost;
+    if (shiftCandidate && budgetOk) {
+      tierByIndex.set(shiftCandidate.index, 0);
+      scoreOf(shiftCandidate);
+    }
+  }
+
+  if (neraiSkill && state.concentration >= neraiCost) {
+    let best: ScoredCandidate | null = null;
+    let bestPStar3 = -Infinity;
+    for (const s of scored) {
+      if (s.candidate.skillId !== 'nerai_nui') continue;
+      const { pStar3 } = scoreOf(s);
+      if (pStar3 > bestPStar3) {
+        bestPStar3 = pStar3;
+        best = s;
+      }
+    }
+    if (best) tierByIndex.set(best.index, 0.5);
+  }
+}
+
+/**
  * エキスパートポリシーv2による候補ランキング(ソルバー拡張)。
  * ルールが許可/禁止とティアを決め、同ティア内は静的評価スコアでタイブレークする
  * (adjustフェーズのfinish以外の候補同士に限り、DPスコア(小さいほど良い。§10.4/2)でタイブレークする)。
@@ -1042,31 +1209,54 @@ export function rankExpert(
   tierByIndex.set(finishScored.index, finishTier);
 
   const nonFinishPermitted = [...tierByIndex.keys()].some((idx) => idx !== finishScored.index);
+  const fallback = !nonFinishPermitted && finishTier === 98;
+
+  // adjustフェーズ: finish以外の許可候補(tierを持つ候補)のみ★3確率合成スコアを事前計算する
+  // (許可候補に限定して計算量を抑える。§10.8/v3a)。
+  // §10.16確認済み: フェーズはターン単位(そのターンの実効パワー)で切り替わる。
+  const tp = turnPhase(state, analysis);
+  const adjustScoreByIndex = new Map<number, { pStar3: number; expErr: number }>();
+  if (tp === 'adjust' && !fallback) {
+    for (const s of scored) {
+      if (s.index === finishScored.index) continue;
+      if (!tierByIndex.has(s.index)) continue;
+      adjustScoreByIndex.set(s.index, adjustScoreForCandidate(ctx, state, s.candidate));
+    }
+
+    // §10.13 詰み盤面の宝くじモード判定: 非finish許可候補のpStar3最大値がlotteryThreshold未満
+    // なら、安全手が存在しないP(★3)最大化の宝くじ工程としてティアを上書きする(モード時のみ。
+    // 該当しなければ通常時の挙動を完全維持する)。
+    // ゲート追加(v3cレビュー): §10.13は盤面レベルの終盤概念なので analysis.phase==='adjust' に
+    // 限定する(弱ターンのturnPhase昇格ではrがDPドメイン(±30)をはみ出す巨大マス盤面で
+    // pStar3が無意味に低くなり誤発動する — H1)。また★3確定盤面(finishTier===0)では
+    // finishが正解なので発動しない(M4)。
+    let maxPStar3 = -Infinity;
+    for (const score of adjustScoreByIndex.values()) {
+      if (score.pStar3 > maxPStar3) maxPStar3 = score.pStar3;
+    }
+    if (
+      analysis.phase === 'adjust' &&
+      finishTier === 98 &&
+      adjustScoreByIndex.size > 0 &&
+      maxPStar3 < P.lotteryThreshold
+    ) {
+      applyLotteryTiers(ctx, state, scored, skillMap, tierByIndex, adjustScoreByIndex);
+    }
+  }
 
   let result: ExpertChoice[];
-  if (!nonFinishPermitted && finishTier === 98) {
+  if (fallback) {
     // 許可候補がfinish(未達)のみ: ルールの穴のフォールバック。全候補をtier99で返す。
     result = scored.map((s) => ({ scored: s, tier: 99 }));
   } else {
     result = scored.filter((s) => tierByIndex.has(s.index)).map((s) => ({ scored: s, tier: tierByIndex.get(s.index)! }));
   }
 
-  // adjustフェーズ: finish以外の許可候補(tierを持つ候補)のみ★3確率合成スコアを事前計算する
-  // (許可候補に限定して計算量を抑える。§10.8/v3a)。
-  const adjustScoreByIndex = new Map<number, { pStar3: number; expErr: number }>();
-  if (analysis.phase === 'adjust') {
-    for (const s of scored) {
-      if (s.index === finishScored.index) continue;
-      if (!tierByIndex.has(s.index)) continue;
-      adjustScoreByIndex.set(s.index, adjustScoreForCandidate(ctx, state, s.candidate));
-    }
-  }
-
   result.sort((a, b) => {
     if (a.tier !== b.tier) return a.tier - b.tier;
     const aIsFinish = a.scored.index === finishScored.index;
     const bIsFinish = b.scored.index === finishScored.index;
-    if (analysis.phase === 'adjust' && !aIsFinish && !bIsFinish) {
+    if (tp === 'adjust' && !aIsFinish && !bIsFinish) {
       const sa = adjustScoreByIndex.get(a.scored.index);
       const sb = adjustScoreByIndex.get(b.scored.index);
       if (sa !== undefined && sb !== undefined) {

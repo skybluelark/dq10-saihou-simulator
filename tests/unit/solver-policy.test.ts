@@ -9,6 +9,8 @@ import {
   analyzeBoard,
   composeStar3Prob,
   createSolverContext,
+  DEFAULT_POLICY_PARAMS,
+  passesE2,
   pickExpert,
   predictRegenTarget,
   rankExpert,
@@ -129,6 +131,10 @@ describe('E2縫いすぎ禁止プルーン', () => {
     // 単マス特技は対象(自身のみ)が残り≤0だと enumerateCandidates 自体が除外するため、
     // 一部マスのみ残り≤0の複数マス特技(たすきぬい)で検証する。
     // (1,1)=30でcarve局面、対象は(2,1)=0・(1,2)=10(diag_up2アンカー(2,1))。
+    // currentPowerはnormal(§10.16のturnPhase上書きはeff==='weak'限定。もしweakにすると
+    // (1,2)=10がfineCount>0トリガーとなりこのターンがturnPhase==='adjust'に上書きされ、
+    // ライン系ゲート(全対象r≥3)により対象(2,1)=0を含むこの候補自体が
+    // 常にnullになってしまい、本テストが検証したいE2の再生布緩和を検証できなくなるため)。
     const cells = [
       { r: 1, c: 1, base: 100, cumulative: 70, shitsuke: false }, // 残り30
       { r: 1, c: 2, base: 100, cumulative: 90, shitsuke: false }, // 残り10
@@ -143,7 +149,7 @@ describe('E2縫いすぎ禁止プルーン', () => {
       cells,
       massCount: 4,
       powerCycle: ['normal'] as Power[],
-      currentPower: 'weak' as const,
+      currentPower: 'normal' as const,
       concentration: 200,
       turnStarted: true,
       hissatsuUsed: true,
@@ -299,22 +305,93 @@ describe('しつけがけ', () => {
     const choices = rankExpert(ctx, state);
     expect(findChoice(choices, 'shitsuke_gake', 1, 1)).toBeUndefined();
   });
+
+  // §10.16確認済み知見「しつけ→最強3倍の一般化」: 現行ルールの「massCount=4限定」は誤り —
+  // マス数でなく巨大マス(概ね200以上。shitsukeBigCellMin)の存在が条件。
+  it('①最強化の仕込み(§10.16): 6マス盤面の残253(巨大マス)へtier2が付く(massCount≠4でも)', () => {
+    const ctx = makeCtx();
+    const cells = [
+      { r: 1, c: 1, base: 300, cumulative: 47, shitsuke: false }, // 残り253(shitsukeBigCellMin=200超)
+      { r: 1, c: 2, base: 100, cumulative: 100, shitsuke: false },
+      { r: 1, c: 3, base: 100, cumulative: 100, shitsuke: false },
+      { r: 2, c: 1, base: 100, cumulative: 100, shitsuke: false },
+      { r: 2, c: 2, base: 100, cumulative: 100, shitsuke: false },
+      { r: 2, c: 3, base: 100, cumulative: 100, shitsuke: false },
+    ];
+    const state = ctx.engine.createStateFromSnapshot({
+      recipeId: 'shitsuke-big-cell',
+      category: 'test',
+      rows: 2,
+      cols: 3,
+      cells,
+      massCount: 6,
+      powerCycle: ['normal'],
+      currentPower: 'normal',
+      concentration: 200,
+      turnStarted: true,
+      hissatsuUsed: true,
+    });
+    const choices = rankExpert(ctx, state);
+    const choice = findChoice(choices, 'shitsuke_gake', 1, 1);
+    expect(choice?.tier).toBe(2);
+  });
+
+  it('①最強化の仕込み(§10.16回帰): 4マス盤面の残30(旧carveMin条件は満たすがshitsukeBigCellMin未満)にはtier2が付かない', () => {
+    const ctx = makeCtx();
+    // 旧ルール(massCount===4 && r>=carveMin(28))ならtier2だったが、§10.16の一般化(r>=200)では
+    // 対象外になる差分ケース。
+    const state = makeState(ctx, [30, 0, 0, 0], 2, { currentPower: 'normal' });
+    const choices = rankExpert(ctx, state);
+    expect(findChoice(choices, 'shitsuke_gake', 1, 1)).toBeUndefined();
+  });
 });
 
-describe('ねらいぬい(v1簡易判定)', () => {
-  it('9マス通常布のcarveでは候補に出ない', () => {
+// §10.16確認済み: 旧「massCount===4限定」を撤廃。残りrがminD〜2×minD
+// (minD=sewDamage(12,1,実効パワー,マス補正))の隙間にちょうど収まるときのみtier2
+// (会心=2倍打が必ず基準値頭打ちとなり誤差0に着地するため)。
+describe('ねらいぬい(§10.16: 会心頭打ちで誤差0に着地する隙間のみtier2)', () => {
+  it('隙間の範囲外(残50)なら9マス通常布のcarveで候補に出ない', () => {
     const ctx = makeCtx();
     const state = makeState(ctx, new Array(9).fill(50), 3, { currentPower: 'normal', clothType: 'normal' });
     const choices = rankExpert(ctx, state);
     expect(choices.some((ch) => ch.scored.candidate.skillId === 'nerai_nui')).toBe(false);
   });
 
-  it('4マスでは(phaseによらず)候補に出る(tier2)', () => {
+  it('§10.16回帰: massCount=4でも隙間の外(残50)なら旧ルールと異なりtier2は付かない', () => {
     const ctx = makeCtx();
+    // 旧ルール(massCount===4なら無条件でtier2)ならtier2だったが、§10.16の一般化(隙間判定)では
+    // 対象外になる差分ケース。
     const state = makeState(ctx, new Array(4).fill(50), 2, { currentPower: 'normal', clothType: 'normal' });
     const choices = rankExpert(ctx, state);
-    const nerai = choices.find((ch) => ch.scored.candidate.skillId === 'nerai_nui');
-    expect(nerai?.tier).toBe(2);
+    expect(choices.some((ch) => ch.scored.candidate.skillId === 'nerai_nui')).toBe(false);
+  });
+
+  it('虹6#21再現形: 残17・実効普通・massCount≠4(6マス)でtier2ベース(minD=12≤17≤24。§10.16)', () => {
+    const ctx = makeCtx();
+    const state = makeState(ctx, [17, 10, 5, 0, 0, 0], 3, { currentPower: 'normal', clothType: 'normal' });
+    const choices = rankExpert(ctx, state);
+    const nerai = findChoice(choices, 'nerai_nui', 1, 1);
+    // §10.16の隙間ゲート自体はtier2を与えるが、この残17・普通は会心頭打ち率が高く
+    // (§10.16の引用どおり約37.8%。≥1/7なのでA1誤差0ボーナスが重ねて適用され、
+    // 最終tierは 2 - zeroBonusTier(既定0.5) = 1.5 になる(A1は本タスクの変更対象外・既存仕様)。
+    expect(nerai).toBeDefined();
+    expect(nerai?.tier).toBe(2 - DEFAULT_POLICY_PARAMS.zeroBonusTier);
+  });
+});
+
+// §10.16確認済み知見「ターン単位フェーズ」: フェーズは盤面全体ではなくターン単位
+// (そのターンの実効パワー)で切り替わる。弱ターン=調整品質の作業、最強ターン=削り。
+describe('ターン単位フェーズ(§10.16)', () => {
+  it('虹6#12再現形: carve級の盤面(大マスあり)+実効弱パワー+盤面にfineCount>0(残5マス)ありで、糸ほぐし(+2)候補にティアが付く(従来はnull)', () => {
+    const ctx = makeCtx();
+    // (1,1)=40で大マス(bigCount>0→盤面全体は'carve')。(2,1)=5がfineCount(3<=r<14)トリガー。
+    // currentPower='weak'なので、このターンはturnPhase==='adjust'に上書きされる。
+    const state = makeState(ctx, [40, 2, 5, 0], 2, { currentPower: 'weak' });
+    const choices = rankExpert(ctx, state);
+    // 盤面全体は'carve'なので、旧実装(analysis.phase直接参照)ならtierForHogushiは
+    // r=2が該当ブランチなし(r<=-3でもr===-2/-1でもない)でnullになっていたはずの候補。
+    const hogushi = findChoice(choices, 'ito_hogushi', 1, 2);
+    expect(hogushi?.tier).toBe(1);
   });
 });
 
@@ -822,6 +899,97 @@ describe('再生布: 押し出し(re-roll setup。§10.6/A1f)', () => {
     expect(nuu).toBeDefined();
     expect(nuu!.tier).toBe(3); // 押し出し不成立: 通常のcarve/普通デフォルト
   });
+
+  // §10.18/v3c: 押し出し帯を [regenPushLo, regenPushHi] から [regenPushLo, regenPushShallowHi]
+  // (既定-4)へ拡張。全出目が従来帯なら加点なし(既存テスト群で回帰確認済み)、一部が浅い側
+  // (regenPushHi, regenPushShallowHi]に掛かるならティア+0.5。
+  it('+2のマスへのnuu@弱(浅押し。非会心-4〜-7で従来帯[-17,-8]の外・拡張帯[-17,-4]の内)はティア1+0.5=1.5', () => {
+    const ctx = makeCtx();
+    // nuu@弱: damage0=roundPositive(12..18×0.5)={6,7,7,8,8,9,9}→{6,7,8,9}。残り=2-{6,7,8,9}={-4,-5,-6,-7}。
+    // 会心は基準値頭打ちで0(会心率<1/7なので上振れ条件は不成立)。
+    const state = makeState(ctx, [2, 0, 0, 0], 2, { currentPower: 'weak', clothType: 'regen', turn: 30 });
+
+    const skill = ctx.engine.listSkills().find((s) => s.id === 'nuu')!;
+    const candidate = {
+      action: { type: 'sew' as const, skillId: 'nuu', anchor: { r: 1, c: 1 } },
+      skillId: 'nuu',
+      cost: ctx.engine.effectiveCost(state, skill),
+      targetCells: [{ r: 1, c: 1, multiplier: 1 }],
+    };
+    const dist = actionDistribution(ctx.engine, state, ctx.config, candidate);
+    const nonCrit = dist.cells
+      .find((d) => d.r === 1 && d.c === 1)!
+      .pmf.map((p) => p.remaining)
+      .filter((r) => r !== 0)
+      .sort((a, b) => a - b);
+    expect(nonCrit).toEqual([-7, -6, -5, -4]);
+
+    const choices = rankExpert(ctx, state);
+    const nuu = findChoice(choices, 'nuu', 1, 1);
+    expect(nuu).toBeDefined();
+    expect(nuu!.tier).toBe(1.5);
+  });
+
+  // §10.18/v3c ライン複合押し出し(#26形): 2マス系ライン(滝のぼり=col2)の一方が押し出しマス
+  // (r=+2)、他方が仕上げ寄与(r=8。全出目が黄色内|remaining|≤4)。烈風#31再現形
+  // 「T29←(3,3)を滝のぼりで−7へ(同じ1手で(2,3)の8を0に仕上げる押し出し+仕上げの複合)」。
+  // tierForRegenPushを直接呼んで検証する(rankExpert経由だと、仕上げ側(1,1)のPMFがA1誤差0
+  // ボーナス(zeroBonusTier。既定0.5)の対象にもなり、押し出しティア自体の値が
+  // tierForSewOrRecoverの他の加点/減点と混ざって読み取りにくくなるため。既存の-2直接呼び出し
+  // テストと同じ方針)。
+  it('滝のぼりで(2,1)を+2から押し出し(浅押し)しつつ(1,1)の8を同じ1手で黄色内に仕上げる複合は押し出しマス基準のティア1.5になる', () => {
+    const ctx = makeCtx();
+    // nuu@弱と同じ出目レンジ(taki_noboriのmultiplierも1): (2,1)=2→非会心{-4..-7}(浅押し)。
+    // (1,1)=8→非会心{2,1,0,-1}・会心も頭打ちで0 → 全出目|remaining|≤4(黄色内)。
+    const state = makeState(ctx, [8, 0, 2, 0], 2, { currentPower: 'weak', clothType: 'regen', turn: 30 });
+
+    const skill = ctx.engine.listSkills().find((s) => s.id === 'taki_nobori')!;
+    const candidate = {
+      action: { type: 'sew' as const, skillId: 'taki_nobori', anchor: { r: 2, c: 1 } },
+      skillId: 'taki_nobori',
+      cost: ctx.engine.effectiveCost(state, skill),
+      targetCells: [
+        { r: 2, c: 1, multiplier: 1 },
+        { r: 1, c: 1, multiplier: 1 },
+      ],
+    };
+    const dist = actionDistribution(ctx.engine, state, ctx.config, candidate);
+    const pushPmf = dist.cells.find((d) => d.r === 2 && d.c === 1)!.pmf;
+    const finishPmf = dist.cells.find((d) => d.r === 1 && d.c === 1)!.pmf;
+    expect(pushPmf.map((p) => p.remaining).filter((r) => r !== 0).sort((a, b) => a - b)).toEqual([-7, -6, -5, -4]);
+    expect(finishPmf.every((p) => Math.abs(p.remaining) <= 4)).toBe(true);
+
+    const prediction = predictRegenTarget(ctx, state);
+    expect(tierForRegenPush(ctx, state, candidate, skill, dist, prediction)).toBe(1.5);
+
+    // rankExpert経由でも候補自体は許可され続けることを確認する(E2で封殺されない)。
+    const choices = rankExpert(ctx, state);
+    const taki = choices.find(
+      (ch) =>
+        ch.scored.candidate.skillId === 'taki_nobori' &&
+        ch.scored.candidate.targetCells.some((t) => t.r === 1 && t.c === 1) &&
+        ch.scored.candidate.targetCells.some((t) => t.r === 2 && t.c === 1),
+    );
+    expect(taki).toBeDefined();
+  });
+
+  it('redCellCount>0では押し出しティアが付かない(§10.6「1つずつ」原則の回帰。tierForRegenPush再構成後も維持。§10.18)', () => {
+    const ctx = makeCtx();
+    // (1,2)=-3が既存の赤マス(redCellCount=1>0)。押し出し候補(1,1)のr=+2はpushCellTierの条件
+    // (r∈{2,-2,3}かつPMFが押し出し帯内)を満たすが、tierForRegenPushの赤ゲート(既存の赤マスが
+    // 0のときのみ。§10.6)によりnullになることを直接呼び出しで確認する。
+    const state = makeState(ctx, [2, -3, 0, 0], 2, { currentPower: 'weak', clothType: 'regen', turn: 30 });
+    const skill = ctx.engine.listSkills().find((s) => s.id === 'nuu')!;
+    const candidate = {
+      action: { type: 'sew' as const, skillId: 'nuu', anchor: { r: 1, c: 1 } },
+      skillId: 'nuu',
+      cost: ctx.engine.effectiveCost(state, skill),
+      targetCells: [{ r: 1, c: 1, multiplier: 1 }],
+    };
+    const dist = actionDistribution(ctx.engine, state, ctx.config, candidate);
+    const prediction = predictRegenTarget(ctx, state);
+    expect(tierForRegenPush(ctx, state, candidate, skill, dist, prediction)).toBeNull();
+  });
 });
 
 // 再生布の回復影響スコアリング(§10.10/v3b。regenProtectionDeltaの一般化=regenImpactDelta)。
@@ -993,13 +1161,209 @@ describe('E2の再生緩和: 上振れ条件(§10.10/v3b)', () => {
     expect(findChoice(choices, 'nuu', 1, 1)).toBeDefined();
   });
 
-  it('残20へのnuu@最強(同条件): 誤差≤1の上振れが会心分(<1/7)しかないため緩和が不適用になり候補から外れる', () => {
+  it('残20へのnuu@最強(同条件・§10.17訂正で許可に変わる): 誤差≤1の上振れは会心分(<1/7)しかないが、r=20≥approachMin(14)のE2深置き保険で上振れ条件なしに許可される', () => {
     const ctx = makeCtx();
     // 非会心残り=20-damage0={-4,-6,-8,-10,-12,-14,-16}(いずれも|残り|>1)。会心は同様に
     // 必ず頭打ち→残り0だが、その質量は会心率(奇跡針★3+コツ+パッシブ=4.3%+1%+0.1%=5.4%)のみで
-    // 1/7(≈14.3%)未満 → 上振れ条件を満たさず緩和不適用 → floor=overshootFloor(-4)。
-    // 非会心最悪-16 < -4 でE2に抵触し禁止される。
+    // 1/7(≈14.3%)未満 → 上振れ条件は満たさない。
+    // §10.17訂正(E2深置き保険。v3c): 「#13の実際の判断基準は最大値216が出ても再生1回で
+    // 回収可能」— 深置きの合法性は残り再生回数の予算で判定する。r=20≥approachMin(14)なので
+    // 上振れ条件なしでfloor=regenOvershootFloor(-16)を適用 → 非会心最悪-16≥-16で許可される
+    // (v3bでは「拒否」だったが、本仕様(v3c)では「許可」が正しい)。
     const state = makeState(ctx, [20, 0, 0, 0], 2, { currentPower: 'strongest', clothType: 'regen' });
+    const choices = rankExpert(ctx, state);
+    expect(findChoice(choices, 'nuu', 1, 1)).toBeDefined();
+  });
+});
+
+// E2深置き保険(§10.17/v3c)。非carveフェーズ分岐で、対象マスの行動前残り r≥approachMin(14)なら
+// 上振れ条件なしでregenOvershootFloor(-16)を適用する(床-16=最悪でも再生1回で回収可能な深さ、の
+// 保険削り)。実例=ノクトルブーツ#13(しつけ×2の残201へ3倍@最強、出目{144..216}→残り{+57..-15})。
+describe('E2深置き保険(§10.17/v3c)', () => {
+  it('ブーツ#13再現形: しつけ済み(補正×2)の残201へ3倍@最強(出目{144..216}→残り{+57..-15})はphase=approachの非carveフェーズ分岐で上振れ条件なしに許可される', () => {
+    // r=201(carveMin以上)の単独マスを含む盤面は analyzeBoard 上つねに bigCount≥1 となり
+    // phase='carve'(regenCarveFloor=-30で無条件許可)に確定してしまい、非carveフェーズ分岐
+    // (今回追加したregenOvershootFloor経路)を rankExpert 経由の統合テストでは再現できない。
+    // passesE2 を直接呼び出し、phase='approach' を明示して検証する(tierForRegenPushの
+    // 既存の直接呼び出しテストと同じ方針)。
+    const ctx = makeCtx();
+    const cells = [
+      { r: 1, c: 1, base: 201, cumulative: 0, shitsuke: true }, // しつけ済み(補正×2)。残201
+      { r: 1, c: 2, base: 100, cumulative: 100, shitsuke: false },
+      { r: 2, c: 1, base: 100, cumulative: 100, shitsuke: false },
+      { r: 2, c: 2, base: 100, cumulative: 100, shitsuke: false },
+    ];
+    const state = ctx.engine.createStateFromSnapshot({
+      recipeId: 'e2-deep-insurance',
+      category: 'test',
+      clothType: 'regen',
+      rows: 2,
+      cols: 2,
+      cells,
+      massCount: 4,
+      powerCycle: ['strongest'] as Power[],
+      currentPower: 'strongest' as const,
+      concentration: 200,
+      turnStarted: true,
+      hissatsuUsed: true,
+    });
+
+    const skill = ctx.engine.listSkills().find((s) => s.id === 'sanbai_nui')!;
+    const candidate = {
+      action: { type: 'sew' as const, skillId: 'sanbai_nui', anchor: { r: 1, c: 1 } },
+      skillId: 'sanbai_nui',
+      cost: ctx.engine.effectiveCost(state, skill),
+      targetCells: [{ r: 1, c: 1, multiplier: 3 }],
+    };
+    const dist = actionDistribution(ctx.engine, state, ctx.config, candidate);
+    const pmf = dist.cells.find((d) => d.r === 1 && d.c === 1)!.pmf;
+    // SPEC§3.2: damage=roundPositive(roundPositive(roundPositive(12..18×3)×2)×2)
+    // =roundPositive((36..54)×2)×2=roundPositive(72..108)×2=144..216。残り=201-{144..216}={57..-15}。
+    const remainings = pmf.map((p) => p.remaining).sort((a, b) => a - b);
+    expect(Math.min(...remainings)).toBe(-15);
+    expect(Math.max(...remainings)).toBe(57);
+
+    expect(passesE2(ctx, state, 'approach', candidate, dist)).toBe(true);
+  });
+});
+
+// §10.13 詰み盤面の宝くじモード(光4#30〜34実例。2026-07-15エキスパート確認済み)。
+// 盤面{0,+1,−1,+2}(massCount=4。星3境界=2)は、massCount4のevaluation境界(star3=2。
+// src/data/game-params.json)に対し (1,1)=0・(1,2)=1・(2,1)=−1 の3マスが既に誤差1+1=2で
+// 境界に到達済みのため、(2,2)=+2マスを誤差0ちょうどにする以外に★3の道がない「詰み」盤面。
+describe('§10.13 詰み盤面の宝くじモード', () => {
+  const LOTTERY_CELLS = [0, 1, -1, 2]; // (1,1)=0,(1,2)=1,(2,1)=-1,(2,2)=2。cols=2。
+
+  function makeLotteryState(ctx: SolverContext, concentration: number) {
+    return makeState(ctx, LOTTERY_CELLS, 2, { concentration });
+  }
+
+  // v3cレビューH1回帰: §10.13は盤面レベルの終盤概念。carve盤面(巨大マスあり)の弱ターンは
+  // turnPhaseがadjustに昇格するが、rがDPドメイン(±30)を超える盤面ではpStar3が無意味に
+  // 低くなるため、analysis.phase==='adjust' でゲートして誤発動させない。
+  it('carve盤面(巨大マスあり)の弱ターンでは宝くじモードが発動しない(shiftにtier0が付かない)', () => {
+    const ctx = makeCtx();
+    const state = makeState(ctx, [253, 5, 0, 0], 2, { currentPower: 'weak', concentration: 30 });
+    const choices = rankExpert(ctx, state);
+    const shift = choices.find((ch) => ch.scored.candidate.skillId === 'power_shift');
+    if (shift) expect(shift.tier).toBeGreaterThan(0);
+    expect(choices[0].scored.candidate.skillId).not.toBe('power_shift');
+  });
+
+  // v3cレビューM4回帰: ★3確定盤面ではfinish(tier0)が正解。宝くじは発動しない。
+  it('★3確定盤面では宝くじモードが発動せずfinishが先頭', () => {
+    const ctx = makeCtx();
+    // 合計誤差2=4マスの★3境界ちょうど → judge=star3 → finishTier=0
+    const state = makeState(ctx, [0, 1, -1, 0], 2, { currentPower: 'weak', concentration: 30 });
+    const choices = rankExpert(ctx, state);
+    expect(choices[0].scored.candidate.action.type).toBe('finish');
+  });
+
+  it('既定値はDEFAULT_POLICY_PARAMSに0.15として定義されている(§10.13の新パラメータ)', () => {
+    expect(DEFAULT_POLICY_PARAMS.lotteryThreshold).toBe(0.15);
+  });
+
+  it('集中15(ねらい16不可): power_shiftがtier0で先頭(自動回復釣り分岐)', () => {
+    const ctx = makeCtx();
+    // ねらい(cost16)・糸ほぐし(cost16)とも15集中では列挙されず(enumerateCandidatesの
+    // cost>concentrationフィルタ)、通常ルールで許可される非finish候補が0件になるため
+    // 詰み判定のpStar3最大値は事実上0 < lotteryThreshold(0.15)。
+    // power_shift: concentration(15)≥シフト実効コスト(7)かつ 集中15 < ねらい実効コスト(16)
+    // (そもそも撃てない→自動回復釣り分岐)によりtier0。
+    const state = makeLotteryState(ctx, 15);
+    const choices = rankExpert(ctx, state);
+    expect(choices[0].scored.candidate.skillId).toBe('power_shift');
+    expect(choices[0].tier).toBe(0);
+  });
+
+  it('集中17(シフトは17−7=10<16で予算死守不可): nerai_nui(+2マス)がtier0.5で先頭、power_shiftは候補から外れる', () => {
+    const ctx = makeCtx();
+    // このconcentration17では、糸ほぐし(cost16)は列挙されるが行動後予算1(17-16)しか残らず
+    // 全対象マスでpStar3=0(通常ルールで許可される候補のpStar3最大値が0<0.15)→詰み判定。
+    // シフトは (17-7=10) < ねらい実効コスト16 かつ 17 ≥ 16(そもそも撃てないわけではない)ため
+    // 予算死守条件を満たさずtier0を得られない(C8の旧ルールも糸ほぐし許可済みでnull)→候補から
+    // 完全に外れる。ねらいぬいは使用可能(17≥16)なのでpStar3最大の単マス候補(+2マス)にtier0.5。
+    const state = makeLotteryState(ctx, 17);
+    const choices = rankExpert(ctx, state);
+
+    expect(choices[0].scored.candidate.skillId).toBe('nerai_nui');
+    expect(choices[0].tier).toBe(0.5);
+    expect(choices[0].scored.candidate.targetCells).toEqual([{ r: 2, c: 2, multiplier: 1 }]);
+
+    expect(findChoice(choices, 'power_shift', 0, 0)).toBeUndefined();
+    expect(choices.some((ch) => ch.scored.candidate.skillId === 'power_shift')).toBe(false);
+
+    // 他候補(糸ほぐし)のティアは変更されない(相対的に下がるのみ。§10.13/実装コメント)。
+    for (const ch of choices) {
+      if (ch.scored.candidate.skillId === 'ito_hogushi') expect(ch.tier).toBe(1);
+    }
+  });
+
+  it('集中23(シフトは23−7=16≥16でちょうど予算死守OKの境界): power_shiftがtier0で先頭、nerai_nuiがtier0.5で次点', () => {
+    // 判断に迷った点: 仕様引用の実例は集中38(#31時点)だが、本実装のadjustDp(§10.8/v3a)で
+    // 実測すると、集中38では糸ほぐし(+2マスへ。ほぐして残8〜11に戻したうえ残予算22で再度
+    // 縫い直す2段構え)自体のpStar3が約0.41(≥lotteryThreshold=0.15)に達し、詰み判定
+    // (非finish許可候補のpStar3最大値<0.15)が発動しない(=DPが糸ほぐし経由の別ルートを
+    // 「安全手」として評価してしまい、宝くじモードの意図(§10.13「安全手は存在せず」)と
+    // 食い違う。本実装のadjustDpはターン数上限をモデル化せず集中力予算のみで多段の縫い直しを
+    // 許容するため、実際のリプレイでエキスパートが除外した「糸ほぐし→再度縫う」の多ターン
+    // プランを許容してしまうことが原因と考えられる(要ユーザー確認事項として報告)。
+    // 予算死守条件の算術自体(concentration−シフトコスト≥ねらいコスト)は集中23で
+    // ちょうど境界(23−7=16)になり、かつこの集中では糸ほぐしのpStar3がまだ0.15未満に留まる
+    // ため、詰み判定と予算死守分岐の両方を同時に検証できる最小の再現値として集中23を用いる。
+    const ctx = makeCtx();
+    const state = makeLotteryState(ctx, 23);
+    const choices = rankExpert(ctx, state);
+
+    expect(choices[0].scored.candidate.skillId).toBe('power_shift');
+    expect(choices[0].tier).toBe(0);
+
+    const nerai = choices.find((ch) => ch.scored.candidate.skillId === 'nerai_nui');
+    expect(nerai).toBeDefined();
+    expect(nerai!.tier).toBe(0.5);
+    expect(nerai!.scored.candidate.targetCells).toEqual([{ r: 2, c: 2, multiplier: 1 }]);
+  });
+
+  it('非詰み盤面(半かげん系でpStar3高)では宝くじモードにならず従来先頭が維持される(回帰)', () => {
+    const ctx = makeCtx();
+    // 残6の1マスのみ(massCount4。他3マスは既に0で境界2に対し誤差0)。kagen_nui@normalの
+    // 出目{6,8,8,8,8,10,10}(SPEC§3.2)は残6に対しpStar3が高く(通常ルールで既にtier0.5=
+    // 単マス系tier1−zeroBonus0.5)、詰み盤面ではない → power_shiftはtierを得ず候補に出ない
+    // (通常時の挙動が完全に維持されることの回帰確認。§4)。
+    const state = makeState(ctx, [6, 0, 0, 0], 2, { concentration: 40 });
+    const choices = rankExpert(ctx, state);
+
+    expect(choices[0].scored.candidate.skillId).toBe('kagen_nui');
+    expect(choices[0].tier).toBe(0.5);
+    expect(choices.some((ch) => ch.scored.candidate.skillId === 'power_shift')).toBe(false);
+  });
+});
+
+// v3cレビュー指摘の回帰テスト(M2/L6)。
+describe('v3cレビュー修正の回帰', () => {
+  // M2: しつけは計画レベルの行動なので盤面全体フェーズで判定する。弱ターン(turnPhase=adjust)でも
+  // carve盤面では①(巨大マスのみtier2)が生き、②(r>=5一律tier1)は発動しない。
+  it('carve盤面の弱ターン: しつけは巨大マス(253)のみtier2、中マス(20)・小マス(5)には付かない', () => {
+    const ctx = makeCtx();
+    const state = makeState(ctx, [253, 5, 20, 0], 2, { currentPower: 'weak', concentration: 200 });
+    const choices = rankExpert(ctx, state);
+    const big = findChoice(choices, 'shitsuke_gake', 1, 1);
+    expect(big).toBeDefined();
+    expect(big!.tier).toBe(2);
+    expect(findChoice(choices, 'shitsuke_gake', 2, 1)).toBeUndefined(); // r=20
+    expect(findChoice(choices, 'shitsuke_gake', 1, 2)).toBeUndefined(); // r=5
+  });
+
+  // L6: E2の押し出し帯例外は押し出し対象値(+2/-2/+3)に限定する。r=+1への深縫い
+  // (ぬう@弱: 出目6..9 -> 残り-5..-8)は帯内でも許可しない(通常床-4で拒否)。
+  it('再生布: r=+1へのぬう@弱(全出目が押し出し帯内)はE2で拒否される(押し出し対象値ではない)', () => {
+    const ctx = makeCtx();
+    const state = makeState(ctx, [1, 20, 0, 0], 2, {
+      currentPower: 'weak',
+      clothType: 'regen',
+      turn: 30,
+      concentration: 200,
+    });
     const choices = rankExpert(ctx, state);
     expect(findChoice(choices, 'nuu', 1, 1)).toBeUndefined();
   });

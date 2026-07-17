@@ -100,14 +100,25 @@ export interface PolicyParams {
   midareStopLoss: number; // みだれ許可条件: 「2倍打の最大値が当たっても残りがこれ以上」または carve 中
                             // (既定-16=ほぐし1回で戻せる範囲。C1/E2)
   zeroBonusTier: number;  // PMFに誤差0(確率≥1/7)を含む縫いへのティア加点(既定0.5。A1)
+  shitsukeBigCellMin: number; // しつけ→最強3倍の一般化(§10.16確認済み)の対象下限(既定200)。
+                               // 現行の「massCount===4限定」は誤りで、マス数ではなく巨大マス
+                               // (概ね200以上)の存在が条件
   // ---- 再生布の再抽選ステアリング (§10.6/§5) ----
   regenPushLo: number;     // 押し出し後の残数値の下限(既定-17)。回復+12〜16で誤差圏に戻る設計
   regenPushHi: number;     // 同上限(既定-8)
+  regenPushShallowHi: number; // 浅押しまで含めた上限(既定-4。§10.18/v3c)。(regenPushHi, regenPushShallowHi]
+                               // に一部出目が掛かる押し出しはティア+0.5(浅い=回収後に再処理が要る/
+                               // 対象化に失敗し得るため弱い)。全出目が[regenPushLo, regenPushHi]内なら
+                               // 加点なし(従来ティア)。
   regenSteerWindow: number; // 押し出し・保護が意味を持つ「次の再生までのターン数」上限(既定2。
                             // 押してから回収までの空白ターンを最小化する — 烈風#31は2ターン前に押した)
   // ---- 再生布の回復影響スコアリング (§10.10/v3b。regenImpactDelta) ----
   regenImpactBad: number;  // 実害(仕上げ帯5/7/8/9が回復対象)のtier加点(既定+1。悪化)
   regenImpactGood: number; // 利得(悪い黄色値の再抽選・保険オーバーの回収)のtier加点(既定-0.5。改善)
+  // ---- 詰み盤面の宝くじモード (§10.13/v3c) ----
+  lotteryThreshold: number; // adjustフェーズで非finish許可候補のpStar3最大値がこれ未満なら
+                             // 「安全手が存在せず以後はP(★3)のみ最大化する宝くじ工程」と判定する
+                             // (既定0.15。光4#30〜34実例=即かげん約5.4%に対し宝くじ設計はP(★3)≈50%超)
 }
 
 export const DEFAULT_POLICY_PARAMS: PolicyParams = {
@@ -118,11 +129,14 @@ export const DEFAULT_POLICY_PARAMS: PolicyParams = {
   regenCarveFloor: -30,
   midareStopLoss: -16,
   zeroBonusTier: 0.5,
+  shitsukeBigCellMin: 200,
   regenPushLo: -17,
   regenPushHi: -8,
+  regenPushShallowHi: -4,
   regenSteerWindow: 2,
   regenImpactBad: 1,
   regenImpactGood: -0.5,
+  lotteryThreshold: 0.15,
 };
 
 /** 盤面分析結果(局面判定・マス分類)。 */
