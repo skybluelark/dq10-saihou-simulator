@@ -13,7 +13,9 @@ import type { RankedCandidate, SolverParams } from './types';
 // v4: エキスパートポリシーv3a(調整フェーズの同tier内タイブレークをexpErr最小化から
 //     ★3確率合成スコア(pStar3降順→expErr昇順)へ置換。SOLVER_POLICY.md §10.8)。ランキングが
 //     変わるため旧版priorとは合算不可。
-export const SOLVER_VERSION = 4;
+// v5: engine修正=しあげるターンもターン開始処理(再生回復等)が走る(SPEC v1.28)。
+//     ロールアウトのfinish結果が変わるため旧版priorとは合算不可。
+export const SOLVER_VERSION = 5;
 
 /** Wilson score interval(95%既定)。n=0 は {lo:0, hi:1}。 */
 export function wilson(n: number, wins: number, z = 1.96): { lo: number; hi: number } {

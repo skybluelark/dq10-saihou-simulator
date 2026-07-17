@@ -323,15 +323,20 @@ export class Engine {
       return { state: next, events };
     }
 
+    // ターン開始処理(？抽選・光発光・回復)。しあげるも通常の行動と同様、実行ターンの
+    // 開始処理の後に行われる(実機実測 2026-07-15: しあげるターンの再生回復が適用される
+    // — ノクトルブーツ★3誤差0リプレイが根拠。SPEC §3.5)。UIは beginTurn を先行呼び出し
+    // するため従来から正しく、runReplay(applyAction直列)のみが finish で開始処理を
+    // 飛ばしていた。finish は常に最終行動のため、この修正で過去リプレイの乱数整合は
+    // 崩れない(finishターンより後に乱数消費が存在しない)。
+    this.startTurn(next, rng, events);
+
     if (action.type === 'finish') {
       next.finished = true;
       const j = judgeState(next, this.params);
       events.push({ kind: 'finish', star: j.star, totalError: j.totalError });
       return { state: next, events };
     }
-
-    // ターン開始処理(？抽選・光発光・回復)
-    this.startTurn(next, rng, events);
 
     const skill = this.skillMap.get(action.skillId);
     if (!skill) throw new Error(`不明な特技: ${action.skillId}`);

@@ -16,7 +16,8 @@
     "recipes:export": "vite-node scripts/recipes-export.ts",
     "solver:bench": "vite-node scripts/solver-bench.ts",
     "solver:agreement": "vite-node scripts/solver-agreement.ts",
-    "solver:dp": "vite-node scripts/solver-dp-dump.ts"
+    "solver:dp": "vite-node scripts/solver-dp-dump.ts",
+    "replay:trace": "vite-node scripts/replay-trace.ts"
   },
   "dependencies": {
     "react": "^18.3.1",

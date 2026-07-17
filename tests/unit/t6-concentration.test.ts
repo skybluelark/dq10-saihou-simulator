@@ -105,7 +105,9 @@ describe('T6 不足時の挙動', () => {
       powerCycle: ['normal'],
       concentration: 0,
     });
-    const { state: s2, events } = engine.applyAction(state, { type: 'finish' }, config, new ScriptedRng([]));
+    // SPEC v1.28: しあげるターンもターン開始処理が先に走る。集中0(≤10)のため
+    // 自動回復判定の乱数を1つ消費する(0.99=不発)。
+    const { state: s2, events } = engine.applyAction(state, { type: 'finish' }, config, new ScriptedRng([0.99]));
     expect(s2.finished).toBe(true);
     expect(events.find((e) => e.kind === 'finish')).toBeDefined();
   });
