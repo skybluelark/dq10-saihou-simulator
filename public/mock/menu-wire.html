@@ -94,20 +94,31 @@
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     background: #cfc9bd; border: 2px dashed #9a9184; border-left: none;
     font-size: 12px; font-weight: bold; color: #3d382f; }
-  .vB2 .evBtn { position: absolute; width: 170px; height: 54px; border-radius: 12px; font-size: 15px;
-    flex-direction: column; gap: 2px; }
-  .vB2 .evA { left: 24px; bottom: 330px; }
-  .vB2 .evB { right: 24px; bottom: 258px; }
-  .vB2 .evC { left: 24px; bottom: 186px; }
-  .vB2 .profCirc { position: absolute; right: 26px; bottom: 356px; width: 70px; height: 70px; font-size: 10px; }
-  .vB2 .arcSwitch { position: absolute; left: -24px; right: -24px; bottom: -66px; height: 150px;
-    border-radius: 50% 50% 0 0 / 100% 100% 0 0; overflow: hidden;
-    border: 2px solid #9a9184; border-bottom: none; background: #e6e3dc; display: flex; }
-  .vB2 .arcHalf { flex: 1 1 0; border: none; background: transparent; color: #7a7264;
-    font-size: 13px; padding-top: 20px; display: flex; justify-content: center; align-items: flex-start; }
-  .vB2 .arcHalf.active { background: #cfc9bd; font-weight: bold; color: #3d382f; }
-  .vB2 .arcHalf + .arcHalf { border-left: 2px solid #9a9184; padding-right: 64px; } /* 右下の設定円とラベルの重なり回避 */
+  /* イベント側の中央特大ボタン(注記つき2行) */
+  .vB2 .evMain { flex-direction: column; gap: 2px; }
+  /* U型バー(下に凸=学マス同向): 巨大な円環(border)の下端の弧をコンテナでクリップして表現。
+     両端が側方へ上がり、左下・右下にコーナーボタンの余地が残る。左右半分ずつがモード切替のタップ領域 */
+  .vB2 .uBand { position: absolute; left: 0; right: 0; bottom: 0; height: 190px; overflow: hidden; }
+  .vB2 .uRing { position: absolute; left: 50%; transform: translateX(-50%); border-radius: 50%;
+    pointer-events: none; }
+  .vB2 .uFill { width: 600px; height: 600px; border: 76px solid #e6e3dc; bottom: 40px; }
+  .vB2 .uFill.halfL { clip-path: inset(0 50% 0 0); }
+  .vB2 .uFill.halfR { clip-path: inset(0 0 0 50%); }
+  .vB2 .uFill.active { border-color: #cfc9bd; }
+  .vB2 .uEdge { width: 604px; height: 604px; border: 2px solid #9a9184; bottom: 38px; }
+  .vB2 .uEdgeIn { width: 444px; height: 444px; border: 2px solid #9a9184; bottom: 118px; }
+  .vB2 .uDiv { position: absolute; left: 50%; margin-left: -1px; width: 2px; height: 76px; bottom: 40px;
+    background: #9a9184; }
+  .vB2 .uHit { position: absolute; bottom: 0; width: 50%; height: 190px; border: none;
+    background: transparent; display: flex; align-items: flex-end; justify-content: center;
+    padding-bottom: 88px; font-size: 13px; color: #7a7264; }
+  .vB2 .uHit.hitL { left: 0; }
+  .vB2 .uHit.hitR { right: 0; }
+  .vB2 .uHit.activeLbl { font-weight: bold; color: #3d382f; }
+  /* コーナーボタン: 右下=設定(共通)、左下=ランキング(イベント側のみ) */
   .vB2 .setCirc { position: absolute; right: 10px; bottom: 8px; width: 56px; height: 56px; z-index: 2;
+    font-size: 10px; }
+  .vB2 .rankCirc { position: absolute; left: 10px; bottom: 8px; width: 60px; height: 60px; z-index: 2;
     font-size: 10px; }
 
   /* ================= C案: 装飾ボタンのジグザグ配置(グラブル型) =================
@@ -177,20 +188,24 @@
         <div class="wbtn mainBtn">シミュレーター</div>
         <div class="wbtn dis circ circR">計算機<span class="note">(開発中)</span></div>
       </div>
-      <!-- イベント側: 優先順位なしの3モード等サイズ+プロフィール(イベント側のみ) -->
+      <!-- イベント側: シミュレーター側と同型(中央特大+円形)。コンテストにスプリントを統合検討 -->
       <div id="b2Event" hidden>
-        <div class="wbtn evBtn evA">コンテスト</div>
-        <div class="wbtn evBtn evB">スプリント</div>
-        <div class="wbtn evBtn evC">裁縫百万石<span class="note">(職人別枠)</span></div>
-        <div class="wbtn circ profCirc">プロフィール</div>
+        <div class="wbtn mainBtn evMain">コンテスト<span class="note">(スプリント統合検討)</span></div>
+        <div class="wbtn circ circR">裁縫百万石<span class="note">(職人別枠)</span></div>
+        <div class="wbtn circ rankCirc">ランキング</div>
       </div>
-      <!-- モード切替: 弧状バー自体を左右分割 -->
-      <div class="arcSwitch">
-        <button class="arcHalf" id="arcSim" type="button">シミュレーター</button>
-        <button class="arcHalf" id="arcEvent" type="button">イベント</button>
+      <!-- モード切替: 下に凸のU型バー(左右半分ずつがタップ領域)。左下・右下はコーナーボタン用に空く -->
+      <div class="uBand">
+        <div class="uRing uFill halfL" id="fillSim"></div>
+        <div class="uRing uFill halfR" id="fillEvent"></div>
+        <div class="uRing uEdge"></div>
+        <div class="uRing uEdgeIn"></div>
+        <div class="uDiv"></div>
+        <button class="uHit hitL" id="arcSim" type="button">シミュレーター</button>
+        <button class="uHit hitR" id="arcEvent" type="button">イベント</button>
       </div>
       <div class="wbtn dis circ setCirc">設定<span>(検討中)</span></div>
-      <div class="note bnote">B2案(改): 弧状バーの左右タップでモード切替 / リボン・ドットは位置の確保のみ / 設定=右下小円</div>
+      <div class="note bnote">B2案(改2): U型バー(下に凸)の左右タップでモード切替 / 右下=設定・左下=ランキング(イベント側のみ) / リボン・ドットは位置の確保のみ</div>
     </div>
   </div>
 
@@ -206,7 +221,7 @@
     </div>
   </div>
 
-  <div class="caption">メニュー画面ワイヤー比較モック v1.2(§5.11.1 再設計検討)— 箱と文字のみで配置・サイズ・余白を比較する段階(トーンB素材・配色は選定後に適用)/ 上部の切替ストリップはモック専用 / A=ポケポケ型・B=学マス型・C=グラブル型(1次選定: B第一候補・次点A・C不採用)/ **B2=B案+拡張込み(改)**: 最下部の弧状バー(U型)自体を左右分割し左=シミュレーター/右=イベントのタップでモード切替(背景中央を塞がない)、シミュレーター側=中央特大+左円リプレイ+右円計算機(リプレイ降格は撤回)、イベント側=優先順位なしの3モード(コンテスト/スプリント/裁縫百万石=職人別枠)を等サイズジグザグ+プロフィール円(イベント側のみ)、設定=右下小円、最上部中央ドット(職人4種)→その下に左上リボン(職人名)は位置の確保のみ(スワイプ動作なし)/ ハッシュ #a #b #b2 #c で直接表示可(既定=B2)/ 無効(開発中・検討中)は破線表現 / v1.2: 実機レビュー6点(ドット位置・弧状バー切替・設定右下・リプレイ復帰・イベント等サイズ・プロフィール片側)を反映</div>
+  <div class="caption">メニュー画面ワイヤー比較モック v1.3(§5.11.1 再設計検討)— 箱と文字のみで配置・サイズ・余白を比較する段階(トーンB素材・配色は選定後に適用)/ 上部の切替ストリップはモック専用 / A=ポケポケ型・B=学マス型・C=グラブル型(1次選定: B第一候補・次点A・C不採用)/ **B2=B案+拡張込み(改2)**: 最下部の**U型バー(下に凸=学マス同向。両端が側方へ上がり左下・右下が空く)**を左右分割し、左=シミュレーター/右=イベントのタップでモード切替(背景中央を塞がない)、シミュレーター側=中央特大+左円リプレイ+右円計算機、イベント側=同型で中央=コンテスト(**スプリント統合検討**)+円=裁縫百万石(職人別枠)、コーナー=右下設定(共通)・左下**ランキング**(イベント側のみ。プロフィールボタンは廃止し設定画面内へ)、最上部中央ドット(職人4種)→その下に左上リボン(職人名)は位置の確保のみ(スワイプ動作なし)/ ハッシュ #a #b #b2 #c で直接表示可(既定=B2)/ 無効(開発中・検討中)は破線表現 / v1.3: 2回目レビュー(U型の向き訂正・ランキング化・イベント側同型化)を反映</div>
 </div>
 
 <script>
@@ -225,15 +240,19 @@
   var initial = (location.hash || '#b2').slice(1);
   show(views[initial] ? initial : 'b2');
 
-  // ---- B2案(改): 弧状バーの左右分割によるモード切替(ワイヤー水準の表現) ----
+  // ---- B2案(改2): U型バー(下に凸)の左右分割によるモード切替(ワイヤー水準の表現) ----
   var b2Sim = document.getElementById('b2Sim');
   var b2Event = document.getElementById('b2Event');
   var arcSim = document.getElementById('arcSim');
   var arcEvent = document.getElementById('arcEvent');
+  var fillSim = document.getElementById('fillSim');
+  var fillEvent = document.getElementById('fillEvent');
   function b2Apply(mode) {
     var sim = mode === 'sim';
-    arcSim.classList.toggle('active', sim);
-    arcEvent.classList.toggle('active', !sim);
+    fillSim.classList.toggle('active', sim);
+    fillEvent.classList.toggle('active', !sim);
+    arcSim.classList.toggle('activeLbl', sim);
+    arcEvent.classList.toggle('activeLbl', !sim);
     b2Sim.hidden = !sim;
     b2Event.hidden = sim;
   }
