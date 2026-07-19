@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>トップ/メニュー画面モック</title>
+<title>トップ画面モック</title>
 <style>
   @font-face {
     font-family: 'GenEiLateMin';
@@ -24,21 +24,6 @@
     color: #fff;
   }
   .frame { width: 100%; max-width: 430px; min-height: 100dvh; display: flex; flex-direction: column; }
-
-  .adArea {
-    height: 50px; flex: 0 0 auto;
-    display: flex; align-items: center; justify-content: center;
-    background: rgba(60,40,10,.12);
-    border-bottom: 1px dashed rgba(60,40,10,.45); color: rgba(60,40,10,.55);
-    font-size: 12px; letter-spacing: .15em;
-  }
-
-  .win {
-    color: #fff;
-    border: 8px solid transparent;
-    border-image: url('./assets/panel_window.png') 96 fill / 10px stretch;
-    box-shadow: 0 3px 6px rgba(40,20,0,.35);
-  }
 
   /* ---- 標準文字スタイル(黒縁白抜き+ドロップシャドウ。2レイヤー方式・§4.9)。index.html と同一定義 ---- */
   .t2 { position: relative; display: inline-block; line-height: 1; }
@@ -66,73 +51,32 @@
     animation: tapBlink 1.8s ease-in-out infinite; }
   @keyframes tapBlink { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
 
-  /* ================= メニュー状態(§5.11) =================
-     背景は他画面と同じ通常背景(body の bg_main)。ヘッダー(◀もどる/画面タイトル)は
-     トップ相当の入口画面のため省略(§5.11に「画面タイトル」の指定なし。判断根拠は
-     キャプション参照)。4項目を縦積みで配置し、有効/無効を画像素材の見た目差で表現する。 */
-  .menuView { flex: 1 1 auto; display: flex; flex-direction: column; }
-  /* .topView/.menuView は display 指定を持つため、hidden 属性(UAの display:none)が
-     負けないよう明示的に上書きする(トップの下にメニューが二重表示されるのを防ぐ) */
+  /* トップ相当の入口画面のみを扱う(メニュー状態は menu.html へ分離・§5.11.1) */
   [hidden] { display: none !important; }
-  .menuMain { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center;
-    gap: 16px; padding: 24px 28px; }
-
-  .menuBtn { width: 100%; height: 54px; font-size: 16px; font-weight: bold;
-    letter-spacing: .25em; text-indent: .25em;
-    display: flex; align-items: center; justify-content: center;
-    background: none; border: 20px solid transparent; border-left-width: 14px; border-right-width: 14px;
-    filter: drop-shadow(0 2px 3px rgba(0,0,0,.35)); }
-  /* シミュレーター: 主要導線のため primary ボタン */
-  .menuBtn.primary { color: #3a2604;
-    border-image: url('./assets/btn_primary_normal.png') 50 fill / 20px 14px stretch; }
-  .menuBtn.primary:active { border-image-source: url('./assets/btn_primary_pressed.png'); }
-  /* リプレイ: 副次導線のため secondary ボタン */
-  .menuBtn.secondary { color: #fff;
-    border-image: url('./assets/btn_secondary_normal.png') 45 fill / 20px 14px stretch; }
-  .menuBtn.secondary:active { border-image-source: url('./assets/btn_secondary_pressed.png'); }
-  /* 計算機(開発中)・設定(検討中): 無効状態。btn_primary_disabled 素材でタップ不可を明示
-     (非表示にせず配置し、レイアウト確認できるようにする。§5.11) */
-  .menuBtn:disabled { color: rgba(58,38,4,.55);
-    border-image-source: url('./assets/btn_primary_disabled.png');
-    filter: none; }
 
   .caption { text-align: center; font-size: 10px; color: rgba(60,40,10,.55); padding: 2px 0 6px; flex: 0 0 auto; }
 </style>
 </head>
 <body>
 <div class="frame">
-  <!-- ---- トップ状態: フレーム全面に暫定背景(bg_title.png)。タップでメニューへ ---- -->
+  <!-- ---- トップ状態: フレーム全面に暫定背景(bg_title.png)。タップでメニュー画面(menu.html)へ ---- -->
   <div class="topView" id="topView">
     <span class="tapText t2 t2-white"><span class="t2s">tap to start</span><span class="t2f">tap to start</span></span>
   </div>
 
-  <!-- ---- メニュー状態: 通常背景+4項目縦積み ---- -->
-  <div class="menuView" id="menuView" hidden>
-    <div class="adArea">アンカー広告(全幅・高さ50〜90dp可変)</div>
-    <main class="menuMain">
-      <button class="menuBtn primary" type="button" onclick="location.href='./recipe-select.html'">シミュレーター</button>
-      <button class="menuBtn secondary" type="button" onclick="location.href='./replay-code.html'">リプレイ</button>
-      <button class="menuBtn" type="button" disabled>計算機(開発中)</button>
-      <button class="menuBtn" type="button" disabled>設定(検討中)</button>
-    </main>
-    <div class="caption">トップ/メニュー画面モック v1.1 — §5.11準拠。トップ=タイトル表示(暫定素材 bg_title.png・全面表示)+「tap to start」(2層文字・点滅)、フレーム内タップでメニューへ / タイトルロゴ文字は画像素材側に含める前提のため本モックではフォント合成しない(ロゴ画像は未作成) / メニュー4項目のうち「計算機(開発中)」「設定(検討中)」は非表示にせず無効ボタンとして配置(レイアウト確認用) / 実装ではトップの「tap to start」タップ時に全UI画像をプリロードする(トップ=ロード画面を兼ねる。§4.10)。本モックではプリロード処理は未実装 / URLハッシュ #menu 付きで開くとトップを飛ばしメニューを直接表示(他画面からの「もどる」用)</div>
-  </div>
+  <div class="caption">トップ画面モック v1.2 — §5.11/§5.11.1準拠。トップ=タイトル表示(暫定素材 bg_title.png・全面表示)+「tap to start」(2層文字・点滅)、フレーム内タップで正式メニュー画面(./menu.html)へ遷移 / タイトルロゴ文字は画像素材側に含める前提のため本モックではフォント合成しない(ロゴ画像は未作成) / 実装ではトップの「tap to start」タップ時に全UI画像をプリロードする(トップ=ロード画面を兼ねる。§4.10)。本モックではプリロード処理は未実装 / v1.2: メニュー状態を廃止し正式メニュー画面(menu.html)に分離。旧リンク互換のためURLハッシュ #menu 付きで開いた場合は即 menu.html へ置き換え遷移する</div>
 </div>
 
 <script>
   var topView = document.getElementById('topView');
-  var menuView = document.getElementById('menuView');
 
-  function showMenu() {
-    topView.hidden = true;
-    menuView.hidden = false;
-  }
-
-  // 他画面からの「もどる」用: #menu 付きで開いたらトップを飛ばして直接メニューを表示
+  // 旧リンク互換: #menu 付きで開かれた場合は即座に正式メニュー画面へ置き換え遷移
   if (location.hash === '#menu') {
-    showMenu();
+    location.replace('./menu.html');
   } else {
-    topView.addEventListener('click', showMenu);
+    topView.addEventListener('click', function () {
+      location.href = './menu.html';
+    });
   }
 </script>
 </body>
