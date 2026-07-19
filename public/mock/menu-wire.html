@@ -78,27 +78,37 @@
   .vB .arcNav .wbtn { width: 74px; height: 46px; font-size: 11px; flex-direction: column; gap: 1px; }
   .vB .bnote { position: absolute; left: 0; right: 0; bottom: 8px; z-index: 2; }
 
-  /* ================= B2案: B案+ロッカースイッチ(拡張込み) =================
-     B案のレイアウトを継承(.vB を併用)。追加要素:
-     ・左上リボン=職人名(職人スワイプ構想。位置の確保のみ)
-     ・上部中央ページドット=職人4種(位置の確保のみ)
-     ・ロッカースイッチ=主ボタン群(中央+左右円)を「シミュレーター系」⇔「イベント3モード」に切替
-     ・弧状ナビ=リプレイ(降格)・設定・プロフィール(将来枠)の3項目でモード共通 */
-  .vB2 .ribbon { position: absolute; left: 0; top: 8px; width: 132px; height: 40px; z-index: 1;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    background: #cfc9bd; border: 2px dashed #9a9184; border-left: none;
-    font-size: 12px; font-weight: bold; color: #3d382f; }
-  .vB2 .dots { position: absolute; top: 58px; left: 50%; transform: translateX(-50%); z-index: 1;
+  /* ================= B2案(改): B案+モード切替を弧状バーに統合 =================
+     B案のレイアウトを継承(.vB を併用)。§5.11.1 のB2改定6点を反映:
+     ・ページドット(職人4種)=最上部中央、その下に左上リボン=職人名(いずれも位置の確保のみ)
+     ・モード切替=最下部の弧状バー(U型)自体を左右分割(左=シミュレーター/右=イベント)。
+       背景画像の中央付近を塞がない
+     ・設定=右下の小円(弧状バーの外)
+     ・シミュレーター側=中央特大+左円リプレイ+右円計算機(リプレイの降格は撤回)
+     ・イベント側=優先順位なしの3モードを等サイズでジグザグ配置+プロフィール円(イベント側のみ) */
+  .vB2 .dots { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 1;
     display: flex; gap: 8px; }
   .vB2 .dot { width: 8px; height: 8px; border-radius: 50%; background: #b9b2a6; }
   .vB2 .dot.on { background: #6b6355; }
-  .vB2 .rocker { position: absolute; left: 50%; transform: translateX(-50%); bottom: 322px; z-index: 1;
-    display: flex; width: 184px; height: 40px; border: 2px solid #9a9184; border-radius: 20px;
-    overflow: hidden; background: #e6e3dc; }
-  .vB2 .rocker button { flex: 1 1 0; border: none; background: transparent; font-size: 12px; color: #7a7264; }
-  .vB2 .rocker button.active { background: #cfc9bd; font-weight: bold; color: #3d382f; }
-  .vB2 .arcNav { gap: 20px; }
-  .vB2 .arcNav .wbtn { width: 80px; }
+  .vB2 .ribbon { position: absolute; left: 0; top: 28px; width: 132px; height: 40px; z-index: 1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: #cfc9bd; border: 2px dashed #9a9184; border-left: none;
+    font-size: 12px; font-weight: bold; color: #3d382f; }
+  .vB2 .evBtn { position: absolute; width: 170px; height: 54px; border-radius: 12px; font-size: 15px;
+    flex-direction: column; gap: 2px; }
+  .vB2 .evA { left: 24px; bottom: 330px; }
+  .vB2 .evB { right: 24px; bottom: 258px; }
+  .vB2 .evC { left: 24px; bottom: 186px; }
+  .vB2 .profCirc { position: absolute; right: 26px; bottom: 356px; width: 70px; height: 70px; font-size: 10px; }
+  .vB2 .arcSwitch { position: absolute; left: -24px; right: -24px; bottom: -66px; height: 150px;
+    border-radius: 50% 50% 0 0 / 100% 100% 0 0; overflow: hidden;
+    border: 2px solid #9a9184; border-bottom: none; background: #e6e3dc; display: flex; }
+  .vB2 .arcHalf { flex: 1 1 0; border: none; background: transparent; color: #7a7264;
+    font-size: 13px; padding-top: 20px; display: flex; justify-content: center; align-items: flex-start; }
+  .vB2 .arcHalf.active { background: #cfc9bd; font-weight: bold; color: #3d382f; }
+  .vB2 .arcHalf + .arcHalf { border-left: 2px solid #9a9184; padding-right: 64px; } /* 右下の設定円とラベルの重なり回避 */
+  .vB2 .setCirc { position: absolute; right: 10px; bottom: 8px; width: 56px; height: 56px; z-index: 2;
+    font-size: 10px; }
 
   /* ================= C案: 装飾ボタンのジグザグ配置(グラブル型) =================
      横長のビジュアルバナー+菱形(45度回転)ボタンを斜めに流れる配置。
@@ -155,25 +165,32 @@
     </div>
   </div>
 
-  <!-- ================= B2案: B案+ロッカースイッチ(拡張込み) ================= -->
+  <!-- ================= B2案(改): B案+モード切替を弧状バーに統合 ================= -->
   <div class="view vB vB2" id="viewB2" hidden>
     <div class="gfx gfxFull">背景=グラフィック全面(職人別に差し替え)</div>
     <div class="layer">
-      <div class="ribbon">さいほう職人<span class="note">(リボン素材想定)</span></div>
       <div class="dots"><span class="dot on"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
-      <div class="rocker">
-        <button id="rockSim" type="button">シミュレーター</button>
-        <button id="rockEvent" type="button">イベント</button>
+      <div class="ribbon">さいほう職人<span class="note">(リボン素材想定)</span></div>
+      <!-- シミュレーター側: B案と同じ「中央特大+左右円」(リプレイは円に復帰) -->
+      <div id="b2Sim">
+        <div class="wbtn circ circL">リプレイ<span class="note">じゅもん</span></div>
+        <div class="wbtn mainBtn">シミュレーター</div>
+        <div class="wbtn dis circ circR">計算機<span class="note">(開発中)</span></div>
       </div>
-      <div class="wbtn circ circL" id="b2L">スプリント</div>
-      <div class="wbtn mainBtn" id="b2Main">シミュレーター</div>
-      <div class="wbtn dis circ circR" id="b2R">計算機<span class="note">(開発中)</span></div>
-      <div class="arcNav">
-        <div class="wbtn sub">リプレイ<span class="note">じゅもん</span></div>
-        <div class="wbtn dis">設定<span class="note">(検討中)</span></div>
-        <div class="wbtn dis">プロフィール<span class="note">(将来枠)</span></div>
+      <!-- イベント側: 優先順位なしの3モード等サイズ+プロフィール(イベント側のみ) -->
+      <div id="b2Event" hidden>
+        <div class="wbtn evBtn evA">コンテスト</div>
+        <div class="wbtn evBtn evB">スプリント</div>
+        <div class="wbtn evBtn evC">裁縫百万石<span class="note">(職人別枠)</span></div>
+        <div class="wbtn circ profCirc">プロフィール</div>
       </div>
-      <div class="note bnote">B2案: ロッカースイッチで主ボタン群を切替 / リボン・ドットは位置の確保のみ / 弧状ナビはモード共通</div>
+      <!-- モード切替: 弧状バー自体を左右分割 -->
+      <div class="arcSwitch">
+        <button class="arcHalf" id="arcSim" type="button">シミュレーター</button>
+        <button class="arcHalf" id="arcEvent" type="button">イベント</button>
+      </div>
+      <div class="wbtn dis circ setCirc">設定<span>(検討中)</span></div>
+      <div class="note bnote">B2案(改): 弧状バーの左右タップでモード切替 / リボン・ドットは位置の確保のみ / 設定=右下小円</div>
     </div>
   </div>
 
@@ -189,7 +206,7 @@
     </div>
   </div>
 
-  <div class="caption">メニュー画面ワイヤー比較モック v1.1(§5.11.1 再設計検討)— 箱と文字のみで配置・サイズ・余白を比較する段階(トーンB素材・配色は選定後に適用)/ 上部の切替ストリップはモック専用 / A=ポケポケ型・B=学マス型・C=グラブル型(1次選定: B第一候補・次点A・C不採用)/ **B2=B案+拡張込み**: ロッカースイッチで主ボタン群を「シミュレーター系(中央=シミュレーター・右円=計算機)」⇔「イベント3モード(中央=コンテスト・左=スプリント・右=裁縫百万石)」に切替、弧状ナビ=リプレイ(降格)・設定・プロフィール(将来枠)のモード共通3項目、左上リボン(職人名)と上部ドット(職人4種)は位置の確保のみ(スワイプ動作なし)/ ハッシュ #a #b #b2 #c で直接表示可(既定=B2)/ 無効(開発中・検討中)は破線表現</div>
+  <div class="caption">メニュー画面ワイヤー比較モック v1.2(§5.11.1 再設計検討)— 箱と文字のみで配置・サイズ・余白を比較する段階(トーンB素材・配色は選定後に適用)/ 上部の切替ストリップはモック専用 / A=ポケポケ型・B=学マス型・C=グラブル型(1次選定: B第一候補・次点A・C不採用)/ **B2=B案+拡張込み(改)**: 最下部の弧状バー(U型)自体を左右分割し左=シミュレーター/右=イベントのタップでモード切替(背景中央を塞がない)、シミュレーター側=中央特大+左円リプレイ+右円計算機(リプレイ降格は撤回)、イベント側=優先順位なしの3モード(コンテスト/スプリント/裁縫百万石=職人別枠)を等サイズジグザグ+プロフィール円(イベント側のみ)、設定=右下小円、最上部中央ドット(職人4種)→その下に左上リボン(職人名)は位置の確保のみ(スワイプ動作なし)/ ハッシュ #a #b #b2 #c で直接表示可(既定=B2)/ 無効(開発中・検討中)は破線表現 / v1.2: 実機レビュー6点(ドット位置・弧状バー切替・設定右下・リプレイ復帰・イベント等サイズ・プロフィール片側)を反映</div>
 </div>
 
 <script>
@@ -208,32 +225,20 @@
   var initial = (location.hash || '#b2').slice(1);
   show(views[initial] ? initial : 'b2');
 
-  // ---- B2案: ロッカースイッチによる主ボタン群の切替(ワイヤー水準の表現) ----
-  var b2Main = document.getElementById('b2Main');
-  var b2L = document.getElementById('b2L');
-  var b2R = document.getElementById('b2R');
-  var rockSim = document.getElementById('rockSim');
-  var rockEvent = document.getElementById('rockEvent');
+  // ---- B2案(改): 弧状バーの左右分割によるモード切替(ワイヤー水準の表現) ----
+  var b2Sim = document.getElementById('b2Sim');
+  var b2Event = document.getElementById('b2Event');
+  var arcSim = document.getElementById('arcSim');
+  var arcEvent = document.getElementById('arcEvent');
   function b2Apply(mode) {
     var sim = mode === 'sim';
-    rockSim.classList.toggle('active', sim);
-    rockEvent.classList.toggle('active', !sim);
-    // シミュレーター系: 中央=シミュレーター、右円=計算機(開発中)、左円は非表示(リプレイは弧状ナビへ降格済み)
-    // イベント3モード(常設): 中央=コンテスト、左円=スプリント、右円=裁縫百万石(職人別に変更可の枠)
-    b2L.hidden = sim;
-    if (sim) {
-      b2Main.textContent = 'シミュレーター';
-      b2R.innerHTML = '計算機<span class="note">(開発中)</span>';
-      b2R.classList.add('dis');
-    } else {
-      b2Main.textContent = 'コンテスト';
-      b2L.textContent = 'スプリント';
-      b2R.innerHTML = '裁縫百万石<span class="note">(職人別枠)</span>';
-      b2R.classList.remove('dis');
-    }
+    arcSim.classList.toggle('active', sim);
+    arcEvent.classList.toggle('active', !sim);
+    b2Sim.hidden = !sim;
+    b2Event.hidden = sim;
   }
-  rockSim.addEventListener('click', function () { b2Apply('sim'); });
-  rockEvent.addEventListener('click', function () { b2Apply('event'); });
+  arcSim.addEventListener('click', function () { b2Apply('sim'); });
+  arcEvent.addEventListener('click', function () { b2Apply('event'); });
   b2Apply('sim');
 </script>
 </body>
