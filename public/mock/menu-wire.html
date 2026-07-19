@@ -96,25 +96,17 @@
     font-size: 12px; font-weight: bold; color: #3d382f; }
   /* イベント側の中央特大ボタン(注記つき2行) */
   .vB2 .evMain { flex-direction: column; gap: 2px; }
-  /* U型バー(下に凸=学マス同向): 巨大な円環(border)の下端の弧をコンテナでクリップして表現。
-     両端が側方へ上がり、左下・右下にコーナーボタンの余地が残る。左右半分ずつがモード切替のタップ領域 */
-  .vB2 .uBand { position: absolute; left: 0; right: 0; bottom: 0; height: 190px; overflow: hidden; }
-  .vB2 .uRing { position: absolute; left: 50%; transform: translateX(-50%); border-radius: 50%;
-    pointer-events: none; }
-  .vB2 .uFill { width: 600px; height: 600px; border: 76px solid #e6e3dc; bottom: 40px; }
-  .vB2 .uFill.halfL { clip-path: inset(0 50% 0 0); }
-  .vB2 .uFill.halfR { clip-path: inset(0 0 0 50%); }
-  .vB2 .uFill.active { border-color: #cfc9bd; }
-  .vB2 .uEdge { width: 604px; height: 604px; border: 2px solid #9a9184; bottom: 38px; }
-  .vB2 .uEdgeIn { width: 444px; height: 444px; border: 2px solid #9a9184; bottom: 118px; }
-  .vB2 .uDiv { position: absolute; left: 50%; margin-left: -1px; width: 2px; height: 76px; bottom: 40px;
-    background: #9a9184; }
-  .vB2 .uHit { position: absolute; bottom: 0; width: 50%; height: 190px; border: none;
-    background: transparent; display: flex; align-items: flex-end; justify-content: center;
-    padding-bottom: 88px; font-size: 13px; color: #7a7264; }
-  .vB2 .uHit.hitL { left: 0; }
-  .vB2 .uHit.hitR { right: 0; }
-  .vB2 .uHit.activeLbl { font-weight: bold; color: #3d382f; }
+  /* U型バー(下に凸=学マス同向): SVGの弧で表現。細身(テキストが弧に沿ってはみ出さない程度)で
+     画面端まで伸ばさず、左右端=リプレイ円の位置(左右対称)。左右半分ずつがモード切替のタップ領域 */
+  .vB2 .uSvg { position: absolute; left: 0; bottom: 0; width: 100%; height: 190px; display: block; }
+  .vB2 .hband { fill: none; stroke-linecap: round; }
+  .vB2 .hOutline { stroke: #9a9184; stroke-width: 32; }
+  .vB2 .hFill { stroke: #e6e3dc; stroke-width: 28; }
+  .vB2 .hFill.active { stroke: #cfc9bd; }
+  .vB2 .hDiv { stroke: #9a9184; stroke-width: 2; }
+  .vB2 .hHit { fill: none; stroke: rgba(0,0,0,0); stroke-width: 48; pointer-events: stroke; cursor: pointer; }
+  .vB2 .uLbl { font-size: 13px; fill: #7a7264; }
+  .vB2 .uLbl.activeLbl { font-weight: bold; fill: #3d382f; }
   /* コーナーボタン: 右下=設定(共通)、左下=ランキング(イベント側のみ) */
   .vB2 .setCirc { position: absolute; right: 10px; bottom: 8px; width: 56px; height: 56px; z-index: 2;
     font-size: 10px; }
@@ -135,8 +127,9 @@
   .vC .diaS { left: 50%; top: 320px; margin-left: -34px; width: 68px; height: 68px; font-size: 11px; }
   .vC .cnote { position: absolute; left: 0; right: 0; bottom: 34px; }
 
-  .caption { position: relative; z-index: 3; text-align: center; font-size: 10px; color: #989082;
-    padding: 2px 8px 6px; flex: 0 0 auto; background: rgba(244,242,238,.9); }
+  /* 更新履歴・注記: フレーム外(画面外)に表示(§5.11.1-11)。実機ではスクロールで参照 */
+  .caption { width: 100%; max-width: 430px; text-align: center; font-size: 10px; color: #989082;
+    padding: 8px 8px 14px; }
 </style>
 </head>
 <body>
@@ -194,18 +187,23 @@
         <div class="wbtn circ circR">裁縫百万石<span class="note">(職人別枠)</span></div>
         <div class="wbtn circ rankCirc">ランキング</div>
       </div>
-      <!-- モード切替: 下に凸のU型バー(左右半分ずつがタップ領域)。左下・右下はコーナーボタン用に空く -->
-      <div class="uBand">
-        <div class="uRing uFill halfL" id="fillSim"></div>
-        <div class="uRing uFill halfR" id="fillEvent"></div>
-        <div class="uRing uEdge"></div>
-        <div class="uRing uEdgeIn"></div>
-        <div class="uDiv"></div>
-        <button class="uHit hitL" id="arcSim" type="button">シミュレーター</button>
-        <button class="uHit hitR" id="arcEvent" type="button">イベント</button>
-      </div>
+      <!-- モード切替: 下に凸のU型バー(SVG弧・細身)。左右半分ずつがタップ領域。
+           両端(x=26/349)=リプレイ円の位置で左右対称、画面端までは伸ばさない -->
+      <svg class="uSvg" viewBox="0 0 375 190" preserveAspectRatio="none">
+        <defs>
+          <path id="uPathL" d="M 26 95 A 264.6 264.6 0 0 0 187.5 150" />
+          <path id="uPathR" d="M 187.5 150 A 264.6 264.6 0 0 0 349 95" />
+        </defs>
+        <path class="hband hOutline" d="M 26 95 A 264.6 264.6 0 0 0 349 95" />
+        <path class="hband hFill" id="fillSim" d="M 26 95 A 264.6 264.6 0 0 0 187.5 150" />
+        <path class="hband hFill" id="fillEvent" d="M 187.5 150 A 264.6 264.6 0 0 0 349 95" />
+        <line class="hDiv" x1="187.5" y1="136" x2="187.5" y2="164" />
+        <text class="uLbl" id="lblSim" dominant-baseline="central"><textPath href="#uPathL" startOffset="50%" text-anchor="middle">シミュレーター</textPath></text>
+        <text class="uLbl" id="lblEvent" dominant-baseline="central"><textPath href="#uPathR" startOffset="50%" text-anchor="middle">イベント</textPath></text>
+        <path class="hHit" id="arcSim" d="M 26 95 A 264.6 264.6 0 0 0 187.5 150" />
+        <path class="hHit" id="arcEvent" d="M 187.5 150 A 264.6 264.6 0 0 0 349 95" />
+      </svg>
       <div class="wbtn dis circ setCirc">設定<span>(検討中)</span></div>
-      <div class="note bnote">B2案(改2): U型バー(下に凸)の左右タップでモード切替 / 右下=設定・左下=ランキング(イベント側のみ) / リボン・ドットは位置の確保のみ</div>
     </div>
   </div>
 
@@ -221,8 +219,10 @@
     </div>
   </div>
 
-  <div class="caption">メニュー画面ワイヤー比較モック v1.3(§5.11.1 再設計検討)— 箱と文字のみで配置・サイズ・余白を比較する段階(トーンB素材・配色は選定後に適用)/ 上部の切替ストリップはモック専用 / A=ポケポケ型・B=学マス型・C=グラブル型(1次選定: B第一候補・次点A・C不採用)/ **B2=B案+拡張込み(改2)**: 最下部の**U型バー(下に凸=学マス同向。両端が側方へ上がり左下・右下が空く)**を左右分割し、左=シミュレーター/右=イベントのタップでモード切替(背景中央を塞がない)、シミュレーター側=中央特大+左円リプレイ+右円計算機、イベント側=同型で中央=コンテスト(**スプリント統合検討**)+円=裁縫百万石(職人別枠)、コーナー=右下設定(共通)・左下**ランキング**(イベント側のみ。プロフィールボタンは廃止し設定画面内へ)、最上部中央ドット(職人4種)→その下に左上リボン(職人名)は位置の確保のみ(スワイプ動作なし)/ ハッシュ #a #b #b2 #c で直接表示可(既定=B2)/ 無効(開発中・検討中)は破線表現 / v1.3: 2回目レビュー(U型の向き訂正・ランキング化・イベント側同型化)を反映</div>
 </div>
+
+<!-- 更新履歴・注記はフレーム外(画面外)に置く: キャプション肥大でフレーム内レイアウトを圧迫しない(§5.11.1-11。実機ではスクロールで参照) -->
+<div class="caption">メニュー画面ワイヤー比較モック v1.4(§5.11.1 再設計検討)— 箱と文字のみで配置・サイズ・余白を比較する段階(トーンB素材・配色は選定後に適用)/ 上部の切替ストリップはモック専用 / A=ポケポケ型・B=学マス型・C=グラブル型(1次選定: B第一候補・次点A・C不採用)/ **B2=B案+拡張込み(改2)**: 最下部の**U型バー(下に凸=学マス同向・細身のSVG弧。両端=リプレイ円の位置で左右対称、画面端まで伸ばさない)**を左右分割し、左=シミュレーター/右=イベントのタップでモード切替(ラベルは弧に沿って円形配置)、シミュレーター側=中央特大+左円リプレイ+右円計算機、イベント側=同型で中央=コンテスト(**スプリント統合検討**)+円=裁縫百万石(職人別枠)、コーナー=右下設定(共通)・左下**ランキング**(イベント側のみ。プロフィールボタンは廃止し設定画面内へ)、最上部中央ドット(職人4種)→その下に左上リボン(職人名)は位置の確保のみ(スワイプ動作なし)/ ハッシュ #a #b #b2 #c で直接表示可(既定=B2)/ 無効(開発中・検討中)は破線表現 / v1.4: 3回目レビュー(U型バー細身化・端まで伸ばさない・更新履歴をフレーム外へ)を反映 / v1.3: 2回目レビュー(U型の向き訂正・ランキング化・イベント側同型化)を反映</div>
 
 <script>
   var views = { a: document.getElementById('viewA'), b: document.getElementById('viewB'), b2: document.getElementById('viewB2'), c: document.getElementById('viewC') };
@@ -240,19 +240,21 @@
   var initial = (location.hash || '#b2').slice(1);
   show(views[initial] ? initial : 'b2');
 
-  // ---- B2案(改2): U型バー(下に凸)の左右分割によるモード切替(ワイヤー水準の表現) ----
+  // ---- B2案(改2): U型バー(下に凸・SVG)の左右分割によるモード切替(ワイヤー水準の表現) ----
   var b2Sim = document.getElementById('b2Sim');
   var b2Event = document.getElementById('b2Event');
   var arcSim = document.getElementById('arcSim');
   var arcEvent = document.getElementById('arcEvent');
   var fillSim = document.getElementById('fillSim');
   var fillEvent = document.getElementById('fillEvent');
+  var lblSim = document.getElementById('lblSim');
+  var lblEvent = document.getElementById('lblEvent');
   function b2Apply(mode) {
     var sim = mode === 'sim';
     fillSim.classList.toggle('active', sim);
     fillEvent.classList.toggle('active', !sim);
-    arcSim.classList.toggle('activeLbl', sim);
-    arcEvent.classList.toggle('activeLbl', !sim);
+    lblSim.classList.toggle('activeLbl', sim);
+    lblEvent.classList.toggle('activeLbl', !sim);
     b2Sim.hidden = !sim;
     b2Event.hidden = sim;
   }
