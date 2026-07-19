@@ -96,7 +96,7 @@ export interface PolicyParams {
   approachMin: number; // アプローチ対象の下限(既定14)。carveMin未満でこれ以上があれば approach
   overshootFloor: number;      // 非会心最大ダメージで残りがこれ未満になる縫いは禁止(既定-4。E2)
   regenOvershootFloor: number; // 再生布の許容下限(既定-16。carve中は regenCarveFloor)
-  regenCarveFloor: number;     // 既定-30(C1)
+  regenCarveFloor: number;     // 既定-34(C1。§10.19⑤: 序盤削りの残4マスへの普通みだれ最悪-32を再生回収前提で許容)
   midareStopLoss: number; // みだれ許可条件: 「2倍打の最大値が当たっても残りがこれ以上」または carve 中
                             // (既定-16=ほぐし1回で戻せる範囲。C1/E2)
   zeroBonusTier: number;  // PMFに誤差0(確率≥1/7)を含む縫いへのティア加点(既定0.5。A1)
@@ -119,6 +119,13 @@ export interface PolicyParams {
   lotteryThreshold: number; // adjustフェーズで非finish許可候補のpStar3最大値がこれ未満なら
                              // 「安全手が存在せず以後はP(★3)のみ最大化する宝くじ工程」と判定する
                              // (既定0.15。光4#30〜34実例=即かげん約5.4%に対し宝くじ設計はP(★3)≈50%超)
+  seishinCarveTolerance: number; // 最強ロック判定の許容不足量(既定30≈効率の悪い手1回分の削り量。
+                                  // §10.19(b): 不足がこの程度なら統一7消費より安い)
+  // ---- 削りフェーズの集中効率化 (§10.19/v3d) ----
+  carveVarianceAverse: boolean; // §10.19回答(a)リスク予算: 成功見込みが高い基準設定(奇跡★3等)では
+                                // 削り中の分散を回避する(既定true。銅針等の低見込み設定でfalse運用)
+  midareReserveCellMax: number; // §10.19回答(a)-2: みだれ格下げターンの最強単発(3倍)はこの値以上の
+                                // 大マスにのみ加点する(それ未満の中小マスは以後のみだれ受け持ち予約)。既定120
 }
 
 export const DEFAULT_POLICY_PARAMS: PolicyParams = {
@@ -126,7 +133,7 @@ export const DEFAULT_POLICY_PARAMS: PolicyParams = {
   approachMin: 14,
   overshootFloor: -4,
   regenOvershootFloor: -16,
-  regenCarveFloor: -30,
+  regenCarveFloor: -34,
   midareStopLoss: -16,
   zeroBonusTier: 0.5,
   shitsukeBigCellMin: 200,
@@ -137,6 +144,9 @@ export const DEFAULT_POLICY_PARAMS: PolicyParams = {
   regenImpactBad: 1,
   regenImpactGood: -0.5,
   lotteryThreshold: 0.15,
+  seishinCarveTolerance: 30,
+  carveVarianceAverse: true,
+  midareReserveCellMax: 120,
 };
 
 /** 盤面分析結果(局面判定・マス分類)。 */

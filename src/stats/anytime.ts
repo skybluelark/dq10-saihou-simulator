@@ -15,7 +15,9 @@ import type { RankedCandidate, SolverParams } from './types';
 //     変わるため旧版priorとは合算不可。
 // v5: engine修正=しあげるターンもターン開始処理(再生回復等)が走る(SPEC v1.28)。
 //     ロールアウトのfinish結果が変わるため旧版priorとは合算不可。
-export const SOLVER_VERSION = 5;
+// v6: v3d 削りフェーズ集中効率化 §10.19(みだれ封じ帯リスク判定・carve同tier内の効率ソート・
+//     turnPhase弱ハイジャックのbigCountゲート等)。ランキングが変わるため旧版priorとは合算不可。
+export const SOLVER_VERSION = 6;
 
 /** Wilson score interval(95%既定)。n=0 は {lo:0, hi:1}。 */
 export function wilson(n: number, wins: number, z = 1.96): { lo: number; hi: number } {

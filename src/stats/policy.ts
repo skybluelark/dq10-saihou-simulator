@@ -81,10 +81,14 @@ export function analyzeBoard(_ctx: SolverContext, state: GameState): BoardAnalys
  * 当該ターンはadjust品質で扱う。それ以外はanalysis.phase(盤面全体の局面)をそのまま返す。
  * ロック計画系(tierForSeishin等)には使わない — ロックは盤面全体を見た計画レベルの判断のため
  * (§10.16)。
+ * §10.19⑤(v3d): 大マス(analysis.bigCount≥1。≥carveMinのマスが残る)間は、弱ターンでも
+ * この昇格を行わない — 「まだ十分に削れていない場合では、残4のマスがあっても普通みだれを
+ * 選択します」(集中効率悪化につながる1マス仕上げへ流れない。削り継続を優先)。
+ * approach盤面(bigCount=0)での既存の昇格挙動はそのまま維持する。
  */
 function turnPhase(state: GameState, analysis: BoardAnalysis): Phase {
   const eff = effPower(state.currentPower);
-  if (eff === 'weak' && (analysis.fineCount > 0 || analysis.overCount > 0)) return 'adjust';
+  if (eff === 'weak' && analysis.bigCount === 0 && (analysis.fineCount > 0 || analysis.overCount > 0)) return 'adjust';
   return analysis.phase;
 }
 
@@ -572,6 +576,24 @@ function tierForNerai(ctx: SolverContext, state: GameState, candidate: Candidate
   return null;
 }
 
+/**
+ * §10.19回答(a): このパワーのみだれ×2打(非会心最大)が「みだれ封じ帯」(0 < 残 ≤ 帯上限)の
+ * 中途半端な小マスを作り得るか。帯上限 = 強パワー×2打の非会心最大 + midareStopLoss(=54-16=38):
+ * この帯のマスは以後の強/普通みだれの最悪打で床を割り、みだれを封じる。会心は残り数値頭打ち
+ * (SPEC §3.4)のため最悪は常に非会心。布特性補正は近似で1固定。
+ */
+function midareX2CreatesBlocker(state: GameState, eff: Power): boolean {
+  const maxX2 = sewDamage(18, 2, eff, 1);
+  const bandHi = sewDamage(18, 2, 'strong', 1) + P.midareStopLoss;
+  for (const cell of state.cells) {
+    const r = cell.base - cell.cumulative;
+    if (r <= 0) continue;
+    const after = r - maxX2;
+    if (after > 0 && after <= bandHi) return true;
+  }
+  return false;
+}
+
 /** みだれぬい(B1〜B3/C1)。E2は対象外(専用のstop-loss判定を用いる)。 */
 function tierForMidare(state: GameState, analysis: BoardAnalysis, dist: ActionDistribution): number | null {
   const isRegen = state.clothType === 'regen';
@@ -596,17 +618,14 @@ function tierForMidare(state: GameState, analysis: BoardAnalysis, dist: ActionDi
     return isRegen ? 2 : null; // 再生布のみ許可
   }
 
-  // carve
+  // carve(§10.19①②: 基本はみだれ=集中効率首位。ただし×2打がみだれ封じ帯の小マスを
+  // 作り得るパワー(最強/強い)では、リスク回避設定時にtier2へ格下げ(回答(a):
+  // 封じられた場合の効率損失期待値 > 即時効率差)
   const eff = effPower(state.currentPower);
-  if (eff === 'weak') {
-    return 1;
+  if ((eff === 'strongest' || eff === 'strong') && P.carveVarianceAverse && midareX2CreatesBlocker(state, eff)) {
+    return 2;
   }
-  if (eff === 'strongest') {
-    const upcoming = scheduleForwardPowers(advanceSchedule(scheduleFromState(state)), 2);
-    const hasNormal = upcoming.some((p) => effPower(p) === 'normal');
-    return hasNormal ? 2 : 1; // B1温存
-  }
-  return 1; // strong(B1)/normal(B3)
+  return 1;
 }
 
 /**
@@ -688,7 +707,14 @@ function tierForGeneralSew(
     switch (eff) {
       case 'strongest': {
         if ((LINE3_IDS.has(skill.id) || skill.id === 'makikomi_nui') && atLeast2(P.approachMin)) return 1;
-        if (skill.id === 'sanbai_nui' && r0() >= P.carveMin) return 1;
+        if (skill.id === 'sanbai_nui' && r0() >= P.carveMin) {
+          // §10.19回答(a)-2: みだれ格下げターンの最強は単発高倍率を大マスへ。
+          // 中小マス(みだれ受け持ち予約)への単発は加点しない
+          if (P.carveVarianceAverse && midareX2CreatesBlocker(state, 'strongest') && r0() >= P.midareReserveCellMax) {
+            return 0.75;
+          }
+          return 1;
+        }
         return 3;
       }
       case 'strong': {
@@ -775,6 +801,45 @@ function nextCycleEntryAfterLock(state: GameState): Power | null {
   return state.powerCycle[(state.cycleIndex + 1) % state.powerCycle.length];
 }
 
+// パワー別削り能力の概算表(§10.19②実測: みだれ最強≈19>みだれ強≈14>…をベースにした
+// 非みだれ手ベースの概算。§10.19(b): 削り遅れ時はみだれ不能が通常のためみだれを含めない。
+// v3d校正対象。キーは scheduleForwardPowers が返す生の Power(effPower適用前。'critx2'/'unknown'
+// を'normal'に畳むと区別できなくなるため、生のcycleエントリのまま判定する)。
+const CARVE_ESTIMATE: Record<Power, number> = {
+  strongest: 90,
+  strong: 55,
+  normal: 30,
+  weak: 5,
+  critx2: 30,
+  unknown: 40,
+};
+
+/** 盤面の各マスの残り r について、r≥approachMin のマスの r 合計(§10.19(b)の「残り削り量」)。 */
+function remainingCarveAmount(state: GameState): number {
+  let total = 0;
+  for (const cell of state.cells) {
+    const r = cell.base - cell.cumulative;
+    if (r >= P.approachMin) total += r;
+  }
+  return total;
+}
+
+/**
+ * 次ターン以降、次の 'weak' エントリの手前まで(weak自身は含めない)のパワースケジュールを
+ * 歩き、パワーごとの削り能力概算(CARVE_ESTIMATE)を合計する(§10.19(b))。
+ * 歩行の上限は1周(powerCycle.length ターン)。1周内にweakが無ければ全周合計。
+ */
+function expectedCarveToWeakLanding(state: GameState): number {
+  const horizon = state.powerCycle.length > 0 ? state.powerCycle.length : 1;
+  const forward = scheduleForwardPowers(advanceSchedule(scheduleFromState(state)), horizon);
+  let total = 0;
+  for (const power of forward) {
+    if (power === 'weak') break;
+    total += CARVE_ESTIMATE[power];
+  }
+  return total;
+}
+
 /**
  * 精神統一(C7/A4①。§10.1/10.2でルール反転: 延長がデフォルト)。
  * 旧v1(fineCount+overCount≥2で発動)を廃止し、残り作業手数の見積もりベースへ置換する。
@@ -782,8 +847,21 @@ function nextCycleEntryAfterLock(state: GameState): Power | null {
 function tierForSeishin(state: GameState, analysis: BoardAnalysis): number | null {
   const unlocked = state.lockPowerRemaining === 0;
 
-  // 最強ロック/再ロック(§10.2): 未ロック、または残りロック2以下(旧: 残1限定を緩和)。
-  if (state.currentPower === 'strongest' && analysis.phase === 'carve' && (unlocked || state.lockPowerRemaining <= 2)) {
+  // 最強ロック/再ロック(§10.19③④(b)。エキスパート回答=仕様の正):
+  // ③ ぬいパワー2周目の最強までは統一しない(1周目の最強は対象外。turn>powerCycle.length)。
+  // ④ 更新は残1になってからのみ(旧: 残2以下の緩和は誤り — 2ターンごとの更新は
+  //   1回あたり1ターン分のロックを無駄に捨てる)。
+  // (b) 基準は「弱いの着地までに削れる量かどうか」。残り削り量(remainingCarveAmount)が
+  //   次のweak手前までの削り能力概算(expectedCarveToWeakLanding。みだれは含めない — 削り遅れは
+  //   通常みだれ不能に起因するため以後の見積りに含めるのは誤り)を上回る不足が
+  //   seishinCarveTolerance(≈効率の悪い手1回分)を超えるときのみ統一する。
+  if (
+    state.currentPower === 'strongest' &&
+    analysis.phase === 'carve' &&
+    (unlocked || state.lockPowerRemaining === 1) &&
+    state.turn > state.powerCycle.length &&
+    remainingCarveAmount(state) - expectedCarveToWeakLanding(state) > P.seishinCarveTolerance
+  ) {
     return 1;
   }
 
@@ -872,7 +950,10 @@ function tierForSewOrRecover(
   if (tier === null) return null;
 
   if (targetsGlowCell(state, candidate)) tier -= 1; // D1: 発光ターンの有効活用
-  if (hasZeroBonus(dist)) tier -= P.zeroBonusTier; // A1: 誤差0ボーナス
+  // A1: 誤差0ボーナス。carve中は適用しない(§10.19②⑤/v3d: 削り中の1マス仕上げ狙いは
+  // 集中効率悪化。実盤面T2では残90ちょうどへの3倍がこのボーナスで予約規則(0.75)を
+  // 逆転し、エキスパートが悪手とした最小マスへの3倍を再選択してしまう)
+  if (turnPhase(state, analysis) !== 'carve' && hasZeroBonus(dist)) tier -= P.zeroBonusTier;
   // 再生布の回復影響スコアリング(§10.10/v3b)。押し出し・保護は既存ルールより優先(§4)なので、
   // 押し出しティアの上からもさらに加算する(実害/利得は両立時も重ねて適用する)。
   tier += regenImpactDelta(ctx, state, dist, prediction);
@@ -1164,9 +1245,27 @@ export function rankExpert(
   const skillMap = new Map(ctx.engine.listSkills().map((s) => [s.id, s]));
   const tierByIndex = new Map<number, number>();
   const regenPrediction = predictRegenTarget(ctx, state); // §10.6: 再生布の再抽選ステアリング
+  // §10.16確認済み: フェーズはターン単位(そのターンの実効パワー)で切り替わる。Pass1の削り効率
+  // 計算(§10.19①/v3d)で使うため、tierByIndex確定より前に計算しておく(純関数なので挙動不変)。
+  const tp = turnPhase(state, analysis);
+
+  // マス別ライン被覆数(§10.19回答(a)-2/v3d): そのマスを対象に含む「2マス以上のsew候補」の数。
+  // carveフェーズの単発縫い同士のタイブレーク(後で多マスに巻き込みにくい位置を優先)に使う。
+  const coverage = new Map<string, number>();
+  for (const s of scored) {
+    if (s.candidate.targetCells.length < 2) continue;
+    for (const t of s.candidate.targetCells) {
+      const key = `${t.r},${t.c}`;
+      coverage.set(key, (coverage.get(key) ?? 0) + 1);
+    }
+  }
 
   // Pass1: 縫い系・糸ほぐし(ぬいパワーシフトの可否判定に必要なため先に確定させる)
   let sewOrRecoverPermitted = 0;
+  // carveフェーズの削り効率(§10.19①/v3d): 許可された sew/recover 候補について
+  // Σ_対象マス Σ_pmf p×(max(0,r_before)−max(0,remaining_after)) ÷ max(cost,1) を保存する。
+  // 同tier内のタイブレークに使う(rankExpert末尾のsort)。
+  const carveEffByIndex = new Map<number, number>();
   for (const s of scored) {
     if (s.candidate.action.type === 'finish') continue;
     const skill = skillMap.get(s.candidate.skillId!);
@@ -1175,6 +1274,18 @@ export function rankExpert(
     if (tier !== null) {
       tierByIndex.set(s.index, tier);
       sewOrRecoverPermitted++;
+      if (tp === 'carve') {
+        const dist = actionDistribution(ctx.engine, state, ctx.config, s.candidate);
+        let eff = 0;
+        for (const cellDist of dist.cells) {
+          const cell = ctx.engine.cellAt(state, cellDist.r, cellDist.c);
+          const rBefore = cell ? cell.base - cell.cumulative : 0;
+          for (const pt of cellDist.pmf) {
+            eff += pt.prob * (Math.max(0, rBefore) - Math.max(0, pt.remaining));
+          }
+        }
+        carveEffByIndex.set(s.index, eff / Math.max(s.candidate.cost, 1));
+      }
     }
   }
 
@@ -1212,9 +1323,7 @@ export function rankExpert(
   const fallback = !nonFinishPermitted && finishTier === 98;
 
   // adjustフェーズ: finish以外の許可候補(tierを持つ候補)のみ★3確率合成スコアを事前計算する
-  // (許可候補に限定して計算量を抑える。§10.8/v3a)。
-  // §10.16確認済み: フェーズはターン単位(そのターンの実効パワー)で切り替わる。
-  const tp = turnPhase(state, analysis);
+  // (許可候補に限定して計算量を抑える。§10.8/v3a)。tp は Pass1 の前で計算済み(§10.19/v3d)。
   const adjustScoreByIndex = new Map<number, { pStar3: number; expErr: number }>();
   if (tp === 'adjust' && !fallback) {
     for (const s of scored) {
@@ -1263,6 +1372,25 @@ export function rankExpert(
         // §10.8/v3a: pStar3降順 → expErr昇順 → (静的スコア降順・indexへフォールスルー)
         if (sa.pStar3 !== sb.pStar3) return sb.pStar3 - sa.pStar3;
         if (sa.expErr !== sb.expErr) return sa.expErr - sb.expErr;
+      }
+    }
+    if (tp === 'carve' && !aIsFinish && !bIsFinish) {
+      const ea = carveEffByIndex.get(a.scored.index) ?? 0;
+      const eb = carveEffByIndex.get(b.scored.index) ?? 0;
+      if (ea !== eb) return eb - ea; // 効率降順(§10.19①)
+      // 同効率の単発縫い同士: ライン被覆昇順 → 残り数値降順(§10.19回答(a)-2:
+      // 単発は「後で多マスに巻き込みにくい位置」の大きいマスへ)
+      if (a.scored.candidate.targetCells.length === 1 && b.scored.candidate.targetCells.length === 1) {
+        const at = a.scored.candidate.targetCells[0];
+        const bt = b.scored.candidate.targetCells[0];
+        const covA = coverage.get(`${at.r},${at.c}`) ?? 0;
+        const covB = coverage.get(`${bt.r},${bt.c}`) ?? 0;
+        if (covA !== covB) return covA - covB;
+        const cellA = ctx.engine.cellAt(state, at.r, at.c);
+        const cellB = ctx.engine.cellAt(state, bt.r, bt.c);
+        const rA = cellA ? cellA.base - cellA.cumulative : 0;
+        const rB = cellB ? cellB.base - cellB.cumulative : 0;
+        if (rA !== rB) return rB - rA;
       }
     }
     if (b.scored.score !== a.scored.score) return b.scored.score - a.scored.score;
