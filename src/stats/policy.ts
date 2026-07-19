@@ -688,6 +688,112 @@ function tierForMidare(state: GameState, analysis: BoardAnalysis, dist: ActionDi
 }
 
 /**
+ * §10.21②: アプローチ開始=「(現在パワーで)みだれが終わった」時点かどうかの判定。
+ * tierForMidare の禁止条件(仕上げ済みガード|残|≤midareFinishedGuard・C1のストップロス床)を、
+ * 「現在パワー」基準の×2非会心最大打の近似で再現する(midareAliveAtNormal の現在パワー版。
+ * 床の選択ロジックも同じものを揃える)。tierForMidareがcarve中に返す0.75/2等の格下げは
+ * 「(みだれを)選択し得る」の範囲に含める — ここで判定するのは禁止(=完全に打てない)のみ。
+ */
+function midareBannedNow(state: GameState, analysis: BoardAnalysis): boolean {
+  const isRegen = state.clothType === 'regen';
+
+  // 仕上げ済みガードによる禁止は非再生布でのみ「みだれの終わり(=アプローチ開始)」を意味する。
+  // 再生布では0/±1マスは再生・押し出しで再開されるためみだれは戦略的に終わっておらず、
+  // ここでガード起因のプラン発動を許すと中盤の0マス常在時に予約規則・効率ソートが
+  // 無効化されて自己対局が悪化する(v3f実験A: プラン無効化で再生3レシピが+6〜+12pt回復)。
+  const guardHit = state.cells.some((cell) => Math.abs(cell.base - cell.cumulative) <= P.midareFinishedGuard);
+  if (!isRegen && guardHit) return true;
+
+  const regenRelaxed = isRegen && redCellCount(state) <= 1;
+  const floor = regenRelaxed
+    ? analysis.phase === 'carve'
+      ? P.regenCarveFloor
+      : P.regenOvershootFloor
+    : P.midareStopLoss;
+
+  const eff = effPower(state.currentPower);
+  const maxX2 = sewDamage(18, 2, eff, 1);
+  // 再生布はガード超(>midareFinishedGuard)の正の残マスのみで床判定する(上記と同じ理由)。
+  // 対象マスが1つも無ければ削り対象なし=みだれの役目は終わっている。
+  const targets = state.cells
+    .map((cell) => cell.base - cell.cumulative)
+    .filter((r) => (isRegen ? r > P.midareFinishedGuard : true));
+  if (targets.length === 0) return true;
+  const worst = Math.min(...targets) - maxX2;
+  return worst < floor;
+}
+
+/**
+ * §10.21②④(アプローチ着地プランナー): 「特技使用時の集中効率はぬうで使用する5からの差分で
+ * 計算します。最も効率が良いのは、最強を大滝(追加ダメージ+60/追加集中+5)、強いを大滝
+ * (+45/+5)、強いをたすき/逆たすき(+23/+2)、普通をたすき(+15/+2)で使用するパターン。」
+ * NUU_BASE=そのパワーで「ぬう」を選び続けた場合の1手あたり削り量概算。MAX_EXTRA=そのパワーで
+ * 最良の特技を使った場合にNUU_BASEへ上乗せできる最大の追加ダメージ概算(上記引用の
+ * 「追加ダメージ」列に対応)。'critx2'/'unknown' は将来ターン(未確定の「？」を含む)の
+ * 前方スケジュール歩行で使うための実測値(effPowerでは畳まない)。v3f校正対象。
+ */
+const NUU_BASE: Record<Power, number> = { strongest: 30, strong: 23, normal: 15, weak: 8, critx2: 15, unknown: 18 };
+const MAX_EXTRA: Record<Power, number> = { strongest: 60, strong: 45, normal: 15, weak: 0, critx2: 15, unknown: 30 };
+
+/** アプローチ着地プラン(§10.21②)。landingTurn=着地予定の弱いターン番号、neededExtra=そこまでに
+ *  ぬう基準を超えて特技で追加に稼ぐ必要のあるダメージ概算(0以下なら稼ぎすぎ=ぬう基準へ戻す)。 */
+export interface ApproachPlan {
+  landingTurn: number;
+  neededExtra: number;
+}
+
+/**
+ * §10.21②(エキスパート指摘=仕様の正): 「みだれの終わった14ターン目からがアプローチになるので、
+ * ここでどこの弱いで着地するかを計画します。2ターン後に弱いがありますが、そこまでに着地
+ * レベルまで削るのは不可能です。…もう一周回して26ターン目で着地するプランになります。」
+ * 現在ターン(state.turn+1。isTraitTurn等と同じ「当ターンの番号」規約)を含む前方スケジュールを
+ * 最大2周(2×powerCycle.length)歩き、'weak'スロット(着地候補)ごとに、現在ターン〜候補turn−1の
+ * 手番で(再生ターンの回復加算込みの)残り作業総量をぬう+特技追加分でまかなえるかを判定する。
+ * 最初に実現可能な候補を採用し(無ければ最後のweakスロット。weakスロット自体が無ければnull)、
+ * 発動条件は「turnPhaseがadjust以外」かつ「現在パワーでみだれが死んでいる」(midareBannedNow)。
+ */
+export function approachLandingPlan(state: GameState, analysis: BoardAnalysis): ApproachPlan | null {
+  if (turnPhase(state, analysis) === 'adjust' || !midareBannedNow(state, analysis)) return null;
+
+  const total = state.cells.reduce((sum, cell) => sum + Math.max(0, cell.base - cell.cumulative), 0);
+
+  const cycleLen = state.powerCycle.length > 0 ? state.powerCycle.length : 1;
+  const maxSteps = 2 * cycleLen;
+  const currentTurnNumber = state.turn + 1;
+
+  const forward = scheduleForwardPowers(advanceSchedule(scheduleFromState(state)), maxSteps - 1);
+  const powers: Power[] = [state.currentPower, ...forward];
+  const isRegen = state.clothType === 'regen';
+
+  let candidate: ApproachPlan | null = null;
+  for (let i = 1; i < maxSteps; i++) {
+    if (powers[i] !== 'weak') continue;
+    const landingTurn = currentTurnNumber + i;
+
+    let base = 0;
+    let maxExtra = 0;
+    let regenAdd = 0;
+    for (let j = 0; j < i; j++) {
+      base += NUU_BASE[powers[j]];
+      maxExtra += MAX_EXTRA[powers[j]];
+      // §10.21②: regenAddは再生布のみ。regenイベントはSPEC(T5初回・4ターンごと)。
+      // 区間(現在ターン, L)内(両端除く)の再生イベント1回あたり+14(=1マスの平均的な
+      // 回復寄与量の概算)。
+      if (isRegen && j >= 1) {
+        const t = currentTurnNumber + j;
+        if (t >= 5 && (t - 5) % 4 === 0) regenAdd += 14;
+      }
+    }
+
+    const neededExtra = Math.max(0, total + regenAdd - base);
+    candidate = { landingTurn, neededExtra };
+    if (total + regenAdd <= base + maxExtra) return candidate;
+  }
+
+  return candidate;
+}
+
+/**
  * ヨコぬい/滝のぼり専用のレンジ判定(C2「明確な理由」。カバー範囲外は禁止=catch-allなし)。
  * B4(§10.5): 「全対象マスが適正レンジ」→「全対象マスが有効」に緩和。有効=適正レンジ内、
  * または非会心最大ダメージでも縫いすぎない(worstRemaining≥0=縫いすぎゼロの純削り)マス。
@@ -784,7 +890,8 @@ function tierForGeneralSew(
         return 3;
       }
       case 'strong': {
-        if ((TASUKI_IDS.has(skill.id) || LINE3_IDS.has(skill.id)) && atLeast2(P.approachMin)) return 1;
+        // §10.21⑤: 「強い巻きこみはアプローチの主力手」(E18の2/7誤差0はA1ボーナスで創発)。
+        if ((TASUKI_IDS.has(skill.id) || LINE3_IDS.has(skill.id) || skill.id === 'makikomi_nui') && atLeast2(P.approachMin)) return 1;
         if (skill.id === 'sanbai_nui' || skill.id === 'nibai_nui') return 2;
         return 3;
       }
@@ -937,9 +1044,12 @@ function tierForSeishin(state: GameState, analysis: BoardAnalysis): number | nul
     if (remainingMoves >= 2) return 0;
   }
 
-  // 弱延長(デフォルト。§10.1訂正): 「延長がデフォルト」。ロックが切れる時点で残り作業
-  // (+しあげ1手)が現ロックの残ターン内に収まる場合のみ放棄し得る(=候補から外す)。
-  if (state.lockedPower === 'weak' && state.lockPowerRemaining > 0 && state.lockPowerRemaining <= 2 && analysis.phase === 'adjust') {
+  // 弱延長(デフォルト。§10.1訂正 → §10.21①で再修正): 「延長がデフォルト」。旧実装
+  // (残2以下で毎回判定)は「調整中の弱い統一が2ターンに1回選択されており、集中力のムダに
+  // なっています」(§10.19④の弱ロック版に相当する誤り。残2での更新は1回あたり1ターン分の
+  // ロックを捨てる)という指摘により、更新判定は残1のときのみ行う。ロックが切れる時点で
+  // 残り作業(+しあげ1手)が現ロックの残ターン内に収まる場合のみ放棄し得る(=候補から外す)。
+  if (state.lockedPower === 'weak' && state.lockPowerRemaining === 1 && analysis.phase === 'adjust') {
     const remainingMoves = estimateAdjustMoves(boardRemainings(state));
     const fitsWithinLock = remainingMoves + 1 <= state.lockPowerRemaining; // +1=しあげる手
     if (!fitsWithinLock) {
@@ -972,6 +1082,9 @@ function tierForMuga(state: GameState): number | null {
 /**
  * 縫い系(みだれ・ねらい含む)・糸ほぐしのティアを決める(E2/D1/A1込み)。
  * prediction: 再生布の次回回復予測(predictRegenTarget)。regen以外ではnull。
+ * plan: §10.21②アプローチ着地プラン(approachLandingPlan)。非nullのときは
+ * みだれ受け持ち予約(v3e/§10.20①)を適用しない — プラン開始=みだれ死後は
+ * 「予約」概念よりプランの効率ソート(rankExpert側)が優先するため。
  */
 function tierForSewOrRecover(
   ctx: SolverContext,
@@ -980,6 +1093,7 @@ function tierForSewOrRecover(
   candidate: Candidate,
   skill: SkillDef,
   prediction: RegenPrediction | null,
+  plan: ApproachPlan | null,
 ): number | null {
   if (skill.kind === 'recover') {
     // §10.20③④⑤/v3e: carve中の糸ほぐしは専用ゲート(tierForHogushiCarve)に差し替える
@@ -1022,7 +1136,10 @@ function tierForSewOrRecover(
 
   // §10.20①/v3e: みだれ生存中のcarveでは小残マス(0<r<midareReserveCellMax)に手を付けない
   // (極力=tier格下げ)。みだれ(random4)自体はtargetCellsが空のため対象外(自然に不成立)。
+  // §10.21②/v3f: アプローチ着地プラン発動中(plan!==null)はこの予約を適用しない
+  // (みだれは既に死んでおり「受け持ち予約」の前提=以後もみだれを打つ、が成立しない)。
   if (
+    plan === null &&
     turnPhase(state, analysis) === 'carve' &&
     P.carveVarianceAverse &&
     midareAliveAtNormal(state, analysis) &&
@@ -1037,8 +1154,11 @@ function tierForSewOrRecover(
   if (targetsGlowCell(state, candidate)) tier -= 1; // D1: 発光ターンの有効活用
   // A1: 誤差0ボーナス。carve中は適用しない(§10.19②⑤/v3d: 削り中の1マス仕上げ狙いは
   // 集中効率悪化。実盤面T2では残90ちょうどへの3倍がこのボーナスで予約規則(0.75)を
-  // 逆転し、エキスパートが悪手とした最小マスへの3倍を再選択してしまう)
-  if (turnPhase(state, analysis) !== 'carve' && hasZeroBonus(dist)) tier -= P.zeroBonusTier;
+  // 逆転し、エキスパートが悪手とした最小マスへの3倍を再選択してしまう)。
+  // ただし着地プラン発動中(§10.21⑤/v3f)は盤面がマス数上carveでもアプローチ意味論に移行して
+  // おり適用する — 「Eに残18があるためC中心の強い巻き込みが調整上有利。2/7で18がでることを
+  // 考慮すると十分に払う価値がある」の2/7誤差0の価値はこのボーナスで創発する。
+  if ((plan !== null || turnPhase(state, analysis) !== 'carve') && hasZeroBonus(dist)) tier -= P.zeroBonusTier;
   // 再生布の回復影響スコアリング(§10.10/v3b)。押し出し・保護は既存ルールより優先(§4)なので、
   // 押し出しティアの上からもさらに加算する(実害/利得は両立時も重ねて適用する)。
   tier += regenImpactDelta(ctx, state, dist, prediction);
@@ -1333,6 +1453,9 @@ export function rankExpert(
   // §10.16確認済み: フェーズはターン単位(そのターンの実効パワー)で切り替わる。Pass1の削り効率
   // 計算(§10.19①/v3d)で使うため、tierByIndex確定より前に計算しておく(純関数なので挙動不変)。
   const tp = turnPhase(state, analysis);
+  // §10.21②/v3f: アプローチ着地プラン。非nullなら受け持ち予約(tierForSewOrRecover)を止め、
+  // Pass1で追加ダメージ/追加集中(ぬう基準差分)を集計してrankExpert末尾のsortで使う。
+  const plan = approachLandingPlan(state, analysis);
 
   // マス別ライン被覆数(§10.19回答(a)-2/v3d): そのマスを対象に含む「2マス以上のsew候補」の数。
   // carveフェーズの単発縫い同士のタイブレーク(後で多マスに巻き込みにくい位置を優先)に使う。
@@ -1351,15 +1474,19 @@ export function rankExpert(
   // Σ_対象マス Σ_pmf p×(max(0,r_before)−max(0,remaining_after)) ÷ max(cost,1) を保存する。
   // 同tier内のタイブレークに使う(rankExpert末尾のsort)。
   const carveEffByIndex = new Map<number, number>();
+  // §10.21④/v3f: アプローチ着地プラン下の追加ダメージ/追加集中(ぬう基準=5からの差分)。
+  // 「特技使用時の集中効率はぬうで使用する5からの差分で計算します」。plan!==null時のみ集計する。
+  const extraDmgByIndex = new Map<number, number>();
+  const extraConcByIndex = new Map<number, number>();
   for (const s of scored) {
     if (s.candidate.action.type === 'finish') continue;
     const skill = skillMap.get(s.candidate.skillId!);
     if (!skill || (skill.kind !== 'sew' && skill.kind !== 'recover')) continue;
-    const tier = tierForSewOrRecover(ctx, state, analysis, s.candidate, skill, regenPrediction);
+    const tier = tierForSewOrRecover(ctx, state, analysis, s.candidate, skill, regenPrediction, plan);
     if (tier !== null) {
       tierByIndex.set(s.index, tier);
       sewOrRecoverPermitted++;
-      if (tp === 'carve') {
+      if (tp === 'carve' || plan) {
         const dist = actionDistribution(ctx.engine, state, ctx.config, s.candidate);
         let eff = 0;
         for (const cellDist of dist.cells) {
@@ -1369,7 +1496,11 @@ export function rankExpert(
             eff += pt.prob * (Math.max(0, rBefore) - Math.max(0, pt.remaining));
           }
         }
-        carveEffByIndex.set(s.index, eff / Math.max(s.candidate.cost, 1));
+        if (tp === 'carve') carveEffByIndex.set(s.index, eff / Math.max(s.candidate.cost, 1));
+        if (plan) {
+          extraDmgByIndex.set(s.index, eff - NUU_BASE[effPower(state.currentPower)]);
+          extraConcByIndex.set(s.index, s.candidate.cost - 5);
+        }
       }
     }
   }
@@ -1386,8 +1517,11 @@ export function rankExpert(
     else if (skill.id === 'seishin_toitsu') tier = tierForSeishin(state, analysis);
     else if (skill.id === 'muga_no_kyochi') tier = tierForMuga(state);
     else if (skill.id === 'power_shift') {
-      // C8: adjust かつ縫い系・ほぐしの許可候補が0件のときのみ(v1簡易)
-      tier = analysis.phase === 'adjust' && sewOrRecoverPermitted === 0 ? 3 : null;
+      // C8: adjust かつ縫い系・ほぐしの許可候補が0件のときのみ(v1簡易)。
+      // §10.21②(実バグ): 弱ロック中(state.lockPowerRemaining>0)にぬいパワーシフトを使っても
+      // ロックが優先されて効果がない(v3e s1のT26で観測: 弱ロック中の集中7の純浪費)ため、
+      // ロックが掛かっていない(lockPowerRemaining===0)ときのみ許可する。
+      tier = analysis.phase === 'adjust' && sewOrRecoverPermitted === 0 && state.lockPowerRemaining === 0 ? 3 : null;
     }
     if (tier !== null) {
       // §10.10/v3b: 支援・必殺にも回復影響スコアリングを適用する(待機手が実害対象を
@@ -1459,7 +1593,31 @@ export function rankExpert(
         if (sa.expErr !== sb.expErr) return sa.expErr - sb.expErr;
       }
     }
-    if (tp === 'carve' && !aIsFinish && !bIsFinish) {
+    if (plan && !aIsFinish && !bIsFinish) {
+      // §10.21④/v3f: アプローチ着地プラン下は carve効率比較の代わりに差分基準で比較する。
+      // 「特技使用時の集中効率はぬうで使用する5からの差分で計算します」。
+      const da = extraDmgByIndex.get(a.scored.index);
+      const db = extraDmgByIndex.get(b.scored.index);
+      const ca = extraConcByIndex.get(a.scored.index);
+      const cb = extraConcByIndex.get(b.scored.index);
+      if (da !== undefined && db !== undefined && ca !== undefined && cb !== undefined) {
+        if (plan.neededExtra > 0) {
+          // §10.21④の運用: 必要追加分は前倒しで稼ぎ、上振れ(会心・？の結果)が出たら後段で
+          // 格下げする(「会心等の発生によって、都度削りの強さを調整」「追加ダメージの取りすぎに
+          // なるため、最強が大滝→たすきになる」)。比率降順だと安い手(たすき)が常に勝ち、
+          // 限られた高パワーターンで必要量を賄えなくなるため、追加ダメージ降順で比較する
+          // (必要量+マージンでキャップ=僅かな必要量に大技は使わない)。同値なら追加集中昇順。
+          const cap = plan.neededExtra + 30;
+          const ka = Math.min(da, cap);
+          const kb = Math.min(db, cap);
+          if (ka !== kb) return kb - ka;
+          if (ca !== cb) return ca - cb;
+        } else if (ca !== cb) {
+          // 稼ぎすぎたらぬう基準(extraConc昇順=安い手優先)へ格下げする。
+          return ca - cb;
+        }
+      }
+    } else if (tp === 'carve' && !aIsFinish && !bIsFinish) {
       const ea = carveEffByIndex.get(a.scored.index) ?? 0;
       const eb = carveEffByIndex.get(b.scored.index) ?? 0;
       if (ea !== eb) return eb - ea; // 効率降順(§10.19①)

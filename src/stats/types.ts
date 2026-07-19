@@ -129,7 +129,10 @@ export interface PolicyParams {
   // ---- コーチング第2ラウンド (§10.20/v3e) ----
   midareFinishedGuard: number; // §10.20④: 「0がある状況で打つ手ではない」。盤面に |残り| ≤ この値の
                                 // 仕上げ済みマスが1つでもあれば、みだれぬい自体を禁止し(tierForMidare)、
-                                // みだれ生存判定(midareAliveAtNormal)も不成立にする。既定2
+                                // みだれ生存判定(midareAliveAtNormal)も不成立にする。既定1。
+                                // §10.21③: 残2(±2)は再生の再抽選対象として優先度が高く縫っては
+                                // いけない箇所ではない(みだれの押し出しはむしろ利得)ためガードは
+                                // |残|≤1に縮小。残1の条件付き例外(他に再生対象がなく序盤)は将来対応。
 }
 
 export const DEFAULT_POLICY_PARAMS: PolicyParams = {
@@ -151,7 +154,7 @@ export const DEFAULT_POLICY_PARAMS: PolicyParams = {
   seishinCarveTolerance: 30,
   carveVarianceAverse: true,
   midareReserveCellMax: 120,
-  midareFinishedGuard: 2,
+  midareFinishedGuard: 1,
 };
 
 /** 盤面分析結果(局面判定・マス分類)。 */

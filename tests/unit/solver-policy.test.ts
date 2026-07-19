@@ -7,6 +7,7 @@ import {
   adjustLookup,
   adjustScoreForCandidate,
   analyzeBoard,
+  approachLandingPlan,
   composeStar3Prob,
   createSolverContext,
   DEFAULT_POLICY_PARAMS,
@@ -326,11 +327,38 @@ describe('精神統一(v2: 延長デフォルト。§10.1/10.2)', () => {
     expect(seishin?.tier).toBe(0);
   });
 
-  it('(c) 放棄: ロック残2×残り作業1手(r=7一つ)では現ロック内で仕上げまで届くため延長しない(候補に出ない)', () => {
+  // §10.21①(エキスパート指摘=仕様の正): 「調整中の弱い統一が2ターンに1回選択されており、
+  // 集中力のムダになっています」。旧実装(残2以下で毎回判定)は残2の時点でも延長を選んで
+  // しまい、これが1回あたり1ターン分のロックを無駄に捨てる原因だった(§10.19④の弱ロック版に
+  // 相当する誤り)。更新判定そのものを残1のときのみ行うよう修正し、残2では(残り作業が
+  // 2手以上あっても)延長判定が発生しない=候補に出ないことを確認する。
+  it('(b\') §10.21①: 弱延長の判定は残1のときのみ行う(残2では残り作業2手以上でも候補に出ない)', () => {
     const ctx = makeCtx();
-    const state = makeState(ctx, [7, 0, 0, 0], 2, {
+    const remaining2 = makeState(ctx, [5, 5, 0, 0], 2, {
       currentPower: 'weak',
       lockPowerRemaining: 2,
+      lockedPower: 'weak',
+    });
+    const seishinAt2 = rankExpert(ctx, remaining2).find((ch) => ch.scored.candidate.skillId === 'seishin_toitsu');
+    expect(seishinAt2).toBeUndefined();
+
+    const remaining1 = makeState(ctx, [5, 5, 0, 0], 2, {
+      currentPower: 'weak',
+      lockPowerRemaining: 1,
+      lockedPower: 'weak',
+    });
+    const seishinAt1 = rankExpert(ctx, remaining1).find((ch) => ch.scored.candidate.skillId === 'seishin_toitsu');
+    expect(seishinAt1?.tier).toBe(0);
+  });
+
+  // §10.21①により判定自体が残1限定になったため、旧テスト(残2×r=7一つ)は「放棄」の
+  // 経路(fitsWithinLock)をもう検証できない(残2では分岐に入らず無条件でundefinedになる
+  // だけのため)。「放棄」の意味のある再現は残1×残り作業0手(=今ターンで仕上げまで届く)。
+  it('(c) 放棄: ロック残1×残り作業0手(全マス|r|≤2)では今ターンで仕上げに届くため延長しない(候補に出ない。§10.21①: 判定自体が残1でのみ行われる)', () => {
+    const ctx = makeCtx();
+    const state = makeState(ctx, [2, -2, 0, 0], 2, {
+      currentPower: 'weak',
+      lockPowerRemaining: 1,
       lockedPower: 'weak',
     });
     const choices = rankExpert(ctx, state);
@@ -338,11 +366,11 @@ describe('精神統一(v2: 延長デフォルト。§10.1/10.2)', () => {
     expect(seishin).toBeUndefined();
   });
 
-  it('(d) 弱→強例外: powerCycle上でロック明け直後がstrong・11≤r≤13のマスがあるときは延長がtier2に下がる', () => {
+  it('(d) 弱→強例外: powerCycle上でロック明け直後がstrong・11≤r≤13のマスがあるときは延長がtier2に下がる(§10.21①: 判定は残1で行う)', () => {
     const ctx = makeCtx();
     const state = makeState(ctx, [12, 0, 0, 0], 2, {
       currentPower: 'weak',
-      lockPowerRemaining: 2,
+      lockPowerRemaining: 1,
       lockedPower: 'weak',
       powerCycle: ['weak', 'strong'],
       cycleIndex: 0, // (cycleIndex+1)%2=1 → 'strong' がロック明け直後に来る
@@ -1679,6 +1707,216 @@ describe('v3e コーチング第2ラウンド(§10.20)', () => {
       const state = makeBoundaryState(ctx, 91);
       const choices = rankExpert(ctx, state);
       expect(findByAnchor(choices, 'sanbai_nui', 1, 1)).toBeUndefined();
+    });
+  });
+});
+
+// v3f コーチング第3ラウンド(SOLVER_POLICY.md §10.21)。
+// ①「調整中の弱い統一が2ターンに1回選択されており、集中力のムダになっています」
+//   (継続更新は残1のみ — §10.19④の弱ロック版に相当する誤りの修正。tierForSeishinの
+//   テストは既存の「精神統一(v2: 延長デフォルト)」describe内で更新済み)。
+// ②「弱ロック中にぬいパワーシフトを使用したがロックが優先され効果なし」(v3e s1のT26で
+//   観測した実バグ=集中7の純浪費)。ロック中(lockPowerRemaining>0)はぬいパワーシフトの
+//   ティアを付けない。
+// ③「『|残|≤2のマスが盤面にあればみだれ禁止』とありますが、2の場合はみだれを選択します。
+//   再生による再抽選対象の優先順位が高いため、縫ってはいけない箇所ではないためです」
+//   (ガードはmidareFinishedGuard=2→1に縮小)。
+describe('v3f コーチング第3ラウンド(§10.21)', () => {
+  describe('§10.21②: ロック中はぬいパワーシフトを候補にしない', () => {
+    // 全マス残り0(仕上げ済み)・concentration=7: 縫い系は全マスr≤0で候補生成自体から除外され
+    // (allNonPositive)、糸ほぐし(cost16)・ねらい(cost16)・しつけ(cost13)は集中不足で列挙されない
+    // ため sewOrRecoverPermitted=0 が確実に成立する。盤面は誤差0=★3確定(finishTier=0)なので
+    // 詰み盤面の宝くじモード(§10.13。finishTier===98が前提)も発動しない。
+    const ZERO_BOARD = [0, 0, 0, 0];
+
+    it('弱ロック中(lockPowerRemaining=2)はpower_shiftが候補に出ない(§10.21②の実バグ修正)', () => {
+      const ctx = makeCtx();
+      const state = makeState(ctx, ZERO_BOARD, 2, {
+        currentPower: 'weak',
+        concentration: 7,
+        lockedPower: 'weak',
+        lockPowerRemaining: 2,
+      });
+      const choices = rankExpert(ctx, state);
+      expect(choices.some((ch) => ch.scored.candidate.skillId === 'power_shift')).toBe(false);
+    });
+
+    it('ロック無し(lockPowerRemaining=0)では従来どおりpower_shiftがtier3で候補に出る', () => {
+      const ctx = makeCtx();
+      const state = makeState(ctx, ZERO_BOARD, 2, {
+        currentPower: 'normal',
+        concentration: 7,
+        lockedPower: null,
+        lockPowerRemaining: 0,
+      });
+      const choices = rankExpert(ctx, state);
+      const shift = choices.find((ch) => ch.scored.candidate.skillId === 'power_shift');
+      expect(shift).toBeDefined();
+      expect(shift!.tier).toBe(3);
+    });
+  });
+
+  describe('§10.21③: みだれガードは|残|≤1に縮小(残2は禁止しない)', () => {
+    it('6マスregen carve盤面で+2のマスが1つ・他は大マス(|残|≤1なし)ならmidare_nuiが許可される(v3eの|残|≤2ガードでは禁止だったケース)', () => {
+      const ctx = makeCtx();
+      // アンカー引用(§10.21③): 「2の場合はみだれを選択します。再生による再抽選対象の
+      // 優先順位が高いため、縫ってはいけない箇所ではないためです」。
+      // +2マスへの×2打(非会心最悪2-36=-34)はregenCarveFloor(-34)ちょうどでC1のストップ
+      // ロスも充足する(worst<floorではない)ため、旧ガード(|残|≤2)でのみ禁止されていた
+      // ケースであることを確認する。
+      const state = makeState(ctx, [2, 137, 159, 90, 100, 110], 2, {
+        currentPower: 'normal',
+        clothType: 'regen',
+        lockPowerRemaining: 0,
+        lockedPower: null,
+      });
+      const choices = rankExpert(ctx, state);
+      const midare = choices.find((ch) => ch.scored.candidate.skillId === 'midare_nui');
+      expect(midare).toBeDefined();
+      expect(midare!.tier).toBe(1);
+    });
+
+    it('0のマスが1つでもあれば引き続きmidare_nuiは禁止される(既存T16アンカーで担保。回帰確認)', () => {
+      const ctx = makeCtx();
+      const state = makeState(ctx, [5, 137, 159, -3, 0, 86], 2, {
+        currentPower: 'weak',
+        clothType: 'regen',
+        lockPowerRemaining: 0,
+        lockedPower: null,
+      });
+      const choices = rankExpert(ctx, state);
+      expect(choices.some((ch) => ch.scored.candidate.skillId === 'midare_nui')).toBe(false);
+    });
+  });
+
+  // §10.21②(エキスパート指摘=仕様の正・アプローチ着地プランナー): 「みだれの終わった14ターン目
+  // からがアプローチになるので、ここでどこの弱いで着地するかを計画します。2ターン後に弱いが
+  // ありますが、そこまでに着地レベルまで削るのは不可能です。…もう一周回して26ターン目で着地
+  // するプランになります。この場合、残り12ターン、最強1回+強い2回+普通2回+「？」6回+弱い1回
+  // なので、すべて「ぬう」選択でも220程度削ることになります。現在の誤差合計は315、再生ターンが
+  // 3回来るため+42計算とし、残りの137を特技で稼ぐ計算となります」「Eに残18があるため、C中心の
+  // 強い巻き込みが調整上有利です。…2/7で18がでることを考慮すると十分に払う価値があります」
+  // (対象盤面: 残 (1,1)=50 (1,2)=65 (2,1)=86 (2,2)=44 (3,1)=18 (3,2)=52、ターン14・強い)。
+  describe('§10.21②: アプローチ着地プランナー', () => {
+    // T14の実際の再生布サイクル(10ターン周期): 普通/最強/？/強い/？/弱い/？/？/普通/？。
+    // T14→cycle[3]='強い'に整列させる(T14 mod 10 = 4 → 1始まりでcycle位置4=index3)。
+    const REGEN_CYCLE: Power[] = ['normal', 'strongest', 'unknown', 'strong', 'unknown', 'weak', 'unknown', 'unknown', 'normal', 'unknown'];
+
+    /** T14盤面(§10.21②アンカー引用の対象盤面)を組み立てる。turn=13(state.turn+1=14=当ターン
+     *  番号。isTraitTurn等と同じ規約)・cycleIndex=3(powerCycle[3]='strong'=currentPowerと整合)。 */
+    function makeT14State(ctx: SolverContext): GameState {
+      return makeState(ctx, [50, 65, 86, 44, 18, 52], 2, {
+        currentPower: 'strong',
+        clothType: 'regen',
+        powerCycle: REGEN_CYCLE,
+        cycleIndex: 3,
+        turn: 13,
+        lockPowerRemaining: 0,
+        lockedPower: null,
+      });
+    }
+
+    it('再生布は0マスの存在ではプラン発動しない(0/±1マスは再生・押し出しで再開される=みだれの戦略的終わりではない。v3f実験A: ガード起因発動が再生3レシピを+6〜+12pt悪化させていた)。非再生布は0マスで発動する', () => {
+      const ctx = makeCtx();
+      // 再生: 0マスあり・ガード超の正の残(最小150)は普通×2打36を引いても床(-34)内 → プラン不発動
+      const regenState = makeState(ctx, [150, 160, 170, 180, 190, 0], 2, {
+        currentPower: 'normal',
+        clothType: 'regen',
+        powerCycle: REGEN_CYCLE,
+        cycleIndex: 0,
+        turn: 10,
+        lockPowerRemaining: 0,
+        lockedPower: null,
+      });
+      expect(approachLandingPlan(regenState, analyzeBoard(ctx, regenState))).toBeNull();
+
+      // 非再生(normal布): 同一盤面なら0マス=みだれ恒久死 → 仕上げ済みガードでプラン発動
+      const normalState = makeState(ctx, [150, 160, 170, 180, 190, 0], 2, {
+        currentPower: 'normal',
+        clothType: 'normal',
+        powerCycle: REGEN_CYCLE,
+        cycleIndex: 0,
+        turn: 10,
+        lockPowerRemaining: 0,
+        lockedPower: null,
+      });
+      expect(approachLandingPlan(normalState, analyzeBoard(ctx, normalState))).not.toBeNull();
+    });
+
+    it('プラン数値アンカー: T14盤面でapproachLandingPlanはlandingTurn===26・neededExtraは125〜145(エキスパート概算137近傍)', () => {
+      const ctx = makeCtx();
+      const state = makeT14State(ctx);
+      const analysis = analyzeBoard(ctx, state);
+      // 引用どおり「みだれの終わった14ターン目からがアプローチ」= turnPhase!=='adjust' かつ
+      // 現在パワー(強い)でみだれが死んでいる(midareBannedNow)が発動条件(currentPower!=='weak'
+      // のためturnPhaseの弱ハイジャックは働かず analysis.phase と一致する)。
+      expect(analysis.phase).not.toBe('adjust');
+
+      const plan = approachLandingPlan(state, analysis);
+      expect(plan).not.toBeNull();
+      // 「2ターン後に弱いがありますが…不可能です」(T16は不採用) → 「もう一周回して26ターン目で
+      // 着地する」(T26採用)。landingTurn===26である時点でT16不採用も担保される。
+      expect(plan!.landingTurn).toBe(26);
+      expect(plan!.neededExtra).toBeGreaterThanOrEqual(125);
+      expect(plan!.neededExtra).toBeLessThanOrEqual(145);
+    });
+
+    // 実装上の判断(報告事項参照): §10.21④の差分効率式(extraDmg/extraConc降順)を文字どおりに
+    // 実装すると、この盤面ではtasuki_nui(1,1)(=C+B。抽出比≈12.44)がmakikomi_nui(2,1)
+    // (=C中心巻きこみ。抽出比≈8.39)・otaki_nobori(1,2)(=B,D,F大滝。抽出比≈9.72)より上位になる
+    // (実測値。抽出比は「useful−NUU_BASE.strong(23)」÷「cost−5」)。makikomi/大滝はコストが
+    // §10.21⑤: 「Eに残18があるため、C中心の強い巻き込みが調整上有利です。…2/7で18がでることを
+    // 考慮すると十分に払う価値があります」。E(3,1:18)への隣接打(×0.75×1.5)は基礎値15・16の
+    // 2/7でちょうど18=誤差0に着地するため、A1誤差0ボーナス(プラン発動中は盤面がcarve判定でも
+    // 適用 — アプローチ意味論)でtier0.5となり、比較器(追加ダメージ前倒し)以前にtierで首位になる。
+    it('T14アンカー: rankExpertの1位がmakikomi_nui(2,1)(A1誤差0ボーナス2/7がプラン発動中に適用される)', () => {
+      const ctx = makeCtx();
+      const state = makeT14State(ctx);
+      const choices = rankExpert(ctx, state);
+
+      expect(choices[0].scored.candidate.skillId).toBe('makikomi_nui');
+      expect(choices[0].scored.candidate.action.type === 'sew' && choices[0].scored.candidate.action.anchor).toEqual({ r: 2, c: 1 });
+    });
+
+    it('neededExtra≤0のケース: 追加集中の安い手(ぬう。extraConc=0)が高コストな手(大滝。extraConc>0)より上位に来る(§10.21④「取りすぎたら…ぬう基準へ」)', () => {
+      const ctx = makeCtx();
+      // 小さな盤面でプランを発動させる(仕上げ済みガード|残|≤1により(2,1)(3,1)=0で
+      // midareBannedNowが即座にtrueになる)。(1,1)=26はmidCount>0を確保しturnPhaseをapproachへ
+      // 保つための対象で、26は[14,25](normalのnuu tier1レンジ)の外なのでnuu(1,1)もLINE3(大滝)と
+      // 同じtier2catch-allに落ちる(=同tier内でextraConc比較が働く。実測確認: 対象列を22にすると
+      // otaki_nobori(1,2)・nuu(1,1)とも誤差0ボーナス非該当でどちらもtier2に揃う)。
+      // powerCycle=7連続normal+weakで手番7ターン分のbase=7×15=105を確保し、total=92≤105で
+      // neededExtra=0(稼ぎすぎ域)にする。
+      const state = makeState(ctx, [26, 22, 0, 22, 0, 22], 2, {
+        currentPower: 'normal',
+        clothType: 'normal',
+        powerCycle: ['normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'weak'],
+        cycleIndex: 0,
+        turn: 0,
+        lockPowerRemaining: 0,
+        lockedPower: null,
+      });
+      const analysis = analyzeBoard(ctx, state);
+      expect(analysis.phase).toBe('approach');
+
+      const plan = approachLandingPlan(state, analysis);
+      expect(plan).not.toBeNull();
+      expect(plan!.neededExtra).toBe(0);
+
+      const choices = rankExpert(ctx, state);
+      const nuuIdx = choices.findIndex(
+        (ch) =>
+          ch.scored.candidate.skillId === 'nuu' &&
+          ch.scored.candidate.action.type === 'sew' &&
+          ch.scored.candidate.action.anchor.r === 1 &&
+          ch.scored.candidate.action.anchor.c === 1,
+      );
+      const otakiIdx = choices.findIndex((ch) => ch.scored.candidate.skillId === 'otaki_nobori');
+      expect(nuuIdx).toBeGreaterThanOrEqual(0);
+      expect(otakiIdx).toBeGreaterThanOrEqual(0);
+      // 同tierであることを確認したうえで、ぬうが大滝より上位(=先着)であることを確認する。
+      expect(choices[nuuIdx].tier).toBe(choices[otakiIdx].tier);
+      expect(nuuIdx).toBeLessThan(otakiIdx);
     });
   });
 });

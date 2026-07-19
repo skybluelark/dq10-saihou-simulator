@@ -20,7 +20,11 @@ import type { RankedCandidate, SolverParams } from './types';
 // v7: v3e §10.20(コーチング第2ラウンド。みだれ受け持ち予約の一般化・3倍予約加点のみだれ生存
 //     条件追加・単発縫いすぎ床の-16化・carve中糸ほぐしの弱パワー限定・C1仕上げ済みガード)。
 //     ランキングが変わるため旧版priorとは合算不可。
-export const SOLVER_VERSION = 7;
+// v8: v3f §10.21(コーチング第3ラウンド。弱延長判定の残1限定・ロック中ぬいパワーシフト禁止・
+//     みだれ仕上げ済みガードの|残|≤2→|残|≤1化・②アプローチ着地プランナー[みだれ死後は
+//     受け持ち予約でなく着地ターンまでの差分効率でsew/recoverを順位付け]・強い巻きこみの
+//     carveアプローチ主力手化)。ランキングが変わるため旧版priorとは合算不可。
+export const SOLVER_VERSION = 8;
 
 /** Wilson score interval(95%既定)。n=0 は {lo:0, hi:1}。 */
 export function wilson(n: number, wins: number, z = 1.96): { lo: number; hi: number } {
