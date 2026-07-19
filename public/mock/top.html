@@ -54,7 +54,9 @@
   /* トップ相当の入口画面のみを扱う(メニュー状態は menu.html へ分離・§5.11.1) */
   [hidden] { display: none !important; }
 
-  .caption { text-align: center; font-size: 10px; color: rgba(60,40,10,.55); padding: 2px 0 6px; flex: 0 0 auto; }
+  /* 更新履歴: フレーム外(100dvhの下)に表示。menu.html と同じ帯様式 */
+  .caption { width: 100%; max-width: 430px; text-align: center; font-size: 10px; color: #4a3a1c;
+    background: #ece4d0; padding: 8px 8px 14px; }
 </style>
 </head>
 <body>
@@ -64,8 +66,10 @@
     <span class="tapText t2 t2-white"><span class="t2s">tap to start</span><span class="t2f">tap to start</span></span>
   </div>
 
-  <div class="caption">トップ画面モック v1.2 — §5.11/§5.11.1準拠。トップ=タイトル表示(暫定素材 bg_title.png・全面表示)+「tap to start」(2層文字・点滅)、フレーム内タップで正式メニュー画面(./menu.html)へ遷移 / タイトルロゴ文字は画像素材側に含める前提のため本モックではフォント合成しない(ロゴ画像は未作成) / 実装ではトップの「tap to start」タップ時に全UI画像をプリロードする(トップ=ロード画面を兼ねる。§4.10)。本モックではプリロード処理は未実装 / v1.2: メニュー状態を廃止し正式メニュー画面(menu.html)に分離。旧リンク互換のためURLハッシュ #menu 付きで開いた場合は即 menu.html へ置き換え遷移する</div>
 </div>
+
+<!-- 更新履歴はフレーム外(100dvhの下)。初期表示には現れず、スクロールで閲覧 -->
+<div class="caption">トップ画面モック v1.3 — §5.11/§5.11.1準拠。トップ=タイトル表示(暫定素材 bg_title.png・全面表示)+「tap to start」(2層文字・点滅)、フレーム内タップで正式メニュー画面(./menu.html)へ遷移 / タイトルロゴ文字は画像素材側に含める前提のため本モックではフォント合成しない(ロゴ画像は未作成) / 実装ではトップの「tap to start」タップ時に全UI画像をプリロードする(トップ=ロード画面を兼ねる。§4.10)。本モックではプリロード処理は未実装 / v1.2: メニュー状態を廃止し正式メニュー画面(menu.html)に分離。旧リンク互換のためURLハッシュ #menu 付きで開いた場合は即 menu.html へ置き換え遷移する / v1.3: 更新履歴(本文)をフレーム外かつ100dvhの外へ移動(初期表示はモック画面のみ・履歴はスクロールで閲覧)</div>
 
 <script>
   var topView = document.getElementById('topView');
