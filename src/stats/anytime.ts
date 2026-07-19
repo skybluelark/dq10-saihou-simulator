@@ -17,7 +17,10 @@ import type { RankedCandidate, SolverParams } from './types';
 //     ロールアウトのfinish結果が変わるため旧版priorとは合算不可。
 // v6: v3d 削りフェーズ集中効率化 §10.19(みだれ封じ帯リスク判定・carve同tier内の効率ソート・
 //     turnPhase弱ハイジャックのbigCountゲート等)。ランキングが変わるため旧版priorとは合算不可。
-export const SOLVER_VERSION = 6;
+// v7: v3e §10.20(コーチング第2ラウンド。みだれ受け持ち予約の一般化・3倍予約加点のみだれ生存
+//     条件追加・単発縫いすぎ床の-16化・carve中糸ほぐしの弱パワー限定・C1仕上げ済みガード)。
+//     ランキングが変わるため旧版priorとは合算不可。
+export const SOLVER_VERSION = 7;
 
 /** Wilson score interval(95%既定)。n=0 は {lo:0, hi:1}。 */
 export function wilson(n: number, wins: number, z = 1.96): { lo: number; hi: number } {

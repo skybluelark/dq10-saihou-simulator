@@ -126,6 +126,10 @@ export interface PolicyParams {
                                 // 削り中の分散を回避する(既定true。銅針等の低見込み設定でfalse運用)
   midareReserveCellMax: number; // §10.19回答(a)-2: みだれ格下げターンの最強単発(3倍)はこの値以上の
                                 // 大マスにのみ加点する(それ未満の中小マスは以後のみだれ受け持ち予約)。既定120
+  // ---- コーチング第2ラウンド (§10.20/v3e) ----
+  midareFinishedGuard: number; // §10.20④: 「0がある状況で打つ手ではない」。盤面に |残り| ≤ この値の
+                                // 仕上げ済みマスが1つでもあれば、みだれぬい自体を禁止し(tierForMidare)、
+                                // みだれ生存判定(midareAliveAtNormal)も不成立にする。既定2
 }
 
 export const DEFAULT_POLICY_PARAMS: PolicyParams = {
@@ -147,6 +151,7 @@ export const DEFAULT_POLICY_PARAMS: PolicyParams = {
   seishinCarveTolerance: 30,
   carveVarianceAverse: true,
   midareReserveCellMax: 120,
+  midareFinishedGuard: 2,
 };
 
 /** 盤面分析結果(局面判定・マス分類)。 */

@@ -115,13 +115,18 @@ describe('E2縫いすぎ禁止プルーン', () => {
     expect(findChoice(choices, 'sanbai_nui', 1, 1)).toBeUndefined();
   });
 
-  it('同条件の縫いすぎでも再生布なら緩和される(regenCarveFloor境界)', () => {
+  // v3e(§10.20②): 「明示指定の単発は最悪でも1回復圏(-16)まで=最強3倍は残92まで」により、
+  // carve中の再生緩和floorは対象マス1つの候補(単発)ではregenCarveFloor(-34)ではなく
+  // midareStopLoss(-16)になった(旧テストの期待値=regenCarveFloor境界は単発には適用されなくなった
+  // ため、境界値をmidareStopLoss基準に更新する)。
+  it('同条件の縫いすぎでも再生布なら緩和される(単発はv3e/§10.20②でmidareStopLoss境界に変更)', () => {
     const ctx = makeCtx();
-    // 2倍ぬい@normal・残り6: 非会心最悪値=-30(regenCarveFloorちょうど)。通常布は禁止、再生布は許可。
-    const normalState = makeState(ctx, [6, 30, 0, 0], 2, { currentPower: 'normal', clothType: 'normal' });
+    // 2倍ぬい@normal・残り20: 非会心最悪値=20-36=-16(単発floor=midareStopLossちょうど)。
+    // 通常布は禁止(floor=overshootFloor=-4)、再生布は許可。
+    const normalState = makeState(ctx, [20, 30, 0, 0], 2, { currentPower: 'normal', clothType: 'normal' });
     expect(findChoice(rankExpert(ctx, normalState), 'nibai_nui', 1, 1)).toBeUndefined();
 
-    const regenState = makeState(ctx, [6, 30, 0, 0], 2, { currentPower: 'normal', clothType: 'regen' });
+    const regenState = makeState(ctx, [20, 30, 0, 0], 2, { currentPower: 'normal', clothType: 'regen' });
     const regenChoice = findChoice(rankExpert(ctx, regenState), 'nibai_nui', 1, 1);
     expect(regenChoice).toBeDefined();
   });
@@ -1464,6 +1469,10 @@ describe('v3d 削りフェーズの集中効率化(§10.19)', () => {
     // ボーナスの対象(残0確率≈18.9%≥1/7)になる。v3dでA1をcarve中は不適用にゲートしたため
     // (§10.19②⑤: 削り中の1マス仕上げ狙いは効率悪化)、実盤面どおり残90のままで
     // 予約規則(0.75)がボーナスに逆転されないことも本テストで保証する。
+    // 追記(v3e/§10.20②): 単発の再生緩和floorがmidareStopLoss(-16)化されたため、
+    // sanbai_nui@E(90)は非会心最悪90-108=-18<-16でE2自体に失格し候補から消える
+    // (=A1との逆転可能性自体が本テストの実行対象から外れる)。choices[0]/みだれtierの
+    // アサーションには影響しないため、本テストの期待値はそのまま維持する。
     const state = makeState(ctx, [154, 200, 262, 93, 90, 222], 2, {
       currentPower: 'strongest',
       clothType: 'regen',
@@ -1497,7 +1506,11 @@ describe('v3d 削りフェーズの集中効率化(§10.19)', () => {
     expect(choices[0].scored.candidate.skillId).toBe('midare_nui');
   });
 
-  it('普通ターン・残4マスあり(他は大マス)・regenのcarveでは、regenCarveFloor(-34)によりみだれが許可され(C1: 最悪4-36=-32≥-34)、かげん系単発(tier3)より上位になる', () => {
+  // v3e(§10.20①): 「以降の手でみだれを選択し得る場合は、残が小さいところには極力手を付けない
+  // ようにするべきです」。この盤面(みだれ生存中=midareAliveAtNormal)ではkagen_nui@(1,1)=4が
+  // 「小残マス(0<r<midareReserveCellMax)」に該当するため、受け持ち予約の格下げ(+1)が乗り、
+  // 旧tier3→tier4になる(旧テストの期待値を更新)。
+  it('普通ターン・残4マスあり(他は大マス)・regenのcarveでは、regenCarveFloor(-34)によりみだれが許可され(C1: 最悪4-36=-32≥-34)、かげん系単発(tier4=旧tier3+みだれ受け持ち予約§10.20①)より上位になる', () => {
     const ctx = makeCtx();
     // 普通パワーの×2打最大=36。旧既定floor(-30)なら4-36=-32<-30で禁止だったが、
     // 新既定(-34)では -32≥-34 で許可される(§10.19⑤/types.tsコメント参照)。
@@ -1517,7 +1530,155 @@ describe('v3d 削りフェーズの集中効率化(§10.19)', () => {
 
     const kagen = findChoice(choices, 'kagen_nui', 1, 1);
     expect(kagen).toBeDefined();
-    expect(kagen!.tier).toBe(3);
+    // v3e(§10.20①): みだれ生存中のcarveで小残マス(r=4)に手を付けるkagen_nuiは受け持ち予約
+    // により+1され、旧tier3からtier4になる。
+    expect(kagen!.tier).toBe(4);
     expect(choices.indexOf(midare!)).toBeLessThan(choices.indexOf(kagen!));
+  });
+});
+
+// v3e(SOLVER_POLICY §10.20 コーチング第2ラウンド): 「以降の手でみだれを選択し得る場合は、
+// 残が小さいところには極力手を付けないようにするべきです」(①受け持ち予約の一般化)。
+// 「最強3倍を使っていいのは実質残92まで」(②単発縫いすぎ床=-16)。carve中の糸ほぐしは
+// 「貴重にならないぬいパワー(弱)」限定で、1回復圏は再生任せ(③④⑤)。盤面は既存ヘルパに
+// 従い6マスregen((1,1)〜(3,2)の順)で統一する。
+describe('v3e コーチング第2ラウンド(§10.20)', () => {
+  /** skillId + アンカー座標で候補を一意に特定する(makikomi_nui等、同じマスが複数アンカーの
+   *  対象に重複して現れ得る候補をfindChoice(targetCells一致)より厳密に区別するためのヘルパ)。 */
+  function findByAnchor(choices: ExpertChoice[], skillId: string, r: number, c: number): ExpertChoice | undefined {
+    return choices.find(
+      (ch) =>
+        ch.scored.candidate.skillId === skillId &&
+        ch.scored.candidate.action.type === 'sew' &&
+        ch.scored.candidate.action.anchor.r === r &&
+        ch.scored.candidate.action.anchor.c === c,
+    );
+  }
+
+  it('T8アンカー: 残[101,192,175,54,33,138]((1,1)〜(3,2))・最強・carve・未ロック → 1位はsanbai_nui(1,2)(=B192)。makikomi_nui(3,1)とsanbai_nui(1,1)は受け持ち予約(§10.20①)で格下げされる(tier>1)', () => {
+    const ctx = makeCtx();
+    // アンカー引用(§10.20①): 「以降の手でみだれを選択し得る場合は、残が小さいところには
+    // 極力手を付けないようにするべきです。」(T8巻きこみ@33が悪手、正着=3倍@B192)。
+    const state = makeState(ctx, [101, 192, 175, 54, 33, 138], 2, {
+      currentPower: 'strongest',
+      clothType: 'regen',
+      lockPowerRemaining: 0,
+      lockedPower: null,
+    });
+    const choices = rankExpert(ctx, state);
+
+    expect(choices[0].scored.candidate.skillId).toBe('sanbai_nui');
+    expect(choices[0].scored.candidate.targetCells).toEqual([{ r: 1, c: 2, multiplier: 3 }]);
+
+    // 巻きこみ@(3,1)(=E=33を中心に含む): みだれ生存中(midareAliveAtNormal)のcarveで
+    // 小残マス(E=33)に手を付けるため受け持ち予約(+1)が乗り格下げされる。
+    const makikomi31 = findByAnchor(choices, 'makikomi_nui', 3, 1);
+    expect(makikomi31).toBeDefined();
+    expect(makikomi31!.tier).toBeGreaterThan(1);
+
+    // 3倍@(1,1)(=A=101。r0<midareReserveCellMax=120のため0.75分岐に入らずbase tier1→
+    // 受け持ち予約で+1され2になる)。
+    const sanbaiA = findByAnchor(choices, 'sanbai_nui', 1, 1);
+    expect(sanbaiA).toBeDefined();
+    expect(sanbaiA!.tier).toBeGreaterThan(1);
+  });
+
+  it('T12アンカー: 残[76,177,159,24,0,112]((1,1)〜(3,2))・最強・carve → sanbai_nui(1,1)は候補に出ない(単発床§10.20②: 76-108=-32<-16)。1位はotaki_nobori(1,2)(=B,D,F列。D=24を含む大滝が効率首位)', () => {
+    const ctx = makeCtx();
+    const state = makeState(ctx, [76, 177, 159, 24, 0, 112], 2, {
+      currentPower: 'strongest',
+      clothType: 'regen',
+      lockPowerRemaining: 0,
+      lockedPower: null,
+    });
+    const choices = rankExpert(ctx, state);
+
+    // §10.20②: 単発(対象マス1つ)の再生緩和floorはmidareStopLoss(-16)。
+    // A=76への3倍@最強は非会心最悪76-108=-32<-16でE2失格。
+    expect(findByAnchor(choices, 'sanbai_nui', 1, 1)).toBeUndefined();
+
+    expect(choices[0].scored.candidate.skillId).toBe('otaki_nobori');
+    expect(choices[0].scored.candidate.targetCells).toEqual(
+      expect.arrayContaining([
+        { r: 1, c: 2, multiplier: 1 },
+        { r: 2, c: 2, multiplier: 1 },
+        { r: 3, c: 2, multiplier: 1 },
+      ]),
+    );
+  });
+
+  it('T13アンカー: 残[-10,177,159,24,0,112]((1,1)〜(3,2))・critx2・carve → ito_hogushi(1,1)は候補に出ない(carve中ほぐしは弱パワー限定。§10.20③)', () => {
+    const ctx = makeCtx();
+    const state = makeState(ctx, [-10, 177, 159, 24, 0, 112], 2, {
+      currentPower: 'critx2',
+      clothType: 'regen',
+      lockPowerRemaining: 0,
+      lockedPower: null,
+    });
+    const choices = rankExpert(ctx, state);
+    // critx2はeffPowerで'normal'に畳まれる(B4)。§10.20③「調整は貴重にならないぬいパワー
+    // (弱)で行う」によりcarve中のほぐしは弱パワー限定 → normal(critx2)では候補に出ない。
+    expect(findChoice(choices, 'ito_hogushi', 1, 1)).toBeUndefined();
+  });
+
+  it('T16アンカー: 残[5,137,159,-3,0,86]((1,1)〜(3,2))・弱・carve → midare_nuiは候補に出ない(C1仕上げ済みガード§10.20④: 0がある)。1位はito_hogushi(2,2)(tier0.5)', () => {
+    const ctx = makeCtx();
+    // アンカー引用(§10.20④): 「0がある状況で打つ手ではない。この盤面なら-3の糸ほぐし
+    // (弱ほぐし+3〜4で0/+1着地)」。
+    const state = makeState(ctx, [5, 137, 159, -3, 0, 86], 2, {
+      currentPower: 'weak',
+      clothType: 'regen',
+      lockPowerRemaining: 0,
+      lockedPower: null,
+    });
+    const choices = rankExpert(ctx, state);
+
+    expect(choices.some((ch) => ch.scored.candidate.skillId === 'midare_nui')).toBe(false);
+
+    expect(choices[0].scored.candidate.skillId).toBe('ito_hogushi');
+    expect(choices[0].scored.candidate.targetCells).toEqual([{ r: 2, c: 2, multiplier: 1 }]);
+    expect(choices[0].tier).toBe(0.5);
+  });
+
+  it('弱・carve・再生布・残-16のマスへのito_hogushiは候補に出ない(1回復圏は再生任せ。§10.20⑤)', () => {
+    const ctx = makeCtx();
+    // アンカー引用(§10.20相当): 「-16は再生に任せる」。carve局面を確保するため他マスは
+    // 大マス(200)で埋める(bigCount>0によりv3dのturnPhase弱ハイジャックゲートも維持されcarveのまま)。
+    const state = makeState(ctx, [-16, 200, 200, 200, 200, 200], 2, {
+      currentPower: 'weak',
+      clothType: 'regen',
+      lockPowerRemaining: 0,
+      lockedPower: null,
+    });
+    const analysis = analyzeBoard(ctx, state);
+    expect(analysis.phase).toBe('carve');
+
+    const choices = rankExpert(ctx, state);
+    expect(findChoice(choices, 'ito_hogushi', 1, 1)).toBeUndefined();
+  });
+
+  describe('単発床境界(§10.20②): 最強・carve・regenへのsanbai_nuiは残92まで許可(92-108=-16)、残91は不許可', () => {
+    function makeBoundaryState(ctx: SolverContext, r: number): GameState {
+      return makeState(ctx, [r, 200, 200, 200, 200, 200], 2, {
+        currentPower: 'strongest',
+        clothType: 'regen',
+        lockPowerRemaining: 0,
+        lockedPower: null,
+      });
+    }
+
+    it('残92: 非会心最悪92-108=-16=midareStopLossちょうどで許可される', () => {
+      const ctx = makeCtx();
+      const state = makeBoundaryState(ctx, 92);
+      const choices = rankExpert(ctx, state);
+      expect(findByAnchor(choices, 'sanbai_nui', 1, 1)).toBeDefined();
+    });
+
+    it('残91: 非会心最悪91-108=-17<-16で不許可(E2失格)', () => {
+      const ctx = makeCtx();
+      const state = makeBoundaryState(ctx, 91);
+      const choices = rankExpert(ctx, state);
+      expect(findByAnchor(choices, 'sanbai_nui', 1, 1)).toBeUndefined();
+    });
   });
 });

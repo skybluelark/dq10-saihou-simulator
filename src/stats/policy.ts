@@ -195,8 +195,11 @@ function pmfUpsideMass(pmf: CellPmf): number {
  *
  * §10.10/v3b: carve以外(approach/adjust)の再生緩和には、対象マス自身のPMFに
  * 上振れ(|remaining|≤1の確率質量 ≥ 1/7 − 1e-9)があることを結合条件として追加する。
- * 満たさないマスは通常床(overshootFloor)で判定する(マスごとに個別判定。carveフェーズの
- * regenCarveFloor経路は一切変更しない)。
+ * 満たさないマスは通常床(overshootFloor)で判定する(マスごとに個別判定)。
+ * §10.20②/v3e: carveフェーズのregenCarveFloor経路は「一切変更しない」としていたが、
+ * 明示単発(対象マス1つ)は最悪でも1回復圏(midareStopLoss=-16)までに縮小する
+ * (「実質、最強3倍を使っていいのは実質残92まで」)。ライン越しの深押し(対象マス2つ以上)は
+ * 再生回収前提で regenCarveFloor(-34) を維持する。
  *
  * §10.17/v3c E2深置き保険: 非carveフェーズ分岐において、対象マスの行動前残り
  * r ≥ approachMin(14)なら上振れ条件なしで regenOvershootFloor(−16)を適用する(床−16=
@@ -231,7 +234,10 @@ export function passesE2(ctx: SolverContext, state: GameState, phase: Phase, can
     if (!regenRelaxed) {
       floor = P.overshootFloor;
     } else if (phase === 'carve') {
-      floor = P.regenCarveFloor; // carve経路は§10.10/v3bで一切変更しない
+      // §10.20②/v3e: 明示指定の単発(対象マス1つ)は最悪でも1回復圏(-16=midareStopLoss)まで
+      // =最強3倍は残92まで。ライン越しの深押し(多マス)は再生回収前提で-34(regenCarveFloor)を
+      // 維持する。旧「carve経路は一切変更しない」注記は本変更で失効。
+      floor = candidate.targetCells.length === 1 ? P.midareStopLoss : P.regenCarveFloor;
     } else if (
       (remainingBefore === 2 || remainingBefore === -2 || remainingBefore === 3) &&
       pmfAt(dist, t.r, t.c) !== undefined &&
@@ -533,6 +539,31 @@ function tierForHogushi(ctx: SolverContext, state: GameState, analysis: BoardAna
   return null;
 }
 
+/**
+ * carve中の糸ほぐし(§10.20③④⑤/v3e)。「まだ削りフェーズなのに最終的に貴重にならない
+ * ぬいパワーで調整している」「−3や−4が残る可能性が高く調整が非常にハイコスト」との指摘により、
+ * carve中の調整は貴重にならない弱パワーに限定し、かつ深い赤マス(1回復圏)は再生に任せて
+ * 触らない。既存 tierForHogushi の一般ルール(turnPhase==='adjust'時のtier1簡略化等)は
+ * carve中には適用されない(呼び出し側でturnPhase==='carve'のときのみこちらを使う)。
+ */
+function tierForHogushiCarve(
+  ctx: SolverContext,
+  state: GameState,
+  analysis: BoardAnalysis,
+  candidate: Candidate,
+): number | null {
+  const eff = effPower(state.currentPower);
+  if (eff !== 'weak') return null; // §10.20③: 調整は貴重にならない弱パワーで行う。強いパワーは削りに使う
+
+  const t = candidate.targetCells[0];
+  const r = remainingAt(ctx.engine, state, t.r, t.c);
+
+  if (r >= -4 && r <= -3) return 0.5; // §10.20④: 弱ほぐし+3〜4で0/+1着地の精度手
+  if (state.clothType === 'regen' && r <= -5 && r >= -17) return null; // §10.20⑤: 1回復圏は再生に任せる
+
+  return tierForHogushi(ctx, state, analysis, candidate); // それ以外(非再生布の深傷等)
+}
+
 /** しつけがけ(C6)。 */
 function tierForShitsuke(ctx: SolverContext, state: GameState, analysis: BoardAnalysis, candidate: Candidate): number | null {
   const t = candidate.targetCells[0];
@@ -594,8 +625,36 @@ function midareX2CreatesBlocker(state: GameState, eff: Power): boolean {
   return false;
 }
 
+/**
+ * §10.20①/v3e: 「以降の手でみだれを選択し得る」かの計画レベル近似(普通パワーを仮定した
+ * C1判定)。仕上げ済みマス(|r|≤midareFinishedGuard)が盤面に無く、かつ全マスの×2非会心最大打
+ * (sewDamage(18,2,'normal',1)=36)後の残りが床以上であれば「みだれはまだ生きている」とみなす。
+ * 床は tierForMidare の stopLossFloor 選択と同じロジックを揃える(再生かつ赤マス≤1なら
+ * carve中regenCarveFloor・非carve中regenOvershootFloor、それ以外はmidareStopLoss)。
+ * worst はPMFでなく r−36 の近似で可(§10.19のmidareX2CreatesBlockerと同じ近似方針)。
+ */
+function midareAliveAtNormal(state: GameState, analysis: BoardAnalysis): boolean {
+  if (state.cells.some((cell) => Math.abs(cell.base - cell.cumulative) <= P.midareFinishedGuard)) return false;
+
+  const isRegen = state.clothType === 'regen';
+  const regenRelaxed = isRegen && redCellCount(state) <= 1;
+  const floor = regenRelaxed
+    ? analysis.phase === 'carve'
+      ? P.regenCarveFloor
+      : P.regenOvershootFloor
+    : P.midareStopLoss;
+
+  const maxX2 = sewDamage(18, 2, 'normal', 1);
+  const worst = Math.min(...state.cells.map((cell) => cell.base - cell.cumulative - maxX2));
+  return worst >= floor;
+}
+
 /** みだれぬい(B1〜B3/C1)。E2は対象外(専用のstop-loss判定を用いる)。 */
 function tierForMidare(state: GameState, analysis: BoardAnalysis, dist: ActionDistribution): number | null {
+  // §10.20④/v3e: 「0がある状況で打つ手ではない」。仕上げ済みマス(|r|≤midareFinishedGuard)が
+  // 盤面に1つでもあればみだれ自体を禁止する(フェーズ分岐・床判定より前段のゲート)。
+  if (state.cells.some((cell) => Math.abs(cell.base - cell.cumulative) <= P.midareFinishedGuard)) return null;
+
   const isRegen = state.clothType === 'regen';
   // 再生布の緩和も赤マス1つまで(D2。passesE2 と同じ理由)
   const regenRelaxed = isRegen && redCellCount(state) <= 1;
@@ -709,8 +768,15 @@ function tierForGeneralSew(
         if ((LINE3_IDS.has(skill.id) || skill.id === 'makikomi_nui') && atLeast2(P.approachMin)) return 1;
         if (skill.id === 'sanbai_nui' && r0() >= P.carveMin) {
           // §10.19回答(a)-2: みだれ格下げターンの最強は単発高倍率を大マスへ。
-          // 中小マス(みだれ受け持ち予約)への単発は加点しない
-          if (P.carveVarianceAverse && midareX2CreatesBlocker(state, 'strongest') && r0() >= P.midareReserveCellMax) {
+          // 中小マス(みだれ受け持ち予約)への単発は加点しない。
+          // §10.20②/v3e: みだれが死んだ後は「予約」概念自体が無意味になり、効率ソートで
+          // 大滝等と比較されるべきなので、みだれ生存判定(midareAliveAtNormal)を条件に加える。
+          if (
+            P.carveVarianceAverse &&
+            midareX2CreatesBlocker(state, 'strongest') &&
+            r0() >= P.midareReserveCellMax &&
+            midareAliveAtNormal(state, analysis)
+          ) {
             return 0.75;
           }
           return 1;
@@ -916,7 +982,12 @@ function tierForSewOrRecover(
   prediction: RegenPrediction | null,
 ): number | null {
   if (skill.kind === 'recover') {
-    let tier = tierForHogushi(ctx, state, analysis, candidate);
+    // §10.20③④⑤/v3e: carve中の糸ほぐしは専用ゲート(tierForHogushiCarve)に差し替える
+    // (調整は貴重にならない弱パワー限定・1回復圏は再生任せ)。carve以外は現状維持。
+    let tier =
+      turnPhase(state, analysis) === 'carve'
+        ? tierForHogushiCarve(ctx, state, analysis, candidate)
+        : tierForHogushi(ctx, state, analysis, candidate);
     if (tier === null) return null;
     // §10.10/v3b: 回復影響スコアリングはほぐしにも適用する(旧「単マス縫いのみ」制限を撤廃)。
     const dist = actionDistribution(ctx.engine, state, ctx.config, candidate);
@@ -948,6 +1019,20 @@ function tierForSewOrRecover(
     }
   }
   if (tier === null) return null;
+
+  // §10.20①/v3e: みだれ生存中のcarveでは小残マス(0<r<midareReserveCellMax)に手を付けない
+  // (極力=tier格下げ)。みだれ(random4)自体はtargetCellsが空のため対象外(自然に不成立)。
+  if (
+    turnPhase(state, analysis) === 'carve' &&
+    P.carveVarianceAverse &&
+    midareAliveAtNormal(state, analysis) &&
+    candidate.targetCells.some((t) => {
+      const r = remainingAt(ctx.engine, state, t.r, t.c);
+      return r > 0 && r < P.midareReserveCellMax;
+    })
+  ) {
+    tier += 1;
+  }
 
   if (targetsGlowCell(state, candidate)) tier -= 1; // D1: 発光ターンの有効活用
   // A1: 誤差0ボーナス。carve中は適用しない(§10.19②⑤/v3d: 削り中の1マス仕上げ狙いは
