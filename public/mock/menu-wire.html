@@ -96,6 +96,9 @@
     font-size: 12px; font-weight: bold; color: #3d382f; }
   /* イベント側の中央特大ボタン(注記つき2行) */
   .vB2 .evMain { flex-direction: column; gap: 2px; }
+  /* イベント側サブボタン(裁縫百万石など): やや大きめの円。機能追加時に随時増える前提の枠 */
+  .vB2 .evSub { position: absolute; right: 20px; bottom: 226px; width: 88px; height: 88px;
+    font-size: 12px; }
   /* U型バー(下に凸=学マス同向): SVGの弧で表現。細身(テキストが弧に沿ってはみ出さない程度)で
      画面端まで伸ばさず、左右端=リプレイ円の位置(左右対称)。左右半分ずつがモード切替のタップ領域 */
   .vB2 .uSvg { position: absolute; left: 0; bottom: 0; width: 100%; height: 190px; display: block; }
@@ -184,24 +187,24 @@
       <!-- イベント側: シミュレーター側と同型(中央特大+円形)。コンテストにスプリントを統合検討 -->
       <div id="b2Event" hidden>
         <div class="wbtn mainBtn evMain">コンテスト<span class="note">(スプリント統合検討)</span></div>
-        <div class="wbtn circ circR">裁縫百万石<span class="note">(職人別枠)</span></div>
+        <div class="wbtn circ evSub">裁縫百万石<span class="note">(職人別枠)</span></div>
         <div class="wbtn circ rankCirc">ランキング</div>
       </div>
       <!-- モード切替: 下に凸のU型バー(SVG弧・細身)。左右半分ずつがタップ領域。
            両端(x=26/349)=リプレイ円の位置で左右対称、画面端までは伸ばさない -->
       <svg class="uSvg" viewBox="0 0 375 190" preserveAspectRatio="none">
         <defs>
-          <path id="uPathL" d="M 26 95 A 264.6 264.6 0 0 0 187.5 150" />
-          <path id="uPathR" d="M 187.5 150 A 264.6 264.6 0 0 0 349 95" />
+          <path id="uPathL" d="M 26 65 A 264.6 264.6 0 0 0 187.5 120" />
+          <path id="uPathR" d="M 187.5 120 A 264.6 264.6 0 0 0 349 65" />
         </defs>
-        <path class="hband hOutline" d="M 26 95 A 264.6 264.6 0 0 0 349 95" />
-        <path class="hband hFill" id="fillSim" d="M 26 95 A 264.6 264.6 0 0 0 187.5 150" />
-        <path class="hband hFill" id="fillEvent" d="M 187.5 150 A 264.6 264.6 0 0 0 349 95" />
-        <line class="hDiv" x1="187.5" y1="136" x2="187.5" y2="164" />
+        <path class="hband hOutline" d="M 26 65 A 264.6 264.6 0 0 0 349 65" />
+        <path class="hband hFill" id="fillSim" d="M 26 65 A 264.6 264.6 0 0 0 187.5 120" />
+        <path class="hband hFill" id="fillEvent" d="M 187.5 120 A 264.6 264.6 0 0 0 349 65" />
+        <line class="hDiv" x1="187.5" y1="106" x2="187.5" y2="134" />
         <text class="uLbl" id="lblSim" dominant-baseline="central"><textPath href="#uPathL" startOffset="50%" text-anchor="middle">シミュレーター</textPath></text>
         <text class="uLbl" id="lblEvent" dominant-baseline="central"><textPath href="#uPathR" startOffset="50%" text-anchor="middle">イベント</textPath></text>
-        <path class="hHit" id="arcSim" d="M 26 95 A 264.6 264.6 0 0 0 187.5 150" />
-        <path class="hHit" id="arcEvent" d="M 187.5 150 A 264.6 264.6 0 0 0 349 95" />
+        <path class="hHit" id="arcSim" d="M 26 65 A 264.6 264.6 0 0 0 187.5 120" />
+        <path class="hHit" id="arcEvent" d="M 187.5 120 A 264.6 264.6 0 0 0 349 65" />
       </svg>
       <div class="wbtn dis circ setCirc">設定<span>(検討中)</span></div>
     </div>
@@ -222,7 +225,7 @@
 </div>
 
 <!-- 更新履歴・注記はフレーム外(画面外)に置く: キャプション肥大でフレーム内レイアウトを圧迫しない(§5.11.1-11。実機ではスクロールで参照) -->
-<div class="caption">メニュー画面ワイヤー比較モック v1.4(§5.11.1 再設計検討)— 箱と文字のみで配置・サイズ・余白を比較する段階(トーンB素材・配色は選定後に適用)/ 上部の切替ストリップはモック専用 / A=ポケポケ型・B=学マス型・C=グラブル型(1次選定: B第一候補・次点A・C不採用)/ **B2=B案+拡張込み(改2)**: 最下部の**U型バー(下に凸=学マス同向・細身のSVG弧。両端=リプレイ円の位置で左右対称、画面端まで伸ばさない)**を左右分割し、左=シミュレーター/右=イベントのタップでモード切替(ラベルは弧に沿って円形配置)、シミュレーター側=中央特大+左円リプレイ+右円計算機、イベント側=同型で中央=コンテスト(**スプリント統合検討**)+円=裁縫百万石(職人別枠)、コーナー=右下設定(共通)・左下**ランキング**(イベント側のみ。プロフィールボタンは廃止し設定画面内へ)、最上部中央ドット(職人4種)→その下に左上リボン(職人名)は位置の確保のみ(スワイプ動作なし)/ ハッシュ #a #b #b2 #c で直接表示可(既定=B2)/ 無効(開発中・検討中)は破線表現 / v1.4: 3回目レビュー(U型バー細身化・端まで伸ばさない・更新履歴をフレーム外へ)を反映 / v1.3: 2回目レビュー(U型の向き訂正・ランキング化・イベント側同型化)を反映</div>
+<div class="caption">メニュー画面ワイヤー比較モック v1.5(§5.11.1 再設計検討)— 箱と文字のみで配置・サイズ・余白を比較する段階(トーンB素材・配色は選定後に適用)/ 上部の切替ストリップはモック専用 / A=ポケポケ型・B=学マス型・C=グラブル型(1次選定: B第一候補・次点A・C不採用)/ **B2=B案+拡張込み(改2)**: 最下部の**U型バー(下に凸=学マス同向・細身のSVG弧。両端=リプレイ円の位置で左右対称、画面端まで伸ばさない)**を左右分割し、左=シミュレーター/右=イベントのタップでモード切替(ラベルは弧に沿って円形配置)、シミュレーター側=中央特大+左円リプレイ+右円計算機、イベント側=同型で中央=コンテスト(**スプリント統合検討**)+円=裁縫百万石(職人別枠)、コーナー=右下設定(共通)・左下**ランキング**(イベント側のみ。プロフィールボタンは廃止し設定画面内へ)、最上部中央ドット(職人4種)→その下に左上リボン(職人名)は位置の確保のみ(スワイプ動作なし)/ ハッシュ #a #b #b2 #c で直接表示可(既定=B2)/ 無効(開発中・検討中)は破線表現 / v1.5: 4回目レビュー(バーを上方移動しコーナー円との重なり解消・アクティブ側の丸キャップが非選択側へはみ出す描画順・裁縫百万石円を88pxに拡大=機能追加でボタン増前提)を反映 / v1.4: 3回目レビュー(U型バー細身化・端まで伸ばさない・更新履歴をフレーム外へ)を反映 / v1.3: 2回目レビュー(U型の向き訂正・ランキング化・イベント側同型化)を反映</div>
 
 <script>
   var views = { a: document.getElementById('viewA'), b: document.getElementById('viewB'), b2: document.getElementById('viewB2'), c: document.getElementById('viewC') };
@@ -255,6 +258,11 @@
     fillEvent.classList.toggle('active', !sim);
     lblSim.classList.toggle('activeLbl', sim);
     lblEvent.classList.toggle('activeLbl', !sim);
+    // 中央境界の丸キャップはアクティブ側が非選択側へはみ出す見た目にする:
+    // SVGは文書順=描画順のため、アクティブ側のパスを後(前面)に並べ替える
+    var top = sim ? fillSim : fillEvent;
+    var under = sim ? fillEvent : fillSim;
+    top.parentNode.insertBefore(under, top);
     b2Sim.hidden = !sim;
     b2Event.hidden = sim;
   }
