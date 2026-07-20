@@ -59,47 +59,50 @@
   .dots { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 1;
     display: flex; gap: 8px; }
   .dot { width: 8px; height: 8px; border-radius: 50%;
-    background: rgba(255,255,255,.4); box-shadow: 0 1px 2px rgba(0,0,0,.35); }
-  .dot.on { background: #e8c86a; box-shadow: 0 0 4px rgba(232,200,106,.8), 0 1px 2px rgba(0,0,0,.35); }
+    background: rgba(255,255,255,.5); box-shadow: 0 1px 2px rgba(0,0,0,.25); }
+  .dot.on { background: #f4a9ba; box-shadow: 0 0 4px rgba(244,169,186,.9), 0 1px 2px rgba(0,0,0,.25); }
 
   /* ---- 職人名リボン(素材 ribbon_craft 未生成のためCSSプレースホルダ。
-       紺地+金縁+右端V字燕尾(clip-path)。文字は源暎ラテミン+2層文字) ---- */
+       パステル調(§5.11.1-19): 淡ラベンダー地+白縁+右端V字燕尾(clip-path)。
+       文字は源暎ラテミン+2層文字) ---- */
   .ribbon { position: absolute; left: 0; top: 28px; width: 132px; height: 40px; z-index: 1;
     display: flex; align-items: center; justify-content: center;
     padding-right: 14px;
-    background: linear-gradient(180deg, #3a4568 0%, #2b3350 55%, #232a42 100%);
-    box-shadow: inset 0 0 0 2px #c9a227, 0 3px 6px rgba(0,0,0,.4);
+    background: linear-gradient(180deg, #eee4fa 0%, #dccdf0 55%, #cfc0e8 100%);
+    box-shadow: inset 0 0 0 2px #ffffff, 0 3px 6px rgba(0,0,0,.18);
     clip-path: polygon(0% 0%, 100% 0%, 84% 50%, 100% 100%, 0% 100%);
   }
   .ribbon .t2 { font-size: 14px; font-weight: bold; letter-spacing: .08em; }
 
-  /* ---- 中央特大ボタン(シミュレーター/コンテスト共通)。btn_primary素材(recipe-select.html
-       の startBtn と同型)を固定サイズ240×66・bottom150pxで配置 ---- */
+  /* ---- 中央特大ボタン(トレーニング/コンテスト共通)。専用素材 btn_main_menu(パステル調・
+       §4.6.4)は未生成のためCSSプレースホルダ: 淡ピンク角丸+白縁。240×66・bottom150px ---- */
   .mainBtn { position: absolute; left: 50%; bottom: 150px; transform: translateX(-50%);
-    width: 240px; height: 66px;
+    width: 240px; height: 66px; border-radius: 33px;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-    background: none; border: 20px solid transparent; border-left-width: 14px; border-right-width: 14px;
-    border-image: url('./assets/btn_primary_normal.png') 50 fill / 20px 14px stretch;
-    filter: drop-shadow(0 2px 3px rgba(0,0,0,.35)); }
-  .mainBtn:active { border-image-source: url('./assets/btn_primary_pressed.png'); }
+    background: linear-gradient(180deg, #fde3e9 0%, #f8c9d4 60%, #f3b9c7 100%);
+    border: 3px solid #ffffff;
+    box-shadow: 0 4px 10px rgba(0,0,0,.18), inset 0 2px 3px rgba(255,255,255,.7); }
+  .mainBtn:active {
+    background: linear-gradient(180deg, #f3c4cf 0%, #edb0bf 60%, #e7a3b4 100%);
+    box-shadow: 0 2px 5px rgba(0,0,0,.18), inset 0 2px 4px rgba(0,0,0,.12); }
   .mainBtn .t2Main { font-size: 20px; font-weight: bold; letter-spacing: .25em; text-indent: .25em; }
   .mainBtn .t2Note { font-size: 10px; font-weight: bold; letter-spacing: .02em; }
 
   /* ---- 円ボタン共通(リプレイ・計算機・裁縫百万石・ランキング・設定)。
        素材 btn_circle 未生成のためCSSプレースホルダ:
-       radial-gradient の紺布地+金の縁2px+drop-shadow。無効は彩度低下+破線縁。
+       パステル調(§5.11.1-19): radial-gradient の淡水色+白の縁2px。無効は彩度低下+破線縁。
        文字はフォント合成(2層文字・11〜12px) ---- */
   .circBtn { position: absolute; border-radius: 50%;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-    background: radial-gradient(circle at 35% 28%, #4d5c86 0%, #2b3350 60%, #1c2238 100%);
-    border: 2px solid #c9a227;
-    box-shadow: 0 3px 8px rgba(0,0,0,.45), inset 0 1px 2px rgba(255,255,255,.18);
-    filter: drop-shadow(0 2px 3px rgba(0,0,0,.3));
+    background: radial-gradient(circle at 35% 28%, #f2f8fd 0%, #cfe4f6 55%, #b7d4ee 100%);
+    border: 2px solid #ffffff;
+    box-shadow: 0 3px 8px rgba(0,0,0,.2), inset 0 1px 2px rgba(255,255,255,.6);
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,.15));
   }
-  .circBtn:active { filter: none; box-shadow: 0 1px 3px rgba(0,0,0,.4), inset 0 1px 4px rgba(0,0,0,.35); }
+  .circBtn:active { filter: none; box-shadow: 0 1px 3px rgba(0,0,0,.2), inset 0 1px 4px rgba(0,0,0,.18); }
   .circBtn.dis {
-    background: radial-gradient(circle at 35% 28%, #676c78 0%, #3c3f47 60%, #292b31 100%);
-    border: 2px dashed rgba(201,162,39,.55);
+    background: radial-gradient(circle at 35% 28%, #ececec 0%, #d6d6d6 60%, #c2c2c2 100%);
+    border: 2px dashed rgba(255,255,255,.85);
     box-shadow: none; filter: saturate(.4);
     pointer-events: none;
   }
@@ -114,19 +117,19 @@
 
   /* ---- モード切替: 下に凸のU型バー(SVG弧)。menu-wire.html vB2 と同一パス幾何
        (端(26,65)・谷(187.5,120)・R264.6、viewBox 0 0 375 190、preserveAspectRatio=none)。
-       配色をトーンBに変更: 外縁=金、非選択地=暗い紺、選択側=明るい金茶ハイライト。
+       配色はパステル調(§5.11.1-19): 外縁=白、非選択地=淡水色、選択側=淡ピンクのハイライト。
        将来、素材 bar_mode(透過画像)完成後にSVGから画像差し替え予定(現状はSVGで代用)。 ---- */
   .uSvg { position: absolute; left: 0; bottom: 0; width: 100%; height: 190px; display: block;
     /* SVG要素自体がタップを奪い中央特大ボタン下部を塞ぐため無効化。当たり判定は .hHit 側で再有効化 */
     pointer-events: none; }
   .hband { fill: none; stroke-linecap: round; }
-  .hOutline { stroke: #c9a227; stroke-width: 32; }
-  .hFill { stroke: #2b3350; stroke-width: 28; }
-  .hFill.active { stroke: #e8c86a; }
-  .hDiv { stroke: #c9a227; stroke-width: 2; opacity: .7; }
+  .hOutline { stroke: #ffffff; stroke-width: 32; }
+  .hFill { stroke: #cfe3f4; stroke-width: 28; }
+  .hFill.active { stroke: #f8c9d4; }
+  .hDiv { stroke: #ffffff; stroke-width: 2; opacity: .9; }
   .hHit { fill: none; stroke: rgba(0,0,0,0); stroke-width: 48; pointer-events: stroke; cursor: pointer; }
-  .uLbl { font-size: 13px; font-weight: bold; fill: #f0e6d2; font-family: 'GenEiLateMin', sans-serif; }
-  .uLbl.activeLbl { font-weight: bold; fill: #3a2604; }
+  .uLbl { font-size: 13px; font-weight: bold; fill: #5f7186; font-family: 'GenEiLateMin', sans-serif; }
+  .uLbl.activeLbl { font-weight: bold; fill: #a04a60; }
 
   /* ---- トースト(replay-code.html の様式を流用) ---- */
   .toast { position: fixed; left: 50%; bottom: 84px; z-index: 30;
@@ -154,17 +157,16 @@
 
     <!-- 職人名リボン(プレースホルダ) -->
     <div class="ribbon">
-      <span class="t2 t2-gold"><span class="t2s">さいほう職人</span><span class="t2f">さいほう職人</span></span>
+      <span class="t2 t2-brown"><span class="t2s">さいほう職人</span><span class="t2f">さいほう職人</span></span>
     </div>
 
-    <!-- シミュレーター側 -->
+    <!-- ホーム側(§5.11.1-18: 旧シミュレーター側) -->
     <div id="simPanel">
       <button class="circBtn circL" type="button" id="btnReplay">
-        <span class="t2 t2Main t2-cream"><span class="t2s">リプレイ</span><span class="t2f">リプレイ</span></span>
-        <span class="t2 t2Note t2-cream"><span class="t2s">じゅもん</span><span class="t2f">じゅもん</span></span>
+        <span class="t2 t2Main t2-brown"><span class="t2s">リプレイ</span><span class="t2f">リプレイ</span></span>
       </button>
       <button class="mainBtn" type="button" id="btnSimulator">
-        <span class="t2 t2Main t2-brown"><span class="t2s">シミュレーター</span><span class="t2f">シミュレーター</span></span>
+        <span class="t2 t2Main t2-brown"><span class="t2s">トレーニング</span><span class="t2f">トレーニング</span></span>
       </button>
       <button class="circBtn circR dis" type="button" id="btnCalc" disabled>
         <span class="t2 t2Main t2-dim"><span class="t2s">計算機</span><span class="t2f">計算機</span></span>
@@ -172,18 +174,18 @@
       </button>
     </div>
 
-    <!-- イベント側 -->
+    <!-- ギルド側(§5.11.1-18: 旧イベント側) -->
     <div id="eventPanel" hidden>
       <button class="mainBtn" type="button" id="btnContest">
         <span class="t2 t2Main t2-brown"><span class="t2s">コンテスト</span><span class="t2f">コンテスト</span></span>
         <span class="t2 t2Note t2-brown"><span class="t2s">(スプリント統合検討)</span><span class="t2f">(スプリント統合検討)</span></span>
       </button>
       <button class="circBtn evSub" type="button" id="btnGuild">
-        <span class="t2 t2Main t2-cream"><span class="t2s">裁縫百万石</span><span class="t2f">裁縫百万石</span></span>
-        <span class="t2 t2Note t2-cream"><span class="t2s">(職人別枠)</span><span class="t2f">(職人別枠)</span></span>
+        <span class="t2 t2Main t2-brown"><span class="t2s">裁縫百万石</span><span class="t2f">裁縫百万石</span></span>
+        <span class="t2 t2Note t2-brown"><span class="t2s">(職人別枠)</span><span class="t2f">(職人別枠)</span></span>
       </button>
       <button class="circBtn rankCirc" type="button" id="btnRanking">
-        <span class="t2 t2Main t2-cream"><span class="t2s">ランキング</span><span class="t2f">ランキング</span></span>
+        <span class="t2 t2Main t2-brown"><span class="t2s">ランキング</span><span class="t2f">ランキング</span></span>
       </button>
     </div>
 
@@ -197,13 +199,13 @@
       <path class="hband hFill" id="fillSim" d="M 26 65 A 264.6 264.6 0 0 0 187.5 120" />
       <path class="hband hFill" id="fillEvent" d="M 187.5 120 A 264.6 264.6 0 0 0 349 65" />
       <line class="hDiv" x1="187.5" y1="106" x2="187.5" y2="134" />
-      <text class="uLbl" id="lblSim" dominant-baseline="central"><textPath href="#uPathL" startOffset="50%" text-anchor="middle">シミュレーター</textPath></text>
-      <text class="uLbl" id="lblEvent" dominant-baseline="central"><textPath href="#uPathR" startOffset="50%" text-anchor="middle">イベント</textPath></text>
+      <text class="uLbl" id="lblSim" dominant-baseline="central"><textPath href="#uPathL" startOffset="50%" text-anchor="middle">ホーム</textPath></text>
+      <text class="uLbl" id="lblEvent" dominant-baseline="central"><textPath href="#uPathR" startOffset="50%" text-anchor="middle">ギルド</textPath></text>
       <path class="hHit" id="arcSim" d="M 26 65 A 264.6 264.6 0 0 0 187.5 120" />
       <path class="hHit" id="arcEvent" d="M 187.5 120 A 264.6 264.6 0 0 0 349 65" />
     </svg>
 
-    <!-- コーナー: 右下=設定(モード共通・無効), 左下=ランキングとは別で常時イベント側のみ表示済み -->
+    <!-- コーナー: 右下=設定(モード共通・無効)。左下のランキングはギルド側パネル内で表示 -->
     <button class="circBtn setCirc dis" type="button" id="btnSettings" disabled>
       <span class="t2 t2Main t2-dim"><span class="t2s">設定</span><span class="t2f">設定</span></span>
     </button>
@@ -214,7 +216,7 @@
 </div>
 
 <!-- 更新履歴はフレーム外(100dvhの下)。初期表示には現れず、スクロールで閲覧 -->
-<div class="caption">メニュー画面モック v1.2 — §5.11.1 B2確定形(menu-wire.html vB2)にトーンB(和風ファンタジー・画像AI実素材)を適用した正式版 / 背景=暫定 bg_title.png を全面cover表示(bg_menu素材は未生成。将来、職人別のメニュー背景に差し替え予定) / プレースホルダ部品(いずれも専用素材が未生成のためCSSで代用。素材生成後に画像差し替え予定): 職人名リボン(紺地+金縁+右端V字燕尾はclip-path)/ 円ボタン(リプレイ・計算機・裁縫百万石・ランキング・設定。radial-gradientの紺布地+金縁+2層文字)/ モード切替のU型バー(SVG弧。将来 bar_mode 画像素材に差し替え予定) / シミュレーター側=中央特大(btn_primary素材・recipe-select.htmlのstartBtnと同型)+左円リプレイ+右円計算機(無効) / イベント側=中央特大コンテスト(注記2行目)+右円裁縫百万石+左下円ランキング / シミュレーター→レシピ選択画面・リプレイ→リプレイコード入力画面へ遷移 / コンテスト・裁縫百万石・ランキングはタップで「モック未作成」トースト(replay-code.htmlの様式を流用)/ 計算機・設定はタップ不可(無効) / 更新履歴はフレーム外に表示(他モックと同方式) / v1.1: 実機不具合2件修正 — ①2層文字の文字サイズ・字間・text-indent 指定を内側レイヤーからラッパー(.t2)へ移動(通常フローの縁レイヤーに text-indent が効かず塗りレイヤーだけずれて二重に見えていた)②U型バーSVGを pointer-events:none 化(SVG要素自体がタップを奪い中央特大ボタン下部が反応しなかった。当たり判定は .hHit の pointer-events:stroke で維持) / v1.2: 更新履歴(本文)をフレーム外かつ100dvhの外へ移動(初期表示はモック画面のみ・履歴はスクロールで閲覧)</div>
+<div class="caption">メニュー画面モック v1.3 — §5.11.1 B2確定形(menu-wire.html vB2)ベースの正式版。素材トーンはパステル調(§5.11.1-19。暫定パレット: クリーム地・淡ピンク・淡水色・淡ラベンダー+白縁。実機レビューで調整前提) / 背景=暫定 bg_title.png を全面cover表示(bg_menu素材は未生成。将来、職人別のメニュー背景に差し替え予定) / プレースホルダ部品(いずれも専用素材が未生成のためCSSで代用。素材生成後に画像差し替え予定): 職人名リボン(淡ラベンダー地+白縁+右端V字燕尾はclip-path)/ 円ボタン(リプレイ・計算機・裁縫百万石・ランキング・設定。radial-gradientの淡水色+白縁+2層文字)/ 中央特大ボタン(専用素材 btn_main_menu 起票済・淡ピンク角丸+白縁のCSS代用)/ モード切替のU型バー(SVG弧。白縁+非選択=淡水色+選択=淡ピンク。将来 bar_mode 画像素材に差し替え予定) / ホーム側=中央特大トレーニング+左円リプレイ+右円計算機(無効) / ギルド側=中央特大コンテスト(注記2行目)+右円裁縫百万石+左下円ランキング / トレーニング→レシピ選択画面・リプレイ→リプレイコード入力画面へ遷移 / コンテスト・裁縫百万石・ランキングはタップで「モック未作成」トースト(replay-code.htmlの様式を流用)/ 計算機・設定はタップ不可(無効) / 更新履歴はフレーム外に表示(他モックと同方式) / v1.1: 実機不具合2件修正 — ①2層文字の文字サイズ・字間・text-indent 指定を内側レイヤーからラッパー(.t2)へ移動(通常フローの縁レイヤーに text-indent が効かず塗りレイヤーだけずれて二重に見えていた)②U型バーSVGを pointer-events:none 化(SVG要素自体がタップを奪い中央特大ボタン下部が反応しなかった。当たり判定は .hHit の pointer-events:stroke で維持) / v1.2: 更新履歴(本文)をフレーム外かつ100dvhの外へ移動(初期表示はモック画面のみ・履歴はスクロールで閲覧) / v1.3: 文言変更(§5.11.1-18: モード名=ホーム/ギルド・中央ボタン=トレーニング・リプレイ円は「リプレイ」1行)+素材トーンをパステル調に変更(§5.11.1-19: 中央特大は btn_primary 流用をやめ btn_main_menu を起票、全プレースホルダを暫定パステルパレットで再配色)</div>
 
 <script>
   var simPanel = document.getElementById('simPanel');
