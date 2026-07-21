@@ -47,7 +47,7 @@
   .t2-gold   { --t2fill: linear-gradient(180deg, #fff3d0 0%, #d9b25a 100%); }
   .t2-brown  { --t2fill: linear-gradient(180deg, #5a3c14 0%, #3a2604 100%); }
   .t2-cream  { --t2fill: linear-gradient(180deg, #fbf3e1 0%, #e8dcc0 100%); }
-  .t2-dim    { --t2fill: linear-gradient(180deg, #cfcfcf 0%, #9a9a9a 100%); }
+  .t2-dim    { --t2fill: linear-gradient(180deg, #e4e4e4 0%, #b6b6b6 100%); }
 
   /* ================= メインビュー(§5.11.1 B2確定形) =================
      背景は body の bg_title.png(全面 cover)。ページドット/職人リボン/中央特大ボタン/
@@ -157,16 +157,16 @@
 
     <!-- 職人名リボン(プレースホルダ) -->
     <div class="ribbon">
-      <span class="t2 t2-brown"><span class="t2s">さいほう職人</span><span class="t2f">さいほう職人</span></span>
+      <span class="t2 t2-white"><span class="t2s">さいほう職人</span><span class="t2f">さいほう職人</span></span>
     </div>
 
     <!-- ホーム側(§5.11.1-18: 旧シミュレーター側) -->
     <div id="simPanel">
       <button class="circBtn circL" type="button" id="btnReplay">
-        <span class="t2 t2Main t2-brown"><span class="t2s">リプレイ</span><span class="t2f">リプレイ</span></span>
+        <span class="t2 t2Main t2-white"><span class="t2s">リプレイ</span><span class="t2f">リプレイ</span></span>
       </button>
       <button class="mainBtn" type="button" id="btnSimulator">
-        <span class="t2 t2Main t2-brown"><span class="t2s">トレーニング</span><span class="t2f">トレーニング</span></span>
+        <span class="t2 t2Main t2-white"><span class="t2s">トレーニング</span><span class="t2f">トレーニング</span></span>
       </button>
       <button class="circBtn circR dis" type="button" id="btnCalc" disabled>
         <span class="t2 t2Main t2-dim"><span class="t2s">計算機</span><span class="t2f">計算機</span></span>
@@ -177,15 +177,13 @@
     <!-- ギルド側(§5.11.1-18: 旧イベント側) -->
     <div id="eventPanel" hidden>
       <button class="mainBtn" type="button" id="btnContest">
-        <span class="t2 t2Main t2-brown"><span class="t2s">コンテスト</span><span class="t2f">コンテスト</span></span>
-        <span class="t2 t2Note t2-brown"><span class="t2s">(スプリント統合検討)</span><span class="t2f">(スプリント統合検討)</span></span>
+        <span class="t2 t2Main t2-white"><span class="t2s">コンテスト</span><span class="t2f">コンテスト</span></span>
       </button>
       <button class="circBtn evSub" type="button" id="btnGuild">
-        <span class="t2 t2Main t2-brown"><span class="t2s">裁縫百万石</span><span class="t2f">裁縫百万石</span></span>
-        <span class="t2 t2Note t2-brown"><span class="t2s">(職人別枠)</span><span class="t2f">(職人別枠)</span></span>
+        <span class="t2 t2Main t2-white"><span class="t2s">裁縫百万石</span><span class="t2f">裁縫百万石</span></span>
       </button>
       <button class="circBtn rankCirc" type="button" id="btnRanking">
-        <span class="t2 t2Main t2-brown"><span class="t2s">ランキング</span><span class="t2f">ランキング</span></span>
+        <span class="t2 t2Main t2-white"><span class="t2s">ランキング</span><span class="t2f">ランキング</span></span>
       </button>
     </div>
 
@@ -216,7 +214,7 @@
 </div>
 
 <!-- 更新履歴はフレーム外(100dvhの下)。初期表示には現れず、スクロールで閲覧 -->
-<div class="caption">メニュー画面モック v1.3 — §5.11.1 B2確定形(menu-wire.html vB2)ベースの正式版。素材トーンはパステル調(§5.11.1-19。暫定パレット: クリーム地・淡ピンク・淡水色・淡ラベンダー+白縁。実機レビューで調整前提) / 背景=暫定 bg_title.png を全面cover表示(bg_menu素材は未生成。将来、職人別のメニュー背景に差し替え予定) / プレースホルダ部品(いずれも専用素材が未生成のためCSSで代用。素材生成後に画像差し替え予定): 職人名リボン(淡ラベンダー地+白縁+右端V字燕尾はclip-path)/ 円ボタン(リプレイ・計算機・裁縫百万石・ランキング・設定。radial-gradientの淡水色+白縁+2層文字)/ 中央特大ボタン(専用素材 btn_main_menu 起票済・淡ピンク角丸+白縁のCSS代用)/ モード切替のU型バー(SVG弧。白縁+非選択=淡水色+選択=淡ピンク。将来 bar_mode 画像素材に差し替え予定) / ホーム側=中央特大トレーニング+左円リプレイ+右円計算機(無効) / ギルド側=中央特大コンテスト(注記2行目)+右円裁縫百万石+左下円ランキング / トレーニング→レシピ選択画面・リプレイ→リプレイコード入力画面へ遷移 / コンテスト・裁縫百万石・ランキングはタップで「モック未作成」トースト(replay-code.htmlの様式を流用)/ 計算機・設定はタップ不可(無効) / 更新履歴はフレーム外に表示(他モックと同方式) / v1.1: 実機不具合2件修正 — ①2層文字の文字サイズ・字間・text-indent 指定を内側レイヤーからラッパー(.t2)へ移動(通常フローの縁レイヤーに text-indent が効かず塗りレイヤーだけずれて二重に見えていた)②U型バーSVGを pointer-events:none 化(SVG要素自体がタップを奪い中央特大ボタン下部が反応しなかった。当たり判定は .hHit の pointer-events:stroke で維持) / v1.2: 更新履歴(本文)をフレーム外かつ100dvhの外へ移動(初期表示はモック画面のみ・履歴はスクロールで閲覧) / v1.3: 文言変更(§5.11.1-18: モード名=ホーム/ギルド・中央ボタン=トレーニング・リプレイ円は「リプレイ」1行)+素材トーンをパステル調に変更(§5.11.1-19: 中央特大は btn_primary 流用をやめ btn_main_menu を起票、全プレースホルダを暫定パステルパレットで再配色)</div>
+<div class="caption">メニュー画面モック v1.4 — §5.11.1 B2確定形(menu-wire.html vB2)ベースの正式版。素材トーンはパステル調(§5.11.1-19。暫定パレット: クリーム地・淡ピンク・淡水色・淡ラベンダー+白縁。実機レビューで調整前提) / 背景=暫定 bg_title.png を全面cover表示(bg_menu素材は未生成。将来、職人別のメニュー背景に差し替え予定) / プレースホルダ部品(いずれも専用素材が未生成のためCSSで代用。素材生成後に画像差し替え予定): 職人名リボン(淡ラベンダー地+白縁+右端V字燕尾はclip-path)/ 円ボタン(リプレイ・計算機・裁縫百万石・ランキング・設定。radial-gradientの淡水色+白縁+2層文字)/ 中央特大ボタン(専用素材 btn_main_menu 起票済・淡ピンク角丸+白縁のCSS代用)/ モード切替のU型バー(SVG弧。白縁+非選択=淡水色+選択=淡ピンク。将来 bar_mode 画像素材に差し替え予定) / ホーム側=中央特大トレーニング+左円リプレイ+右円計算機(無効) / ギルド側=中央特大コンテスト(注記2行目)+右円裁縫百万石+左下円ランキング / トレーニング→レシピ選択画面・リプレイ→リプレイコード入力画面へ遷移 / コンテスト・裁縫百万石・ランキングはタップで「モック未作成」トースト(replay-code.htmlの様式を流用)/ 計算機・設定はタップ不可(無効) / 更新履歴はフレーム外に表示(他モックと同方式) / v1.1: 実機不具合2件修正 — ①2層文字の文字サイズ・字間・text-indent 指定を内側レイヤーからラッパー(.t2)へ移動(通常フローの縁レイヤーに text-indent が効かず塗りレイヤーだけずれて二重に見えていた)②U型バーSVGを pointer-events:none 化(SVG要素自体がタップを奪い中央特大ボタン下部が反応しなかった。当たり判定は .hHit の pointer-events:stroke で維持) / v1.2: 更新履歴(本文)をフレーム外かつ100dvhの外へ移動(初期表示はモック画面のみ・履歴はスクロールで閲覧) / v1.3: 文言変更(§5.11.1-18: モード名=ホーム/ギルド・中央ボタン=トレーニング・リプレイ円は「リプレイ」1行)+素材トーンをパステル調に変更(§5.11.1-19: 中央特大は btn_primary 流用をやめ btn_main_menu を起票、全プレースホルダを暫定パステルパレットで再配色) / v1.4: 2層文字の塗りを白系に統一(§5.11.1-20: パステル地に濃茶塗りは判読性低下。無効ボタンの灰塗りも明るく調整)・コンテスト「(スプリント統合検討)」と裁縫百万石「(職人別枠)」の注記行を削除(§5.11.1-21。計算機「(開発中)」は無効状態の説明として継続)</div>
 
 <script>
   var simPanel = document.getElementById('simPanel');
