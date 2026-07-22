@@ -80,7 +80,7 @@
     width: 240px; height: 66px; border-radius: 33px;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
     background: linear-gradient(180deg, #cdeee9 0%, #8ed2c9 55%, #5cb9ae 100%);
-    border: 3px solid #ffffff;
+    border: 3px solid #1f6b64; /* §5.11.1-23: 白縁は明るい背景と同化するため濃青緑 */
     box-shadow: 0 4px 10px rgba(0,0,0,.28), inset 0 2px 3px rgba(255,255,255,.7); }
   .mainBtn:active {
     background: linear-gradient(180deg, #a9dcd5 0%, #74bfb5 55%, #47a297 100%);
@@ -95,14 +95,14 @@
   .circBtn { position: absolute; border-radius: 50%;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
     background: radial-gradient(circle at 35% 28%, #ddf3ef 0%, #96d6cd 55%, #55b5aa 100%);
-    border: 2px solid #ffffff;
+    border: 2px solid #1f6b64; /* §5.11.1-23 */
     box-shadow: 0 3px 8px rgba(0,0,0,.3), inset 0 1px 2px rgba(255,255,255,.6);
     filter: drop-shadow(0 2px 3px rgba(0,0,0,.2));
   }
   .circBtn:active { filter: none; box-shadow: 0 1px 3px rgba(0,0,0,.25), inset 0 1px 4px rgba(0,0,0,.2); }
   .circBtn.dis {
     background: radial-gradient(circle at 35% 28%, #ececec 0%, #d6d6d6 60%, #c2c2c2 100%);
-    border: 2px dashed rgba(255,255,255,.85);
+    border: 2px dashed rgba(31,107,100,.55); /* §5.11.1-23 */
     box-shadow: none; filter: saturate(.4);
     pointer-events: none;
   }
@@ -125,10 +125,10 @@
     pointer-events: none;
     filter: drop-shadow(0 3px 5px rgba(0,0,0,.28)); }
   .hband { fill: none; stroke-linecap: round; }
-  .hOutline { stroke: #ffffff; stroke-width: 32; }
+  .hOutline { stroke: #1f6b64; stroke-width: 32; } /* §5.11.1-23: 白縁は背景と同化するため濃青緑 */
   .hFill { stroke: #bfe2dd; stroke-width: 28; }
   .hFill.active { stroke: #f2708a; }
-  .hDiv { stroke: #ffffff; stroke-width: 2; opacity: .9; }
+  .hDiv { stroke: #1f6b64; stroke-width: 2; opacity: .85; }
   .hHit { fill: none; stroke: rgba(0,0,0,0); stroke-width: 48; pointer-events: stroke; cursor: pointer; }
   .uLbl { font-size: 13px; font-weight: bold; fill: #55807a; font-family: 'GenEiLateMin', sans-serif; }
   .uLbl.activeLbl { font-weight: bold; fill: #ffffff;
@@ -217,7 +217,7 @@
 </div>
 
 <!-- 更新履歴はフレーム外(100dvhの下)。初期表示には現れず、スクロールで閲覧 -->
-<div class="caption">メニュー画面モック v1.5 — §5.11.1 B2確定形(menu-wire.html vB2)ベースの正式版。素材トーンはパステル調(§5.11.1-19)、カラーパレットは2色+アクセント1色・メイン青緑系(§5.11.1-22: メイン=青緑・サブ=淡青緑/生成り・アクセント=コーラルピンク。実機レビューで調整前提) / 背景=暫定 bg_title.png を全面cover表示(bg_menu素材は未生成。将来、職人別のメニュー背景に差し替え予定) / プレースホルダ部品(いずれも専用素材が未生成のためCSSで代用。素材生成後に画像差し替え予定): 職人名リボン(濃青緑+白縁+右端V字燕尾はclip-path。パステル限定なし・背景から浮いてよい)/ 円ボタン(リプレイ・計算機・裁縫百万石・ランキング・設定。radial-gradientの青緑+白縁+影+2層文字)/ 中央特大ボタン(専用素材 btn_main_menu 起票済・青緑角丸+白縁のCSS代用)/ モード切替のU型バー(SVG弧。白縁+影、非選択=低彩度の淡青緑+くすみ文字、選択=コーラルピンク+白文字。将来 bar_mode 画像素材に差し替え予定) / ホーム側=中央特大トレーニング+左円リプレイ+右円計算機(無効) / ギルド側=中央特大コンテスト(注記2行目)+右円裁縫百万石+左下円ランキング / トレーニング→レシピ選択画面・リプレイ→リプレイコード入力画面へ遷移 / コンテスト・裁縫百万石・ランキングはタップで「モック未作成」トースト(replay-code.htmlの様式を流用)/ 計算機・設定はタップ不可(無効) / 更新履歴はフレーム外に表示(他モックと同方式) / v1.1: 実機不具合2件修正 — ①2層文字の文字サイズ・字間・text-indent 指定を内側レイヤーからラッパー(.t2)へ移動(通常フローの縁レイヤーに text-indent が効かず塗りレイヤーだけずれて二重に見えていた)②U型バーSVGを pointer-events:none 化(SVG要素自体がタップを奪い中央特大ボタン下部が反応しなかった。当たり判定は .hHit の pointer-events:stroke で維持) / v1.2: 更新履歴(本文)をフレーム外かつ100dvhの外へ移動(初期表示はモック画面のみ・履歴はスクロールで閲覧) / v1.3: 文言変更(§5.11.1-18: モード名=ホーム/ギルド・中央ボタン=トレーニング・リプレイ円は「リプレイ」1行)+素材トーンをパステル調に変更(§5.11.1-19: 中央特大は btn_primary 流用をやめ btn_main_menu を起票、全プレースホルダを暫定パステルパレットで再配色) / v1.4: 2層文字の塗りを白系に統一(§5.11.1-20: パステル地に濃茶塗りは判読性低下。無効ボタンの灰塗りも明るく調整)・コンテスト「(スプリント統合検討)」と裁縫百万石「(職人別枠)」の注記行を削除(§5.11.1-21。計算機「(開発中)」は無効状態の説明として継続) / v1.5: カラーパレットを2色+アクセント1色・メイン青緑系に変更(§5.11.1-22: ボタン=青緑+白縁+影で背景から強調、リボン=濃青緑、バー=白縁+影・非選択=低彩度淡青緑・選択=アクセントのコーラルピンク+白文字で判別を明確化、アクティブドット=アクセント)</div>
+<div class="caption">メニュー画面モック v1.6 — §5.11.1 B2確定形(menu-wire.html vB2)ベースの正式版。素材トーンはパステル調(§5.11.1-19)、カラーパレットは2色+アクセント1色・メイン青緑系(§5.11.1-22: メイン=青緑・サブ=淡青緑/生成り・アクセント=コーラルピンク。実機レビューで調整前提) / 背景=暫定 bg_title.png を全面cover表示(bg_menu素材は未生成。将来、職人別のメニュー背景に差し替え予定) / プレースホルダ部品(いずれも専用素材が未生成のためCSSで代用。素材生成後に画像差し替え予定): 職人名リボン(濃青緑+白縁+右端V字燕尾はclip-path。パステル限定なし・背景から浮いてよい)/ 円ボタン(リプレイ・計算機・裁縫百万石・ランキング・設定。radial-gradientの青緑+白縁+影+2層文字)/ 中央特大ボタン(専用素材 btn_main_menu 起票済・青緑角丸+白縁のCSS代用)/ モード切替のU型バー(SVG弧。白縁+影、非選択=低彩度の淡青緑+くすみ文字、選択=コーラルピンク+白文字。将来 bar_mode 画像素材に差し替え予定) / ホーム側=中央特大トレーニング+左円リプレイ+右円計算機(無効) / ギルド側=中央特大コンテスト(注記2行目)+右円裁縫百万石+左下円ランキング / トレーニング→レシピ選択画面・リプレイ→リプレイコード入力画面へ遷移 / コンテスト・裁縫百万石・ランキングはタップで「モック未作成」トースト(replay-code.htmlの様式を流用)/ 計算機・設定はタップ不可(無効) / 更新履歴はフレーム外に表示(他モックと同方式) / v1.1: 実機不具合2件修正 — ①2層文字の文字サイズ・字間・text-indent 指定を内側レイヤーからラッパー(.t2)へ移動(通常フローの縁レイヤーに text-indent が効かず塗りレイヤーだけずれて二重に見えていた)②U型バーSVGを pointer-events:none 化(SVG要素自体がタップを奪い中央特大ボタン下部が反応しなかった。当たり判定は .hHit の pointer-events:stroke で維持) / v1.2: 更新履歴(本文)をフレーム外かつ100dvhの外へ移動(初期表示はモック画面のみ・履歴はスクロールで閲覧) / v1.3: 文言変更(§5.11.1-18: モード名=ホーム/ギルド・中央ボタン=トレーニング・リプレイ円は「リプレイ」1行)+素材トーンをパステル調に変更(§5.11.1-19: 中央特大は btn_primary 流用をやめ btn_main_menu を起票、全プレースホルダを暫定パステルパレットで再配色) / v1.4: 2層文字の塗りを白系に統一(§5.11.1-20: パステル地に濃茶塗りは判読性低下。無効ボタンの灰塗りも明るく調整)・コンテスト「(スプリント統合検討)」と裁縫百万石「(職人別枠)」の注記行を削除(§5.11.1-21。計算機「(開発中)」は無効状態の説明として継続) / v1.5: カラーパレットを2色+アクセント1色・メイン青緑系に変更(§5.11.1-22: ボタン=青緑+白縁+影で背景から強調、リボン=濃青緑、バー=白縁+影・非選択=低彩度淡青緑・選択=アクセントのコーラルピンク+白文字で判別を明確化、アクティブドット=アクセント) / v1.6: ボタン・バーの縁取りを白→濃青緑に変更(§5.11.1-23: 白縁は明るい背景と同化して境界が出ないため。濃地のリボンのみ白縁を維持。無効円の破線縁も濃青緑系に)</div>
 
 <script>
   var simPanel = document.getElementById('simPanel');
