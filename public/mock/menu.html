@@ -11,6 +11,10 @@
     font-weight: normal; font-style: normal; font-display: swap;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  /* §5.11.1-24⑦: バー選択側のアクセント色は紫系/橙系を比較検討中(右上の仮設切替で変更)。
+     アクティブドット等もアクセントに連動 */
+  :root { --accent: #b691e6; --accentDeep: #8a63c0; --accentStroke: rgba(70,40,110,.5); }
+  body[data-accent="orange"] { --accent: #f5a35f; --accentDeep: #d47f35; --accentStroke: rgba(150,80,10,.5); }
   html, body { height: 100%; }
   button { font-family: inherit; } /* フォーム部品はフォントを継承しないため明示 */
   body {
@@ -48,6 +52,8 @@
   .t2-brown  { --t2fill: linear-gradient(180deg, #5a3c14 0%, #3a2604 100%); }
   .t2-cream  { --t2fill: linear-gradient(180deg, #fbf3e1 0%, #e8dcc0 100%); }
   .t2-dim    { --t2fill: linear-gradient(180deg, #e4e4e4 0%, #b6b6b6 100%); }
+  /* §5.11.1-24⑥: リプレイ・中央特大の文字の塗りグラデ(暫定: 白→クリーム→淡金) */
+  .t2-shine  { --t2fill: linear-gradient(180deg, #ffffff 0%, #fdf0cf 50%, #f6d88e 100%); }
 
   /* ================= メインビュー(§5.11.1 B2確定形) =================
      背景は body の bg_title.png(全面 cover)。ページドット/職人リボン/中央特大ボタン/
@@ -60,7 +66,7 @@
     display: flex; gap: 8px; }
   .dot { width: 8px; height: 8px; border-radius: 50%;
     background: rgba(255,255,255,.55); box-shadow: 0 1px 2px rgba(0,0,0,.3); }
-  .dot.on { background: #f2708a; box-shadow: 0 0 4px rgba(242,112,138,.9), 0 1px 2px rgba(0,0,0,.3); }
+  .dot.on { background: var(--accent); box-shadow: 0 0 4px var(--accent), 0 1px 2px rgba(0,0,0,.3); }
 
   /* ---- 職人名リボン(素材 ribbon_craft 未生成のためCSSプレースホルダ。
        §5.11.1-22: リボンは濃色可(背景から浮いてよい)→濃い青緑+白縁+右端V字燕尾(clip-path)。
@@ -79,13 +85,13 @@
   .mainBtn { position: absolute; left: 50%; bottom: 150px; transform: translateX(-50%);
     width: 240px; height: 66px; border-radius: 33px;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-    background: linear-gradient(180deg, #cdeee9 0%, #8ed2c9 55%, #5cb9ae 100%);
-    border: 3px solid #1f6b64; /* §5.11.1-23: 白縁は明るい背景と同化するため濃青緑 */
+    background: linear-gradient(180deg, #dcf3ef 0%, #b2e2da 55%, #8fd0c6 100%); /* §5.11.1-24①: v1.5前の明るさへ */
+    border: 3px solid #5aa79d; /* §5.11.1-24③: 面色と同系の中間色 */
     box-shadow: 0 4px 10px rgba(0,0,0,.28), inset 0 2px 3px rgba(255,255,255,.7); }
   .mainBtn:active {
-    background: linear-gradient(180deg, #a9dcd5 0%, #74bfb5 55%, #47a297 100%);
+    background: linear-gradient(180deg, #c2e6df 0%, #98d0c6 55%, #76bcb0 100%);
     box-shadow: 0 2px 5px rgba(0,0,0,.25), inset 0 2px 4px rgba(0,0,0,.12); }
-  .mainBtn .t2Main { font-size: 20px; font-weight: bold; letter-spacing: .25em; text-indent: .25em; }
+  .mainBtn .t2Main { font-size: 22px; font-weight: bold; letter-spacing: .25em; text-indent: .25em; } /* §5.11.1-24⑥: 一回り拡大 */
   .mainBtn .t2Note { font-size: 10px; font-weight: bold; letter-spacing: .02em; }
 
   /* ---- 円ボタン共通(リプレイ・計算機・裁縫百万石・ランキング・設定)。
@@ -94,22 +100,26 @@
        無効は彩度低下+破線縁。文字はフォント合成(2層文字・11〜12px) ---- */
   .circBtn { position: absolute; border-radius: 50%;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-    background: radial-gradient(circle at 35% 28%, #ddf3ef 0%, #96d6cd 55%, #55b5aa 100%);
-    border: 2px solid #1f6b64; /* §5.11.1-23 */
+    background: radial-gradient(circle at 35% 28%, #e8f7f4 0%, #c0e8e1 55%, #9cd6cc 100%); /* §5.11.1-24① */
+    border: 2px solid #5aa79d; /* §5.11.1-24③: 面色と同系の中間色 */
     box-shadow: 0 3px 8px rgba(0,0,0,.3), inset 0 1px 2px rgba(255,255,255,.6);
     filter: drop-shadow(0 2px 3px rgba(0,0,0,.2));
   }
   .circBtn:active { filter: none; box-shadow: 0 1px 3px rgba(0,0,0,.25), inset 0 1px 4px rgba(0,0,0,.2); }
   .circBtn.dis {
     background: radial-gradient(circle at 35% 28%, #ececec 0%, #d6d6d6 60%, #c2c2c2 100%);
-    border: 2px dashed rgba(31,107,100,.55); /* §5.11.1-23 */
+    border: 2px dashed #a9b4b1; /* §5.11.1-24③: 無効面のグレーに合わせた中間グレー */
     box-shadow: none; filter: saturate(.4);
     pointer-events: none;
   }
   .circBtn .t2Main { font-size: 12px; font-weight: bold; }
   .circBtn .t2Note { font-size: 9px; }
 
-  .circL { left: 20px; bottom: 226px; width: 88px; height: 88px; }
+  /* リプレイ円: 面=淡青(§5.11.1-24②)+同系中間色の縁(24③)、文字は一回り拡大(24⑥) */
+  .circL { left: 20px; bottom: 226px; width: 88px; height: 88px;
+    background: radial-gradient(circle at 35% 28%, #eef5fd 0%, #c8dff5 55%, #a8cbec 100%);
+    border-color: #6d9ecb; }
+  .circL .t2Main { font-size: 14px; }
   .circR { right: 20px; bottom: 226px; width: 88px; height: 88px; }
   .evSub { right: 20px; bottom: 226px; width: 88px; height: 88px; }
   .rankCirc { left: 10px; bottom: 8px; width: 60px; height: 60px; z-index: 2; }
@@ -125,14 +135,21 @@
     pointer-events: none;
     filter: drop-shadow(0 3px 5px rgba(0,0,0,.28)); }
   .hband { fill: none; stroke-linecap: round; }
-  .hOutline { stroke: #1f6b64; stroke-width: 32; } /* §5.11.1-23: 白縁は背景と同化するため濃青緑 */
+  .hOutline { stroke: #ffffff; stroke-width: 32; } /* §5.11.1-24④: バーの枠は白で可(影で分離) */
   .hFill { stroke: #bfe2dd; stroke-width: 28; }
-  .hFill.active { stroke: #f2708a; }
-  .hDiv { stroke: #1f6b64; stroke-width: 2; opacity: .85; }
+  .hFill.active { stroke: var(--accent); } /* §5.11.1-24⑦: 紫/橙 比較中 */
+  /* §5.11.1-24⑤: 中央縦線は廃止。選択側の丸キャップ端の境界リング(アクティブ塗りの下に敷く) */
+  .capRing { fill: none; stroke: var(--accentDeep); stroke-width: 2; }
   .hHit { fill: none; stroke: rgba(0,0,0,0); stroke-width: 48; pointer-events: stroke; cursor: pointer; }
   .uLbl { font-size: 13px; font-weight: bold; fill: #55807a; font-family: 'GenEiLateMin', sans-serif; }
   .uLbl.activeLbl { font-weight: bold; fill: #ffffff;
-    paint-order: stroke; stroke: rgba(90,20,40,.45); stroke-width: 1.2px; }
+    paint-order: stroke; stroke: var(--accentStroke); stroke-width: 1.2px; }
+
+  /* ---- アクセント比較の仮設切替(§5.11.1-24⑦。モック専用・素材化しない) ---- */
+  .accentSwitch { position: absolute; top: 8px; right: 8px; z-index: 3; display: flex; gap: 4px; }
+  .accentSwitch button { width: 32px; height: 22px; font-size: 11px; line-height: 1; border-radius: 11px;
+    border: 1px solid rgba(0,0,0,.25); background: rgba(255,255,255,.78); color: #555; }
+  .accentSwitch button.on { background: var(--accent); color: #fff; border-color: var(--accentDeep); }
 
   /* ---- トースト(replay-code.html の様式を流用) ---- */
   .toast { position: fixed; left: 50%; bottom: 84px; z-index: 30;
@@ -166,10 +183,10 @@
     <!-- ホーム側(§5.11.1-18: 旧シミュレーター側) -->
     <div id="simPanel">
       <button class="circBtn circL" type="button" id="btnReplay">
-        <span class="t2 t2Main t2-white"><span class="t2s">リプレイ</span><span class="t2f">リプレイ</span></span>
+        <span class="t2 t2Main t2-shine"><span class="t2s">リプレイ</span><span class="t2f">リプレイ</span></span>
       </button>
       <button class="mainBtn" type="button" id="btnSimulator">
-        <span class="t2 t2Main t2-white"><span class="t2s">トレーニング</span><span class="t2f">トレーニング</span></span>
+        <span class="t2 t2Main t2-shine"><span class="t2s">トレーニング</span><span class="t2f">トレーニング</span></span>
       </button>
       <button class="circBtn circR dis" type="button" id="btnCalc" disabled>
         <span class="t2 t2Main t2-dim"><span class="t2s">計算機</span><span class="t2f">計算機</span></span>
@@ -180,7 +197,7 @@
     <!-- ギルド側(§5.11.1-18: 旧イベント側) -->
     <div id="eventPanel" hidden>
       <button class="mainBtn" type="button" id="btnContest">
-        <span class="t2 t2Main t2-white"><span class="t2s">コンテスト</span><span class="t2f">コンテスト</span></span>
+        <span class="t2 t2Main t2-shine"><span class="t2s">コンテスト</span><span class="t2f">コンテスト</span></span>
       </button>
       <button class="circBtn evSub" type="button" id="btnGuild">
         <span class="t2 t2Main t2-white"><span class="t2s">裁縫百万石</span><span class="t2f">裁縫百万石</span></span>
@@ -199,7 +216,9 @@
       <path class="hband hOutline" d="M 26 65 A 264.6 264.6 0 0 0 349 65" />
       <path class="hband hFill" id="fillSim" d="M 26 65 A 264.6 264.6 0 0 0 187.5 120" />
       <path class="hband hFill" id="fillEvent" d="M 187.5 120 A 264.6 264.6 0 0 0 349 65" />
-      <line class="hDiv" x1="187.5" y1="106" x2="187.5" y2="134" />
+      <!-- 選択側キャップの境界リング(§5.11.1-24⑤)。JSでアクティブ塗りの直前(下)に並べ替え、
+           はみ出した半円の縁だけが見える -->
+      <circle class="capRing" id="capRing" cx="187.5" cy="120" r="15" />
       <text class="uLbl" id="lblSim" dominant-baseline="central"><textPath href="#uPathL" startOffset="50%" text-anchor="middle">ホーム</textPath></text>
       <text class="uLbl" id="lblEvent" dominant-baseline="central"><textPath href="#uPathR" startOffset="50%" text-anchor="middle">ギルド</textPath></text>
       <path class="hHit" id="arcSim" d="M 26 65 A 264.6 264.6 0 0 0 187.5 120" />
@@ -210,6 +229,12 @@
     <button class="circBtn setCirc dis" type="button" id="btnSettings" disabled>
       <span class="t2 t2Main t2-dim"><span class="t2s">設定</span><span class="t2f">設定</span></span>
     </button>
+
+    <!-- アクセント比較の仮設切替(§5.11.1-24⑦。モック専用) -->
+    <div class="accentSwitch" id="accentSwitch">
+      <button type="button" data-accent="purple" class="on">紫</button>
+      <button type="button" data-accent="orange">橙</button>
+    </div>
   </div>
 
   <!-- モック未作成トースト -->
@@ -217,7 +242,7 @@
 </div>
 
 <!-- 更新履歴はフレーム外(100dvhの下)。初期表示には現れず、スクロールで閲覧 -->
-<div class="caption">メニュー画面モック v1.6 — §5.11.1 B2確定形(menu-wire.html vB2)ベースの正式版。素材トーンはパステル調(§5.11.1-19)、カラーパレットは2色+アクセント1色・メイン青緑系(§5.11.1-22: メイン=青緑・サブ=淡青緑/生成り・アクセント=コーラルピンク。実機レビューで調整前提) / 背景=暫定 bg_title.png を全面cover表示(bg_menu素材は未生成。将来、職人別のメニュー背景に差し替え予定) / プレースホルダ部品(いずれも専用素材が未生成のためCSSで代用。素材生成後に画像差し替え予定): 職人名リボン(濃青緑+白縁+右端V字燕尾はclip-path。パステル限定なし・背景から浮いてよい)/ 円ボタン(リプレイ・計算機・裁縫百万石・ランキング・設定。radial-gradientの青緑+白縁+影+2層文字)/ 中央特大ボタン(専用素材 btn_main_menu 起票済・青緑角丸+白縁のCSS代用)/ モード切替のU型バー(SVG弧。白縁+影、非選択=低彩度の淡青緑+くすみ文字、選択=コーラルピンク+白文字。将来 bar_mode 画像素材に差し替え予定) / ホーム側=中央特大トレーニング+左円リプレイ+右円計算機(無効) / ギルド側=中央特大コンテスト(注記2行目)+右円裁縫百万石+左下円ランキング / トレーニング→レシピ選択画面・リプレイ→リプレイコード入力画面へ遷移 / コンテスト・裁縫百万石・ランキングはタップで「モック未作成」トースト(replay-code.htmlの様式を流用)/ 計算機・設定はタップ不可(無効) / 更新履歴はフレーム外に表示(他モックと同方式) / v1.1: 実機不具合2件修正 — ①2層文字の文字サイズ・字間・text-indent 指定を内側レイヤーからラッパー(.t2)へ移動(通常フローの縁レイヤーに text-indent が効かず塗りレイヤーだけずれて二重に見えていた)②U型バーSVGを pointer-events:none 化(SVG要素自体がタップを奪い中央特大ボタン下部が反応しなかった。当たり判定は .hHit の pointer-events:stroke で維持) / v1.2: 更新履歴(本文)をフレーム外かつ100dvhの外へ移動(初期表示はモック画面のみ・履歴はスクロールで閲覧) / v1.3: 文言変更(§5.11.1-18: モード名=ホーム/ギルド・中央ボタン=トレーニング・リプレイ円は「リプレイ」1行)+素材トーンをパステル調に変更(§5.11.1-19: 中央特大は btn_primary 流用をやめ btn_main_menu を起票、全プレースホルダを暫定パステルパレットで再配色) / v1.4: 2層文字の塗りを白系に統一(§5.11.1-20: パステル地に濃茶塗りは判読性低下。無効ボタンの灰塗りも明るく調整)・コンテスト「(スプリント統合検討)」と裁縫百万石「(職人別枠)」の注記行を削除(§5.11.1-21。計算機「(開発中)」は無効状態の説明として継続) / v1.5: カラーパレットを2色+アクセント1色・メイン青緑系に変更(§5.11.1-22: ボタン=青緑+白縁+影で背景から強調、リボン=濃青緑、バー=白縁+影・非選択=低彩度淡青緑・選択=アクセントのコーラルピンク+白文字で判別を明確化、アクティブドット=アクセント) / v1.6: ボタン・バーの縁取りを白→濃青緑に変更(§5.11.1-23: 白縁は明るい背景と同化して境界が出ないため。濃地のリボンのみ白縁を維持。無効円の破線縁も濃青緑系に)</div>
+<div class="caption">メニュー画面モック v1.7 — §5.11.1 B2確定形(menu-wire.html vB2)ベースの正式版。素材トーンはパステル調(§5.11.1-19)、カラーパレットは2色+アクセント1色・メイン青緑系(§5.11.1-22。アクセントは紫系/橙系を比較検討中=§5.11.1-24⑦・右上の仮設切替「紫/橙」で変更可) / 背景=暫定 bg_title.png を全面cover表示(bg_menu素材は未生成。将来、職人別のメニュー背景に差し替え予定) / プレースホルダ部品(いずれも専用素材が未生成のためCSSで代用。素材生成後に画像差し替え予定): 職人名リボン(濃青緑+白縁+右端V字燕尾はclip-path。パステル限定なし・背景から浮いてよい)/ 円ボタン(計算機・裁縫百万石・ランキング・設定=パステル寄りの青緑面+同系中間色の縁、リプレイ=淡青面+中間の青の縁・文字14px)/ 中央特大ボタン(専用素材 btn_main_menu 起票済・パステル寄りの青緑角丸+同系中間色の縁のCSS代用・文字22px)/ リプレイ・中央特大の文字は塗りに白→クリーム→淡金のグラデ(§5.11.1-24⑥)/ モード切替のU型バー(SVG弧。白枠+影、非選択=低彩度の淡青緑+くすみ文字、選択=アクセント+白文字。中央縦線なし・選択側の丸キャップ端に境界リング=§5.11.1-24⑤。将来 bar_mode 画像素材に差し替え予定) / ホーム側=中央特大トレーニング+左円リプレイ+右円計算機(無効) / ギルド側=中央特大コンテスト(注記2行目)+右円裁縫百万石+左下円ランキング / トレーニング→レシピ選択画面・リプレイ→リプレイコード入力画面へ遷移 / コンテスト・裁縫百万石・ランキングはタップで「モック未作成」トースト(replay-code.htmlの様式を流用)/ 計算機・設定はタップ不可(無効) / 更新履歴はフレーム外に表示(他モックと同方式) / v1.1: 実機不具合2件修正 — ①2層文字の文字サイズ・字間・text-indent 指定を内側レイヤーからラッパー(.t2)へ移動(通常フローの縁レイヤーに text-indent が効かず塗りレイヤーだけずれて二重に見えていた)②U型バーSVGを pointer-events:none 化(SVG要素自体がタップを奪い中央特大ボタン下部が反応しなかった。当たり判定は .hHit の pointer-events:stroke で維持) / v1.2: 更新履歴(本文)をフレーム外かつ100dvhの外へ移動(初期表示はモック画面のみ・履歴はスクロールで閲覧) / v1.3: 文言変更(§5.11.1-18: モード名=ホーム/ギルド・中央ボタン=トレーニング・リプレイ円は「リプレイ」1行)+素材トーンをパステル調に変更(§5.11.1-19: 中央特大は btn_primary 流用をやめ btn_main_menu を起票、全プレースホルダを暫定パステルパレットで再配色) / v1.4: 2層文字の塗りを白系に統一(§5.11.1-20: パステル地に濃茶塗りは判読性低下。無効ボタンの灰塗りも明るく調整)・コンテスト「(スプリント統合検討)」と裁縫百万石「(職人別枠)」の注記行を削除(§5.11.1-21。計算機「(開発中)」は無効状態の説明として継続) / v1.5: カラーパレットを2色+アクセント1色・メイン青緑系に変更(§5.11.1-22: ボタン=青緑+白縁+影で背景から強調、リボン=濃青緑、バー=白縁+影・非選択=低彩度淡青緑・選択=アクセントのコーラルピンク+白文字で判別を明確化、アクティブドット=アクセント) / v1.6: ボタン・バーの縁取りを白→濃青緑に変更(§5.11.1-23: 白縁は明るい背景と同化して境界が出ないため。濃地のリボンのみ白縁を維持。無効円の破線縁も濃青緑系に) / v1.7: 配色調整方針7点を反映(§5.11.1-24: ①面色の彩度をv1.5前に戻す ②リプレイ=淡青 ③縁は面色に合わせた同系中間色に緩和 ④バー枠=白に戻す ⑤中央縦線を廃止し選択側キャップに境界リング ⑥リプレイ・中央特大の文字を一回り拡大+塗りグラデ ⑦アクセントを紫系/橙系の比較用に仮設切替を設置=右上「紫/橙」・アクティブドット等も連動)</div>
 
 <script>
   var simPanel = document.getElementById('simPanel');
@@ -229,6 +254,8 @@
   var lblSim = document.getElementById('lblSim');
   var lblEvent = document.getElementById('lblEvent');
 
+  var capRing = document.getElementById('capRing');
+
   function applyMode(mode) {
     var sim = mode === 'sim';
     fillSim.classList.toggle('active', sim);
@@ -236,16 +263,29 @@
     lblSim.classList.toggle('activeLbl', sim);
     lblEvent.classList.toggle('activeLbl', !sim);
     // 中央境界の丸キャップはアクティブ側が非選択側へはみ出す見た目にする:
-    // SVGは文書順=描画順のため、アクティブ側のパスを後(前面)に並べ替える(menu-wire.html と同じ)
+    // SVGは文書順=描画順のため、アクティブ側のパスを後(前面)に並べ替える(menu-wire.html と同じ)。
+    // 境界リングはアクティブ塗りの直前(下)に敷き、はみ出した半円の縁だけを見せる(§5.11.1-24⑤)
     var top = sim ? fillSim : fillEvent;
     var under = sim ? fillEvent : fillSim;
     top.parentNode.insertBefore(under, top);
+    top.parentNode.insertBefore(capRing, top);
     simPanel.hidden = !sim;
     eventPanel.hidden = sim;
   }
   arcSim.addEventListener('click', function () { applyMode('sim'); });
   arcEvent.addEventListener('click', function () { applyMode('event'); });
   applyMode('sim');
+
+  // ---- アクセント比較の仮設切替(§5.11.1-24⑦) ----
+  var accentSwitch = document.getElementById('accentSwitch');
+  accentSwitch.addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    if (!b) return;
+    document.body.dataset.accent = b.dataset.accent;
+    accentSwitch.querySelectorAll('button').forEach(function (x) {
+      x.classList.toggle('on', x === b);
+    });
+  });
 
   // ---- トースト(モック未作成) ----
   var toast = document.getElementById('toast');
