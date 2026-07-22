@@ -59,47 +59,47 @@
   .dots { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 1;
     display: flex; gap: 8px; }
   .dot { width: 8px; height: 8px; border-radius: 50%;
-    background: rgba(255,255,255,.5); box-shadow: 0 1px 2px rgba(0,0,0,.25); }
-  .dot.on { background: #f4a9ba; box-shadow: 0 0 4px rgba(244,169,186,.9), 0 1px 2px rgba(0,0,0,.25); }
+    background: rgba(255,255,255,.55); box-shadow: 0 1px 2px rgba(0,0,0,.3); }
+  .dot.on { background: #f2708a; box-shadow: 0 0 4px rgba(242,112,138,.9), 0 1px 2px rgba(0,0,0,.3); }
 
   /* ---- 職人名リボン(素材 ribbon_craft 未生成のためCSSプレースホルダ。
-       パステル調(§5.11.1-19): 淡ラベンダー地+白縁+右端V字燕尾(clip-path)。
+       §5.11.1-22: リボンは濃色可(背景から浮いてよい)→濃い青緑+白縁+右端V字燕尾(clip-path)。
        文字は源暎ラテミン+2層文字) ---- */
   .ribbon { position: absolute; left: 0; top: 28px; width: 132px; height: 40px; z-index: 1;
     display: flex; align-items: center; justify-content: center;
     padding-right: 14px;
-    background: linear-gradient(180deg, #eee4fa 0%, #dccdf0 55%, #cfc0e8 100%);
-    box-shadow: inset 0 0 0 2px #ffffff, 0 3px 6px rgba(0,0,0,.18);
+    background: linear-gradient(180deg, #3d968d 0%, #2a7f77 55%, #1f6b64 100%);
+    box-shadow: inset 0 0 0 2px #ffffff, 0 3px 6px rgba(0,0,0,.3);
     clip-path: polygon(0% 0%, 100% 0%, 84% 50%, 100% 100%, 0% 100%);
   }
   .ribbon .t2 { font-size: 14px; font-weight: bold; letter-spacing: .08em; }
 
-  /* ---- 中央特大ボタン(トレーニング/コンテスト共通)。専用素材 btn_main_menu(パステル調・
-       §4.6.4)は未生成のためCSSプレースホルダ: 淡ピンク角丸+白縁。240×66・bottom150px ---- */
+  /* ---- 中央特大ボタン(トレーニング/コンテスト共通)。専用素材 btn_main_menu(§4.6.4)は
+       未生成のためCSSプレースホルダ: メインの青緑+白縁の角丸(§5.11.1-22)。240×66・bottom150px ---- */
   .mainBtn { position: absolute; left: 50%; bottom: 150px; transform: translateX(-50%);
     width: 240px; height: 66px; border-radius: 33px;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-    background: linear-gradient(180deg, #fde3e9 0%, #f8c9d4 60%, #f3b9c7 100%);
+    background: linear-gradient(180deg, #cdeee9 0%, #8ed2c9 55%, #5cb9ae 100%);
     border: 3px solid #ffffff;
-    box-shadow: 0 4px 10px rgba(0,0,0,.18), inset 0 2px 3px rgba(255,255,255,.7); }
+    box-shadow: 0 4px 10px rgba(0,0,0,.28), inset 0 2px 3px rgba(255,255,255,.7); }
   .mainBtn:active {
-    background: linear-gradient(180deg, #f3c4cf 0%, #edb0bf 60%, #e7a3b4 100%);
-    box-shadow: 0 2px 5px rgba(0,0,0,.18), inset 0 2px 4px rgba(0,0,0,.12); }
+    background: linear-gradient(180deg, #a9dcd5 0%, #74bfb5 55%, #47a297 100%);
+    box-shadow: 0 2px 5px rgba(0,0,0,.25), inset 0 2px 4px rgba(0,0,0,.12); }
   .mainBtn .t2Main { font-size: 20px; font-weight: bold; letter-spacing: .25em; text-indent: .25em; }
   .mainBtn .t2Note { font-size: 10px; font-weight: bold; letter-spacing: .02em; }
 
   /* ---- 円ボタン共通(リプレイ・計算機・裁縫百万石・ランキング・設定)。
        素材 btn_circle 未生成のためCSSプレースホルダ:
-       パステル調(§5.11.1-19): radial-gradient の淡水色+白の縁2px。無効は彩度低下+破線縁。
-       文字はフォント合成(2層文字・11〜12px) ---- */
+       メインの青緑+白の縁2px(§5.11.1-22: 背景に埋まらない彩度+白縁・影で境界強調)。
+       無効は彩度低下+破線縁。文字はフォント合成(2層文字・11〜12px) ---- */
   .circBtn { position: absolute; border-radius: 50%;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-    background: radial-gradient(circle at 35% 28%, #f2f8fd 0%, #cfe4f6 55%, #b7d4ee 100%);
+    background: radial-gradient(circle at 35% 28%, #ddf3ef 0%, #96d6cd 55%, #55b5aa 100%);
     border: 2px solid #ffffff;
-    box-shadow: 0 3px 8px rgba(0,0,0,.2), inset 0 1px 2px rgba(255,255,255,.6);
-    filter: drop-shadow(0 2px 3px rgba(0,0,0,.15));
+    box-shadow: 0 3px 8px rgba(0,0,0,.3), inset 0 1px 2px rgba(255,255,255,.6);
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,.2));
   }
-  .circBtn:active { filter: none; box-shadow: 0 1px 3px rgba(0,0,0,.2), inset 0 1px 4px rgba(0,0,0,.18); }
+  .circBtn:active { filter: none; box-shadow: 0 1px 3px rgba(0,0,0,.25), inset 0 1px 4px rgba(0,0,0,.2); }
   .circBtn.dis {
     background: radial-gradient(circle at 35% 28%, #ececec 0%, #d6d6d6 60%, #c2c2c2 100%);
     border: 2px dashed rgba(255,255,255,.85);
@@ -117,19 +117,22 @@
 
   /* ---- モード切替: 下に凸のU型バー(SVG弧)。menu-wire.html vB2 と同一パス幾何
        (端(26,65)・谷(187.5,120)・R264.6、viewBox 0 0 375 190、preserveAspectRatio=none)。
-       配色はパステル調(§5.11.1-19): 外縁=白、非選択地=淡水色、選択側=淡ピンクのハイライト。
+       配色(§5.11.1-22): 外縁=白+影で背景から分離、非選択地=低彩度の淡青緑+くすみ文字、
+       選択側=アクセントのコーラルピンク(高彩度)+白文字で選択状態を明確化。
        将来、素材 bar_mode(透過画像)完成後にSVGから画像差し替え予定(現状はSVGで代用)。 ---- */
   .uSvg { position: absolute; left: 0; bottom: 0; width: 100%; height: 190px; display: block;
     /* SVG要素自体がタップを奪い中央特大ボタン下部を塞ぐため無効化。当たり判定は .hHit 側で再有効化 */
-    pointer-events: none; }
+    pointer-events: none;
+    filter: drop-shadow(0 3px 5px rgba(0,0,0,.28)); }
   .hband { fill: none; stroke-linecap: round; }
   .hOutline { stroke: #ffffff; stroke-width: 32; }
-  .hFill { stroke: #cfe3f4; stroke-width: 28; }
-  .hFill.active { stroke: #f8c9d4; }
+  .hFill { stroke: #bfe2dd; stroke-width: 28; }
+  .hFill.active { stroke: #f2708a; }
   .hDiv { stroke: #ffffff; stroke-width: 2; opacity: .9; }
   .hHit { fill: none; stroke: rgba(0,0,0,0); stroke-width: 48; pointer-events: stroke; cursor: pointer; }
-  .uLbl { font-size: 13px; font-weight: bold; fill: #5f7186; font-family: 'GenEiLateMin', sans-serif; }
-  .uLbl.activeLbl { font-weight: bold; fill: #a04a60; }
+  .uLbl { font-size: 13px; font-weight: bold; fill: #55807a; font-family: 'GenEiLateMin', sans-serif; }
+  .uLbl.activeLbl { font-weight: bold; fill: #ffffff;
+    paint-order: stroke; stroke: rgba(90,20,40,.45); stroke-width: 1.2px; }
 
   /* ---- トースト(replay-code.html の様式を流用) ---- */
   .toast { position: fixed; left: 50%; bottom: 84px; z-index: 30;
@@ -214,7 +217,7 @@
 </div>
 
 <!-- 更新履歴はフレーム外(100dvhの下)。初期表示には現れず、スクロールで閲覧 -->
-<div class="caption">メニュー画面モック v1.4 — §5.11.1 B2確定形(menu-wire.html vB2)ベースの正式版。素材トーンはパステル調(§5.11.1-19。暫定パレット: クリーム地・淡ピンク・淡水色・淡ラベンダー+白縁。実機レビューで調整前提) / 背景=暫定 bg_title.png を全面cover表示(bg_menu素材は未生成。将来、職人別のメニュー背景に差し替え予定) / プレースホルダ部品(いずれも専用素材が未生成のためCSSで代用。素材生成後に画像差し替え予定): 職人名リボン(淡ラベンダー地+白縁+右端V字燕尾はclip-path)/ 円ボタン(リプレイ・計算機・裁縫百万石・ランキング・設定。radial-gradientの淡水色+白縁+2層文字)/ 中央特大ボタン(専用素材 btn_main_menu 起票済・淡ピンク角丸+白縁のCSS代用)/ モード切替のU型バー(SVG弧。白縁+非選択=淡水色+選択=淡ピンク。将来 bar_mode 画像素材に差し替え予定) / ホーム側=中央特大トレーニング+左円リプレイ+右円計算機(無効) / ギルド側=中央特大コンテスト(注記2行目)+右円裁縫百万石+左下円ランキング / トレーニング→レシピ選択画面・リプレイ→リプレイコード入力画面へ遷移 / コンテスト・裁縫百万石・ランキングはタップで「モック未作成」トースト(replay-code.htmlの様式を流用)/ 計算機・設定はタップ不可(無効) / 更新履歴はフレーム外に表示(他モックと同方式) / v1.1: 実機不具合2件修正 — ①2層文字の文字サイズ・字間・text-indent 指定を内側レイヤーからラッパー(.t2)へ移動(通常フローの縁レイヤーに text-indent が効かず塗りレイヤーだけずれて二重に見えていた)②U型バーSVGを pointer-events:none 化(SVG要素自体がタップを奪い中央特大ボタン下部が反応しなかった。当たり判定は .hHit の pointer-events:stroke で維持) / v1.2: 更新履歴(本文)をフレーム外かつ100dvhの外へ移動(初期表示はモック画面のみ・履歴はスクロールで閲覧) / v1.3: 文言変更(§5.11.1-18: モード名=ホーム/ギルド・中央ボタン=トレーニング・リプレイ円は「リプレイ」1行)+素材トーンをパステル調に変更(§5.11.1-19: 中央特大は btn_primary 流用をやめ btn_main_menu を起票、全プレースホルダを暫定パステルパレットで再配色) / v1.4: 2層文字の塗りを白系に統一(§5.11.1-20: パステル地に濃茶塗りは判読性低下。無効ボタンの灰塗りも明るく調整)・コンテスト「(スプリント統合検討)」と裁縫百万石「(職人別枠)」の注記行を削除(§5.11.1-21。計算機「(開発中)」は無効状態の説明として継続)</div>
+<div class="caption">メニュー画面モック v1.5 — §5.11.1 B2確定形(menu-wire.html vB2)ベースの正式版。素材トーンはパステル調(§5.11.1-19)、カラーパレットは2色+アクセント1色・メイン青緑系(§5.11.1-22: メイン=青緑・サブ=淡青緑/生成り・アクセント=コーラルピンク。実機レビューで調整前提) / 背景=暫定 bg_title.png を全面cover表示(bg_menu素材は未生成。将来、職人別のメニュー背景に差し替え予定) / プレースホルダ部品(いずれも専用素材が未生成のためCSSで代用。素材生成後に画像差し替え予定): 職人名リボン(濃青緑+白縁+右端V字燕尾はclip-path。パステル限定なし・背景から浮いてよい)/ 円ボタン(リプレイ・計算機・裁縫百万石・ランキング・設定。radial-gradientの青緑+白縁+影+2層文字)/ 中央特大ボタン(専用素材 btn_main_menu 起票済・青緑角丸+白縁のCSS代用)/ モード切替のU型バー(SVG弧。白縁+影、非選択=低彩度の淡青緑+くすみ文字、選択=コーラルピンク+白文字。将来 bar_mode 画像素材に差し替え予定) / ホーム側=中央特大トレーニング+左円リプレイ+右円計算機(無効) / ギルド側=中央特大コンテスト(注記2行目)+右円裁縫百万石+左下円ランキング / トレーニング→レシピ選択画面・リプレイ→リプレイコード入力画面へ遷移 / コンテスト・裁縫百万石・ランキングはタップで「モック未作成」トースト(replay-code.htmlの様式を流用)/ 計算機・設定はタップ不可(無効) / 更新履歴はフレーム外に表示(他モックと同方式) / v1.1: 実機不具合2件修正 — ①2層文字の文字サイズ・字間・text-indent 指定を内側レイヤーからラッパー(.t2)へ移動(通常フローの縁レイヤーに text-indent が効かず塗りレイヤーだけずれて二重に見えていた)②U型バーSVGを pointer-events:none 化(SVG要素自体がタップを奪い中央特大ボタン下部が反応しなかった。当たり判定は .hHit の pointer-events:stroke で維持) / v1.2: 更新履歴(本文)をフレーム外かつ100dvhの外へ移動(初期表示はモック画面のみ・履歴はスクロールで閲覧) / v1.3: 文言変更(§5.11.1-18: モード名=ホーム/ギルド・中央ボタン=トレーニング・リプレイ円は「リプレイ」1行)+素材トーンをパステル調に変更(§5.11.1-19: 中央特大は btn_primary 流用をやめ btn_main_menu を起票、全プレースホルダを暫定パステルパレットで再配色) / v1.4: 2層文字の塗りを白系に統一(§5.11.1-20: パステル地に濃茶塗りは判読性低下。無効ボタンの灰塗りも明るく調整)・コンテスト「(スプリント統合検討)」と裁縫百万石「(職人別枠)」の注記行を削除(§5.11.1-21。計算機「(開発中)」は無効状態の説明として継続) / v1.5: カラーパレットを2色+アクセント1色・メイン青緑系に変更(§5.11.1-22: ボタン=青緑+白縁+影で背景から強調、リボン=濃青緑、バー=白縁+影・非選択=低彩度淡青緑・選択=アクセントのコーラルピンク+白文字で判別を明確化、アクティブドット=アクセント)</div>
 
 <script>
   var simPanel = document.getElementById('simPanel');
