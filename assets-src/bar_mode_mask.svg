@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  bar_mode 形状マスクSVG(§4.6.4 / §5.11.1-24⑤・25①⑥・27)
+  書き出し: 2026-07-23(menu.html v2.0 の U型バーSVGと同一ジオメトリ)
+
+  ■ 座標系
+    viewBox は menu.html の .uSvg と同一(0 0 375 190)。完成した透過PNGを
+    メニュー画面の left:0 / bottom:0 / width:100% / height:190px に置くと
+    モックのSVG描画と完全に一致する(モック側は preserveAspectRatio="none" で
+    横方向に伸縮している点も同じ扱いになる)。
+    推奨書き出し解像度: 2倍 = 750×380px(canvas全体)。
+    描画内容のバウンディングボックス: おおよそ x=10, y=49, w=355, h=87
+    (弧の帯幅28+枠の張り出し。キャップリングは中央 (187.5,120) r16.25 まで)。
+
+  ■ 弧の幾何(ワイヤー確定値)
+    端 (26,65) - 谷 (187.5,120) - 端 (349,65)、半径 R=264.6、
+    帯(塗り)幅 28、枠(外縁)幅 32、線端はすべて round cap。
+
+  ■ レイヤー構成と重ね順(下から)
+    1. frame      白い枠(外縁)。全幅の弧を幅32で描いたもの
+    2. ground     非選択地(サブ系の淡水色 #c5e6f2)。全幅の弧・幅28
+    3. capRing    選択側キャップの境界リング(白・幅2.5・r15)。
+                  ※選択塗りの「下」に敷く: 選択塗りに覆われず残った
+                    はみ出し半円のフチだけが見える(§5.11.1-24⑤・25①)
+    4. activeLeft 選択ハイライト(ホーム側=左半弧)。パープル #b691e6・幅28。
+                  中央端の round cap が非選択側へはみ出す(§5.11.1-13)
+    5. activeRight ギルド側選択時の右半弧(参考・display:none)。
+                  素材としては「左半弧+リング」を作って左右反転でよい
+
+  ■ 使い方
+    - 各レイヤーの形をそのまま選択範囲(マスク)にして質感テクスチャを合成する。
+      色は実装確定値なので、そのまま色見本としても使える。
+    - 必要素材(§4.6.4): ①非選択地=frame+ground を合成した状態
+      ②選択ハイライト=capRing+activeLeft を合成した状態(右は左右反転)
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 375 190" width="750" height="380">
+  <!-- 1. 白い枠(外縁): 幅32 -->
+  <g id="frame">
+    <path d="M 26 65 A 264.6 264.6 0 0 0 349 65"
+          fill="none" stroke="#ffffff" stroke-width="32" stroke-linecap="round" />
+  </g>
+
+  <!-- 2. 非選択地(全幅): サブ系の淡水色・幅28 -->
+  <g id="ground">
+    <path d="M 26 65 A 264.6 264.6 0 0 0 349 65"
+          fill="none" stroke="#c5e6f2" stroke-width="28" stroke-linecap="round" />
+  </g>
+
+  <!-- 3. 選択側キャップの境界リング(白)。選択塗りの下に敷く -->
+  <g id="capRing">
+    <circle cx="187.5" cy="120" r="15"
+            fill="none" stroke="#ffffff" stroke-width="2.5" />
+  </g>
+
+  <!-- 4. 選択ハイライト(ホーム側=左半弧): パープル・幅28・round cap -->
+  <g id="activeLeft">
+    <path d="M 26 65 A 264.6 264.6 0 0 0 187.5 120"
+          fill="none" stroke="#b691e6" stroke-width="28" stroke-linecap="round" />
+  </g>
+
+  <!-- 5. (参考)ギルド側選択時の右半弧。素材は左半+リングの左右反転で可 -->
+  <g id="activeRight" display="none">
+    <path d="M 187.5 120 A 264.6 264.6 0 0 0 349 65"
+          fill="none" stroke="#b691e6" stroke-width="28" stroke-linecap="round" />
+  </g>
+</svg>
