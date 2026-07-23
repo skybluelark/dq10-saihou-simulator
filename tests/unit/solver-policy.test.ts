@@ -1816,10 +1816,14 @@ describe('v3f コーチング第3ラウンド(§10.21)', () => {
       });
     }
 
-    it('再生布は0マスの存在ではプラン発動しない(0/±1マスは再生・押し出しで再開される=みだれの戦略的終わりではない。v3f実験A: ガード起因発動が再生3レシピを+6〜+12pt悪化させていた)。非再生布は0マスで発動する', () => {
+    // §10.23①(v3g/エキスパート回答=仕様の正): 「誤差0マスがある場合は、この限りではありません
+    // (=みだれ絶対禁止)。…誤差0ができたらそこからアプローチ、が基本戦術になります」(再生布でも
+    // 同じ)。旧v3f実装(「再生は0マスの存在ではプラン発動しない」)は誤りだったため期待が逆転する。
+    // ±1マスは引き続き再生では発動根拠にしない(押し出し・再生でリサイクルされるため)。
+    it('再生布も0マスの存在でプラン発動する(§10.23①: 誤差0は全布共通の聖域。旧v3f仕様の反転)。±1マス(0なし)ではプラン不発動のまま(再生でリサイクルされる)', () => {
       const ctx = makeCtx();
-      // 再生: 0マスあり・ガード超の正の残(最小150)は普通×2打36を引いても床(-34)内 → プラン不発動
-      const regenState = makeState(ctx, [150, 160, 170, 180, 190, 0], 2, {
+      // 再生+0マス: 誤差0の存在自体がみだれの終わり=アプローチ開始を意味する(§10.23①) → プラン発動
+      const regenZeroState = makeState(ctx, [150, 160, 170, 180, 190, 0], 2, {
         currentPower: 'normal',
         clothType: 'regen',
         powerCycle: REGEN_CYCLE,
@@ -1828,9 +1832,22 @@ describe('v3f コーチング第3ラウンド(§10.21)', () => {
         lockPowerRemaining: 0,
         lockedPower: null,
       });
-      expect(approachLandingPlan(regenState, analyzeBoard(ctx, regenState))).toBeNull();
+      expect(approachLandingPlan(regenZeroState, analyzeBoard(ctx, regenZeroState))).not.toBeNull();
 
-      // 非再生(normal布): 同一盤面なら0マス=みだれ恒久死 → 仕上げ済みガードでプラン発動
+      // 再生+±1マス(0なし)・ガード超の正の残(最小150)は普通×2打36を引いても床(-34)内。
+      // ±1は再抽選でリサイクルされるためみだれの終わりの根拠にならず、プラン不発動のまま。
+      const regenOneState = makeState(ctx, [150, 160, 170, 180, 190, 1], 2, {
+        currentPower: 'normal',
+        clothType: 'regen',
+        powerCycle: REGEN_CYCLE,
+        cycleIndex: 0,
+        turn: 10,
+        lockPowerRemaining: 0,
+        lockedPower: null,
+      });
+      expect(approachLandingPlan(regenOneState, analyzeBoard(ctx, regenOneState))).toBeNull();
+
+      // 非再生(normal布): 同一盤面(0マスあり)なら0マス=みだれ恒久死 → 仕上げ済みガードでプラン発動
       const normalState = makeState(ctx, [150, 160, 170, 180, 190, 0], 2, {
         currentPower: 'normal',
         clothType: 'normal',
@@ -1917,6 +1934,140 @@ describe('v3f コーチング第3ラウンド(§10.21)', () => {
       // 同tierであることを確認したうえで、ぬうが大滝より上位(=先着)であることを確認する。
       expect(choices[nuuIdx].tier).toBe(choices[otakiIdx].tier);
       expect(nuuIdx).toBeLessThan(otakiIdx);
+    });
+  });
+});
+
+// v3g コーチング第4ラウンド即応反映(SOLVER_POLICY.md §10.22⑤・§10.23①④)。
+// §10.23①「誤差0マスがある場合は、この限りではありません(=みだれ絶対禁止)。…誤差0ができたら
+//   そこからアプローチ、が基本戦術になります」(再生布でも同じ。旧v3f「再生はガード無視」は誤り)。
+// §10.23④「(誤差1のみだれ再抽選は)他に戻さなくてはならないマスがなく、再抽選後の誤差2を
+//   アプローチまでに再抽選できるならば打ちます。実質2回目の再生ターンまで、かつ弱い限定になる
+//   気がします」。
+// §10.22⑤「(弱い統一の更新は)再生ではほぼ例外なく残1で更新します。虹布、光布では、虹布の
+//   会心ターン、光布の発光ターンに残1になった場合に更新するのが非効率のため、その前の残2の
+//   ターンで更新することがあります」。
+describe('v3g コーチング第4ラウンド即応反映(§10.22⑤/§10.23①④)', () => {
+  describe('みだれガード新アンカー(§10.23④: 誤差1みだれ再抽選の再生限定条件付き許可)', () => {
+    // 6マスregen carve盤面: 対象マス(1,1)の残りだけ±1(誤差1)、他5マスは大マス(carveMin以上)。
+    // §10.21③の既存アンカー([2,137,159,90,100,110]・normal・tier1確認済み)と同型で、対象マスの
+    // 値だけ±1に変え、弱パワー・ターン番号の条件を差し替える。
+    const BASE_BIG_CELLS = [137, 159, 90, 100, 110];
+
+    it('(a) +1マスあり(0なし・残≤−5なし)・弱・ターン番号≤9ではmidare_nuiが許可される', () => {
+      const ctx = makeCtx();
+      const state = makeState(ctx, [1, ...BASE_BIG_CELLS], 2, {
+        currentPower: 'weak',
+        clothType: 'regen',
+        lockPowerRemaining: 0,
+        lockedPower: null,
+        turn: 0, // 当ターン番号(state.turn+1)=1≤9
+      });
+      const choices = rankExpert(ctx, state);
+      expect(choices.some((ch) => ch.scored.candidate.skillId === 'midare_nui')).toBe(true);
+    });
+
+    it('(b) 同条件でもターン番号が9を超えるとmidare_nuiは禁止される(実質2回目の再生ターンまで)', () => {
+      const ctx = makeCtx();
+      const state = makeState(ctx, [1, ...BASE_BIG_CELLS], 2, {
+        currentPower: 'weak',
+        clothType: 'regen',
+        lockPowerRemaining: 0,
+        lockedPower: null,
+        turn: 10, // 当ターン番号=11>9
+      });
+      const choices = rankExpert(ctx, state);
+      expect(choices.some((ch) => ch.scored.candidate.skillId === 'midare_nui')).toBe(false);
+    });
+
+    it('(c) 同条件でも普通パワーではmidare_nuiは禁止される(弱限定)', () => {
+      const ctx = makeCtx();
+      const state = makeState(ctx, [1, ...BASE_BIG_CELLS], 2, {
+        currentPower: 'normal',
+        clothType: 'regen',
+        lockPowerRemaining: 0,
+        lockedPower: null,
+        turn: 0,
+      });
+      const choices = rankExpert(ctx, state);
+      expect(choices.some((ch) => ch.scored.candidate.skillId === 'midare_nui')).toBe(false);
+    });
+
+    it('(d) 同条件でも別マスに残≤−5(戻さなくてはならないマス)があるとmidare_nuiは禁止される', () => {
+      const ctx = makeCtx();
+      const state = makeState(ctx, [1, 137, 159, 90, 100, -8], 2, {
+        currentPower: 'weak',
+        clothType: 'regen',
+        lockPowerRemaining: 0,
+        lockedPower: null,
+        turn: 0,
+      });
+      const choices = rankExpert(ctx, state);
+      expect(choices.some((ch) => ch.scored.candidate.skillId === 'midare_nui')).toBe(false);
+    });
+
+    // (e) 0マスがあれば全布で不許可(§10.23①)は既存T16アンカー(「T16アンカー: 残
+    // [5,137,159,-3,0,86]…」)および「0のマスが1つでもあれば引き続きmidare_nuiは禁止される」
+    // (§10.21③のdescribe内)で再生布ケースを担保済みのため、ここでは重複させない。
+  });
+
+  describe('弱統一延長の虹会心/光発光前倒し(§10.22⑤)', () => {
+    // clothTrait既定(firstTurn=5, interval=4): 特性ターンは5,9,13,17,...。
+    // turn=7→次ターン(state.turn+2)=9は特性ターン。turn=6→次ターン=8は特性ターンでない。
+    const REMAINING_2_MOVES = [5, 5, 0, 0]; // estimateAdjustMoves=1+1=2手(残り作業2手以上)
+
+    it('rainbow・弱ロック・adjust・残り作業2手以上で、lockPowerRemaining=2かつ次ターンが特性ターンなら延長がtier0(前倒し)', () => {
+      const ctx = makeCtx();
+      const state = makeState(ctx, REMAINING_2_MOVES, 2, {
+        currentPower: 'weak',
+        lockPowerRemaining: 2,
+        lockedPower: 'weak',
+        clothType: 'rainbow',
+        turn: 7,
+      });
+      const choices = rankExpert(ctx, state);
+      const seishin = choices.find((ch) => ch.scored.candidate.skillId === 'seishin_toitsu');
+      expect(seishin?.tier).toBe(0);
+    });
+
+    it('rainbow・同条件でも次ターンが特性ターンでなければ候補に出ない(前倒し不成立)', () => {
+      const ctx = makeCtx();
+      const state = makeState(ctx, REMAINING_2_MOVES, 2, {
+        currentPower: 'weak',
+        lockPowerRemaining: 2,
+        lockedPower: 'weak',
+        clothType: 'rainbow',
+        turn: 6,
+      });
+      const choices = rankExpert(ctx, state);
+      expect(choices.some((ch) => ch.scored.candidate.skillId === 'seishin_toitsu')).toBe(false);
+    });
+
+    it('regen・同条件(残2・次ターンが特性ターン)では前倒しの対象外なので候補に出ない(虹・光限定)', () => {
+      const ctx = makeCtx();
+      const state = makeState(ctx, REMAINING_2_MOVES, 2, {
+        currentPower: 'weak',
+        lockPowerRemaining: 2,
+        lockedPower: 'weak',
+        clothType: 'regen',
+        turn: 7,
+      });
+      const choices = rankExpert(ctx, state);
+      expect(choices.some((ch) => ch.scored.candidate.skillId === 'seishin_toitsu')).toBe(false);
+    });
+
+    it('light・残2・次ターンが発光ターンなら同様に延長がtier0(前倒し)', () => {
+      const ctx = makeCtx();
+      const state = makeState(ctx, REMAINING_2_MOVES, 2, {
+        currentPower: 'weak',
+        lockPowerRemaining: 2,
+        lockedPower: 'weak',
+        clothType: 'light',
+        turn: 7,
+      });
+      const choices = rankExpert(ctx, state);
+      const seishin = choices.find((ch) => ch.scored.candidate.skillId === 'seishin_toitsu');
+      expect(seishin?.tier).toBe(0);
     });
   });
 });

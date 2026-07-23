@@ -651,9 +651,25 @@ function midareAliveAtNormal(state: GameState, analysis: BoardAnalysis): boolean
 
 /** みだれぬい(B1〜B3/C1)。E2は対象外(専用のstop-loss判定を用いる)。 */
 function tierForMidare(state: GameState, analysis: BoardAnalysis, dist: ActionDistribution): number | null {
-  // §10.20④/v3e: 「0がある状況で打つ手ではない」。仕上げ済みマス(|r|≤midareFinishedGuard)が
-  // 盤面に1つでもあればみだれ自体を禁止する(フェーズ分岐・床判定より前段のゲート)。
-  if (state.cells.some((cell) => Math.abs(cell.base - cell.cumulative) <= P.midareFinishedGuard)) return null;
+  // §10.23①(v3g/エキスパート回答=仕様の正): 「誤差0マスがある場合は、この限りではありません
+  // (=みだれ絶対禁止)。…誤差0ができたらそこからアプローチ、が基本戦術になります」。誤差0は
+  // 全布共通の聖域(例外なし。再生布でも同じ)であり、旧v3f「再生はガード無視」の扱いは誤りだった。
+  if (state.cells.some((cell) => cell.base - cell.cumulative === 0)) return null;
+
+  // §10.23④(v3g/エキスパート回答=仕様の正): |残|===1(誤差1)は非再生布では従来どおり禁止する。
+  // 再生布のみ、次の3条件をすべて満たす場合に限り許可する(満たさなければ同じく禁止):
+  //   (a) 実効パワーがweak(誤差1みだれ再抽選は「弱い限定になる気がします」)
+  //   (b) 当ターン番号(state.turn+1)が9以下(=2回目の再生イベント(T5,T9)まで。「実質2回目の
+  //       再生ターンまで」)
+  //   (c) ±1のマス以外に「戻さなくてはならないマス」(残≤−5)が無いこと
+  // 「他に戻さなくてはならないマスがなく、再抽選後の誤差2をアプローチまでに再抽選できるならば
+  // 打ちます」。弱×2打で1に18が当たり戻り切らないレアケース(≈1/6×1/7)は受容する。
+  if (state.cells.some((cell) => Math.abs(cell.base - cell.cumulative) === P.midareFinishedGuard)) {
+    const eff = effPower(state.currentPower);
+    const turnNumber = state.turn + 1;
+    const hasMustReturnCell = state.cells.some((cell) => cell.base - cell.cumulative <= -5);
+    if (state.clothType !== 'regen' || eff !== 'weak' || turnNumber > 9 || hasMustReturnCell) return null;
+  }
 
   const isRegen = state.clothType === 'regen';
   // 再生布の緩和も赤マス1つまで(D2。passesE2 と同じ理由)
@@ -697,11 +713,15 @@ function tierForMidare(state: GameState, analysis: BoardAnalysis, dist: ActionDi
 function midareBannedNow(state: GameState, analysis: BoardAnalysis): boolean {
   const isRegen = state.clothType === 'regen';
 
-  // 仕上げ済みガードによる禁止は非再生布でのみ「みだれの終わり(=アプローチ開始)」を意味する。
-  // 再生布では0/±1マスは再生・押し出しで再開されるためみだれは戦略的に終わっておらず、
-  // ここでガード起因のプラン発動を許すと中盤の0マス常在時に予約規則・効率ソートが
-  // 無効化されて自己対局が悪化する(v3f実験A: プラン無効化で再生3レシピが+6〜+12pt回復)。
-  const guardHit = state.cells.some((cell) => Math.abs(cell.base - cell.cumulative) <= P.midareFinishedGuard);
+  // §10.23①(v3g/エキスパート回答=仕様の正): 「誤差0ができたらそこからアプローチ」。誤差0マスは
+  // 全布共通でみだれの終わり(=アプローチ開始)を意味する — 再生布でも例外にしない(旧v3f
+  // 「再生はガード無視」の扱いは誤りだった)。
+  if (state.cells.some((cell) => cell.base - cell.cumulative === 0)) return true;
+
+  // ±1のマスは再生布ではみだれの終わりの根拠にしない(押し出し・再生でリサイクルされるため。
+  // v3f実験A: ガード起因のプラン発動を許すと中盤の±1マス常在時に予約規則・効率ソートが
+  // 無効化されて自己対局が悪化した=再生3レシピが+6〜+12pt回復)。
+  const guardHit = state.cells.some((cell) => Math.abs(cell.base - cell.cumulative) === P.midareFinishedGuard);
   if (!isRegen && guardHit) return true;
 
   const regenRelaxed = isRegen && redCellCount(state) <= 1;
@@ -1017,7 +1037,7 @@ function expectedCarveToWeakLanding(state: GameState): number {
  * 精神統一(C7/A4①。§10.1/10.2でルール反転: 延長がデフォルト)。
  * 旧v1(fineCount+overCount≥2で発動)を廃止し、残り作業手数の見積もりベースへ置換する。
  */
-function tierForSeishin(state: GameState, analysis: BoardAnalysis): number | null {
+function tierForSeishin(ctx: SolverContext, state: GameState, analysis: BoardAnalysis): number | null {
   const unlocked = state.lockPowerRemaining === 0;
 
   // 最強ロック/再ロック(§10.19③④(b)。エキスパート回答=仕様の正):
@@ -1044,12 +1064,19 @@ function tierForSeishin(state: GameState, analysis: BoardAnalysis): number | nul
     if (remainingMoves >= 2) return 0;
   }
 
-  // 弱延長(デフォルト。§10.1訂正 → §10.21①で再修正): 「延長がデフォルト」。旧実装
-  // (残2以下で毎回判定)は「調整中の弱い統一が2ターンに1回選択されており、集中力のムダに
-  // なっています」(§10.19④の弱ロック版に相当する誤り。残2での更新は1回あたり1ターン分の
-  // ロックを捨てる)という指摘により、更新判定は残1のときのみ行う。ロックが切れる時点で
-  // 残り作業(+しあげ1手)が現ロックの残ターン内に収まる場合のみ放棄し得る(=候補から外す)。
-  if (state.lockedPower === 'weak' && state.lockPowerRemaining === 1 && analysis.phase === 'adjust') {
+  // 弱延長(デフォルト。§10.1訂正 → §10.21①で再修正 → §10.22⑤/v3gで布別に前倒し例外追加):
+  // 「延長がデフォルト」。旧実装(残2以下で毎回判定)は「調整中の弱い統一が2ターンに1回選択
+  // されており、集中力のムダになっています」(§10.19④の弱ロック版に相当する誤り。残2での
+  // 更新は1回あたり1ターン分のロックを捨てる)という指摘により、更新判定は残1のときのみ行う。
+  // §10.22⑤(エキスパート回答=仕様の正): 「再生ではほぼ例外なく残1で更新します。虹布、光布では、
+  // 虹布の会心ターン、光布の発光ターンに残1になった場合に更新するのが非効率のため、その前の
+  // 残2のターンで更新することがあります」。虹・光布限定で、残2かつ次ターン(当ターン番号+1)が
+  // 布特性ターンなら前倒しでこの判定に入る。
+  const isTraitFrontload =
+    state.lockPowerRemaining === 2 &&
+    (state.clothType === 'rainbow' || state.clothType === 'light') &&
+    isTraitTurn(state.turn + 2, ctx.data.params);
+  if (state.lockedPower === 'weak' && analysis.phase === 'adjust' && (state.lockPowerRemaining === 1 || isTraitFrontload)) {
     const remainingMoves = estimateAdjustMoves(boardRemainings(state));
     const fitsWithinLock = remainingMoves + 1 <= state.lockPowerRemaining; // +1=しあげる手
     if (!fitsWithinLock) {
@@ -1514,7 +1541,7 @@ export function rankExpert(
 
     let tier: number | null = null;
     if (skill.id === 'shitsuke_gake') tier = tierForShitsuke(ctx, state, analysis, s.candidate);
-    else if (skill.id === 'seishin_toitsu') tier = tierForSeishin(state, analysis);
+    else if (skill.id === 'seishin_toitsu') tier = tierForSeishin(ctx, state, analysis);
     else if (skill.id === 'muga_no_kyochi') tier = tierForMuga(state);
     else if (skill.id === 'power_shift') {
       // C8: adjust かつ縫い系・ほぐしの許可候補が0件のときのみ(v1簡易)。

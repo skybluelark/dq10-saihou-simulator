@@ -24,7 +24,11 @@ import type { RankedCandidate, SolverParams } from './types';
 //     みだれ仕上げ済みガードの|残|≤2→|残|≤1化・②アプローチ着地プランナー[みだれ死後は
 //     受け持ち予約でなく着地ターンまでの差分効率でsew/recoverを順位付け]・強い巻きこみの
 //     carveアプローチ主力手化)。ランキングが変わるため旧版priorとは合算不可。
-export const SOLVER_VERSION = 8;
+// v9: v3g §10.22⑤/§10.23①④(コーチング第4ラウンド即応反映。誤差0みだれ絶対ガードの全布
+//     統一[再生も例外なし]・誤差1みだれの再生限定条件付き許可[弱×2回目の再生ターンまで×
+//     他に戻し対象なし]・弱統一更新の虹会心/光発光ターン前倒し)。ランキングが変わるため
+//     旧版priorとは合算不可。
+export const SOLVER_VERSION = 9;
 
 /** Wilson score interval(95%既定)。n=0 は {lo:0, hi:1}。 */
 export function wilson(n: number, wins: number, z = 1.96): { lo: number; hi: number } {
